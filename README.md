@@ -8,7 +8,7 @@
 > - Professor: [Prof. Dr. Butz](https://www.medien.ifi.lmu.de/team/andreas.butz/)
 > - Assistant: [Changkun Ou](https://www.medien.ifi.lmu.de/team/changkun.ou/)
 > - Date: Monday, 2 p.m. - 6 p.m. (starts on Nov 2, 2020)
-> - Location: Online
+> - Location: [Zoom](https://lmu-munich.zoom.us/j/98754182746) (Password is sent via Uni2Work Email)
 >
 
 ## Prerequisites
@@ -26,7 +26,7 @@ We use our [GP GitHub repository](https://github.com/mimuc/gp-ws2021) to manage 
 
 Please register yourself on GitHub if you do not have a GitHub account yet. You can use any distinguishable identifier for your username if you do not want your real name to appear on GitHub publicly.
 
-## Preparing
+## Preparation
 
 Since we use GitHub to organize the course, it is recommended for you to get familiar with GitHub beforehand. The following tools are used in the course, please install them before you taking the course: [Blender](https://www.blender.org/) (2.90+), [Node.js](https://nodejs.org/en/) (v14+).
 
@@ -37,6 +37,8 @@ In this practical course, students will learn and practice more about geometry p
 During the semester, students will participate in the course every two weeks to discuss and learn more geometry processing techniques, then do 5 out of 6 geometry processing coding projects.
 
 Along the semester, students should propose a project idea, and by the end of semester, implement and demonstrate their project in 2 minutes using a pre-recorded video.
+
+Organization details: [Link](https://changkun.de/s/gp-0-org)
 
 | Date | Topic | Slides | Project Skeleton |
 |:----:|:------|:-------|:-----------------|
