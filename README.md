@@ -36,9 +36,9 @@ In this practical course, students will learn and practice more about geometry p
 
 During the semester, students will participate in the course every two weeks to discuss and learn more geometry processing techniques, then do 5 out of 6 geometry processing coding projects.
 
-Along the semester, students should propose a project idea, and by the end of semester, implement and demonstrate their project in 2 minutes using a pre-recorded video.
+Along the semester, students should propose a project idea, and by the end of semester, implement and demonstrate their project in 2-5 minutes in video format.
 
-Organization details: [Link](https://changkun.de/s/gp-0-org)
+Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
 | Date | Topic | Slides | Project Skeleton |
 |:----:|:------|:-------|:-----------------|
@@ -54,33 +54,29 @@ Organization details: [Link](https://changkun.de/s/gp-0-org)
 
 ## Grading
 
-The grading scheme contains two parts: course projects and independent project.
+The grading scheme contains two parts: _coding projects_ and _individual project_.
 
-### (50%) Course Projects
+### (50%) Coding Projects
 
-Submit 5 course projects out of 6:
+Please check [this document](./skeletons/README.md) for further details for the submissions.
 
-| Proportion | Item | Deadline |
-|:----------:|:-----|:--------:|
-| 10% | Coding Project 1 | 30.11.2020 00:00:00 |
-| 10% | Coding Project 2 | 14.12.2020 00:00:00 |
-| 10% | Coding Project 3 | 11.01.2021 00:00:00 |
-| 10% | Coding Project 4 | 25.01.2021 00:00:00 |
-| 10% | Coding Project 5 | 08.02.2021 00:00:00 |
-| 10% | Coding Project 6 | 22.02.2021 00:00:00 |
+### (50%) Individual Project
 
-### (50%) Independent Project
+Please check [this document](./projects/README.md) for further details for the submissions.
 
-| Proportion | Project | Deadline |
-|:----------:|:--------|:--------:|
-| 10% | Project proposal | 01.01.2021 00:00:00 |
-| 40% | Project presentation | 01.03.2021 00:00:00 |
+### Late and Cheat Policy
 
-### Late submission
+Late: _0.005% subtraction for every minute late._
 
-_0.005% subtraction for every minute late._
+- For each coding project, you have 2000 minutes (10%/0.005%) to send your pull request at the very latest, otherwise, you will receive 0 points from the corresponding project.
 
-This means for each coding project, you have only 2000 minutes (10%/0.005%=2000) to send your pull request at the very latest, otherwise, you will receive 0 points from the corresponding project.
+Cheat: You don't.
+
+- Coding projects will surround the re-implementation of well-known GP algorithms, workflows, etc.
+- If one sent a pull request, then he/she's the solution will be publicly visible
+- We will discuss the solution anyway
+- You don't want to cheat because you take responsibility for your own study
+- If you just want a pass, we do not recommend the participation of this course
 
 ## License
 
