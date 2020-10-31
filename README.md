@@ -58,7 +58,7 @@ The grading scheme contains two parts: _coding projects_ and _individual project
 
 ### (50%) Coding Projects
 
-Please check [this document](./skeletons/README.md) for further details for the submissions.
+Please check [this document](./homeworks/README.md) for further details for the submissions.
 
 ### (50%) Individual Project
 
@@ -73,10 +73,11 @@ Late: _0.005% subtraction for every minute late._
 Cheat: You don't.
 
 - Coding projects will surround the re-implementation of well-known GP algorithms, workflows, etc.
-- If one sent a pull request, then he/she's the solution will be publicly visible
+- If one sent a pull request, then he/she's the solution will be visible publicly
 - We will discuss the solution anyway
-- You don't want to cheat because you take responsibility for your own study
-- If you just want a pass, we do not recommend the participation of this course
+- If you found someone plagiarize your submission, ask the person to stop privately; if you can't find consensus together, please talk to me
+- If you just want a pass, we do not recommend participation in this course
+- **You don't want to cheat because you take responsibility for your own study**
 
 ## License
 
