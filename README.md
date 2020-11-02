@@ -40,17 +40,17 @@ Along the semester, students should propose a project idea, and by the end of se
 
 Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
-| Date | Topic | Slides | Project Skeleton |
-|:----:|:------|:-------|:-----------------|
-| 02.11.2020 | Introduction | TBA | - |
-| 16.11.2020 | Discrete Differential Geometry | TBA | TBA |
-| 30.11.2020 | Smoothing | TBA | TBA |
-| 14.12.2020 | Parameterization | TBA | TBA |
-| 11.01.2021 | Remeshing | TBA | TBA |
-| 25.01.2021 | Deformation | TBA | TBA |
-| 08.02.2021 | Data-driven Shape Analysis | TBA | TBA |
-| 22.02.2021 | Guest Talk: Industrial Modeling Practice | - | - |
-| 01.03.2021 | Final Project Presentation | - | - |
+| Date | Topic | Project Skeleton |
+|:----:|:------|:-----------------|
+| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | - |
+| 16.11.2020 | Discrete Differential Geometry | TBA |
+| 30.11.2020 | Smoothing | TBA |
+| 14.12.2020 | Parameterization | TBA |
+| 11.01.2021 | Remeshing | TBA |
+| 25.01.2021 | Deformation | TBA |
+| 08.02.2021 | Data-driven Shape Analysis | TBA |
+| 22.02.2021 | Guest Talk: Industrial Modeling Practice | - |
+| 01.03.2021 | Final Project Presentation | - |
 
 ## Grading
 
