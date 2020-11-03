@@ -8,7 +8,7 @@
 > - Professor: [Prof. Dr. Butz](https://www.medien.ifi.lmu.de/team/andreas.butz/)
 > - Assistant: [Changkun Ou](https://www.medien.ifi.lmu.de/team/changkun.ou/)
 > - Date: Monday, 2 p.m. - 6 p.m. (starts on Nov 2, 2020)
-> - Location: [Zoom](https://lmu-munich.zoom.us/j/98754182746) (Password is sent via Uni2Work Email)
+> - Location: [Zoom](https://lmu-munich.zoom.us/j/98754182746) (Password was sent via Uni2Work Email)
 >
 
 ## Prerequisites
@@ -40,9 +40,9 @@ Along the semester, students should propose a project idea, and by the end of se
 
 Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
-| Date | Topic | Project Skeleton |
+| Date | Topic | Homework & Skeleton |
 |:----:|:------|:-----------------|
-| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | - |
+| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Getting started with Mesh](./homeworks/1-intro) |
 | 16.11.2020 | Discrete Differential Geometry | TBA |
 | 30.11.2020 | Smoothing | TBA |
 | 14.12.2020 | Parameterization | TBA |
