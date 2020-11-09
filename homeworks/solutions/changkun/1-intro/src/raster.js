@@ -11,6 +11,37 @@ import Vector from './vec'
 import Matrix from './mat'
 
 /**
+ * Vertex represents a 3D vertex that contains coordinates regarding
+ * uv, normal and position.
+ */
+class Vertex {
+  constructor() {
+    this.uv = null
+    this.normal = null
+    this.position = null
+  }
+}
+
+/**
+ * Triangle is a triangle representation that consists of an array of
+ * vertices.
+ */
+class Triangle {
+  constructor() {
+    this.vertices = []
+  }
+}
+
+/**
+ * TriMesh represents a triangulated mesh.
+ */
+class TriMesh {
+  constructor() {
+    this.triangles = []
+  }
+}
+
+/**
  * Rasterizer implements a CPU rasterization rendering pipeline.
  */
 export default class Rasterizer {
@@ -37,11 +68,9 @@ export default class Rasterizer {
       position: new Vector(-200, 250, 600, 1),
     }
     this.model = {
-      // Hint: geometry is a three.js Geometry object.
-      // You can check the document for the needed properties here:
-      // https://threejs.org/docs/#api/en/core/Geometry
-      geometry: params.model.geometry,
-      // Hint: The texture color is an array of numbers that aligned as
+      url: params.model.geometry,
+      mesh: null, // mesh is the loaded obj mesh model
+      // The texture color is an array of numbers that aligned as
       // [r, g, b, a, r, g, b, a, ...] with size (width x height x 4).
       // r, g, b, a represents red, green, blue and alpha channel values.
       // You only need r, g, b values in this assignment.
@@ -156,40 +185,93 @@ export default class Rasterizer {
   }
 
   /**
+   * loadMesh loads a mesh from an .obj file.
+   * @returns {TriMesh} a triangle mesh
+   */
+  async loadMesh() {
+    const resp = await fetch(this.model.url)
+    let lines = await resp.text()
+    let m = new TriMesh()
+
+    // an obj loader
+    let positions = []
+    let uvs       = []
+    let normals   = []
+    lines = lines.split('\n')
+    for (let line of lines) {
+      line = line.trim()
+      const tokens = line.split(' ')
+      switch(tokens[0].trim()) {
+      case 'v':
+        positions.push(new Vector(
+          parseFloat(tokens[1]),
+          parseFloat(tokens[2]),
+          parseFloat(tokens[3]),
+          1,
+        ))
+        continue
+      case 'vt':
+        uvs.push(new Vector(
+          parseFloat(tokens[1]),
+          parseFloat(tokens[2]),
+          0, 1,
+        ))
+        continue
+      case 'vn':
+        normals.push(new Vector(
+          parseFloat(tokens[1]),
+          parseFloat(tokens[2]),
+          parseFloat(tokens[3]),
+          0,
+        ))
+        continue
+      case 'f':
+        let tri = new Triangle()
+        for (let i = 1; i < tokens.length; i++) {
+          const vidx = tokens[i].split('/')[0].trim()-1
+          const uvidx = tokens[i].split('/')[1].trim()-1
+          const nidx = tokens[i].split('/')[2].trim()-1
+          let v = new Vertex()
+          v.position = positions[vidx]
+          v.uv = uvs[uvidx]
+          v.normal = normals[nidx]
+          tri.vertices.push(v)
+        }
+        m.triangles.push(tri)
+        continue
+      }
+    }
+
+    this.model.mesh = m
+  }
+  /**
    * render implements a rasterization rendering pipeline.
    * Evetually, this methods stored all computed color in the frame buffer.
    */
-  render() {
+  async render() {
+    await this.loadMesh()
+
     // initialization, and vertex generation, etc.
     this.initBuffers()
     this.initTransformation()
-    const g = this.model.geometry
-    for (let i = 0; i < g.faces.length; i++) {
-      const f = g.faces[i]
+
+    for (let i = 0; i < this.model.mesh.triangles.length; i++) {
+      const tri = this.model.mesh.triangles[i]
 
       // vertex generation
-      const a = new Vector(
-        g.vertices[f.a].x, g.vertices[f.a].y, g.vertices[f.a].z, 1)
-      const b = new Vector(
-        g.vertices[f.b].x, g.vertices[f.b].y, g.vertices[f.b].z, 1)
-      const c = new Vector(
-        g.vertices[f.c].x, g.vertices[f.c].y, g.vertices[f.c].z, 1)
+      const a = tri.vertices[0].position
+      const b = tri.vertices[1].position
+      const c = tri.vertices[2].position
 
       // uv generation
-      const UVa = new Vector(
-        g.faceVertexUvs[0][i][0].x, g.faceVertexUvs[0][i][0].y, 0, 1)
-      const UVb = new Vector(
-        g.faceVertexUvs[0][i][1].x, g.faceVertexUvs[0][i][1].y, 0, 1)
-      const UVc = new Vector(
-        g.faceVertexUvs[0][i][2].x, g.faceVertexUvs[0][i][2].y, 0, 1)
+      const UVa = tri.vertices[0].uv
+      const UVb = tri.vertices[1].uv
+      const UVc = tri.vertices[2].uv
 
       // normal generation
-      const Na = new Vector(
-        f.vertexNormals[0].x, f.vertexNormals[0].y, f.vertexNormals[0].z, 0)
-      const Nb = new Vector(
-        f.vertexNormals[1].x, f.vertexNormals[1].y, f.vertexNormals[1].z, 0)
-      const Nc = new Vector(
-        f.vertexNormals[2].x, f.vertexNormals[2].y, f.vertexNormals[2].z, 0)
+      const Na = tri.vertices[0].normal
+      const Nb = tri.vertices[1].normal
+      const Nc = tri.vertices[2].normal
 
       // rasterizing the triangle
       this.draw([a, b, c], [UVa, UVb, UVc], [Na, Nb, Nc])

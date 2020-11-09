@@ -214,8 +214,10 @@ class Monitor extends Renderer {
     canvas.getContext('2d').drawImage(
       t.image, 0, 0, canvas.width, canvas.height
     )
-    this.params.model.geometry =
-      new Geometry().fromBufferGeometry(g.children[0].geometry)
+
+    // NOTE: don't change the param to three.js geometry, let the rasterizer load from raw file.
+    // this.params.model.geometry = new Geometry().fromBufferGeometry(g.children[0].geometry)
+
     this.params.model.texture = {
       data: canvas.getContext('2d')
         .getImageData(0, 0, canvas.width, canvas.height).data,
@@ -260,11 +262,11 @@ class Monitor extends Renderer {
 
     // measuring rendering performance
     const t0 = performance.now()
-    r.render()
-    const t1 = performance.now()
-
-    this.flushFrameBuffer(r)
-    console.log(`CPU rasterizer perf: ${1000/(t1-t0)} fps`)
+    r.render().then(() => {
+      const t1 = performance.now()
+      this.flushFrameBuffer(r)
+      console.log(`CPU rasterizer perf: ${1000/(t1-t0)} fps`)
+    })
   }
   /**
    * initScreen creates a plane to simulate a pixel based screen.
