@@ -1,0 +1,31 @@
+{
+  "name": "gp-rasterizer",
+  "main": "src/main.js",
+  "description": "LMU Munich GP WS2021",
+  "scripts": {
+    "start": "webpack s",
+    "build": "webpack --env prod",
+    "test": "jest --verbose"
+  },
+  "repository": "mimuc/gp-ws2021",
+  "author": "Changkun Ou <hi@changkun.us>",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "dat.gui": "^0.7.7",
+    "stats.js": "^0.17.0",
+    "three": "^0.122.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.3",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "babel-jest": "^26.6.3",
+    "babel-loader": "^8.1.0",
+    "copy-webpack-plugin": "^6.3.0",
+    "html-webpack-plugin": "^4.5.0",
+    "regenerator-runtime": "^0.13.7",
+    "webpack": "^5.4.0",
+    "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
