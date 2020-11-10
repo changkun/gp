@@ -1,46 +1,39 @@
-# Homework 0
+# Homework 1: Getting started with mesh
 
-This document demonstrates how you could submit your solution
-for homework 0.
+This document explains my solution for homework 1.
 
-Since this homework is not mandatory, there are no constraints on how
-you should organize your submissions. Here might be an example for inspiration.
+## Implementation an .obj file loader and a CPU rasterizer
 
-## 1. Re-implementation rasterization pipeline
+The source code files are placed in the `src` folder. One can run the solution
+using the following commands:
 
-The reimplemented rasterization pipeline is placed in folder `src`, and
-there are several highlights of my implementation:
+```sh
+$ npm i
+$ npm start
+```
 
-1. highlight
-2. another highlight
+The core implementation of the rasterizer and obj file loader are located
+in the `src/raster.js` file.
 
-## 2. Reproduce teaser
+## Reproduce teaser
 
 Here is my reproduced teaser picture:
 
-![](./assets/reproduced-teaser.png)
+![](./assets/teaser.png)
 
-> Note that you don't need submit your `.blend` file.
+> Note that you do not have to submit your `.blend` file.
 
-## 3. Mesh data structure
+There is also a procedure script that demonstrates how to reproduce
+the teaser automatically. One can execute the Python script using
+the following command:
 
-In the `src` folder, the mesh data structure is implemented as an extension
-to the rasterization implementation. 
+```sh
+$ blender -b -P teaser.py
+```
 
-The implemented mesh structure uses X structure (for example, halfedge).
-Detailed implementation can be found in the `x.js` file.
+## The BMesh data structure
 
 After reading the blender's developer documentation, here are some of
-my understanding of its internal mesh structure:
+the understanding highlights regarding its internal mesh structure:
 
-
-Answer about Q1
-
-Answer about Q2
-
-## 4. Individual Project Idea
-
-You are very creative. If you already have an idea(s), 
-you can present it now so that others could be aware of the conflicts with you.
-But note that you will still have to write a formal proposal
-to the `projects` folder.
+TODO:
