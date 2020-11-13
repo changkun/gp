@@ -1,24 +1,75 @@
-# Homework 2: Visualizing Discrete Curvature
+# Homework 2: Visualizing Curvatures
 
-1. Re-implement the rasterization and ray tracing pipeline
+In this homework, you will be working on the implementation of curvature
+visualization for manifold triangle meshes.
 
-   - See [SS20 CG1 Assignment 7](https://www.medien.ifi.lmu.de/lehre/ss20/cg1/#tutorial) (ray tracing) and [Online-Hausarbeiten 3](https://www.medien.ifi.lmu.de/lehre/ss20/cg1/#online-hausarbeiten) (rasterization)
+## Skeleton
 
-2. Getting started with Blender
+The skeleton for this homework is structured as follows:
 
-   - Find awesome YouTube videos that fits your taste, e.g. [Blender Guru](https://www.youtube.com/watch?v=TPrnSACiTJ4&ab_channel=BlenderGuru).
-   - Use models from GitHub repository, reproduce the course [teaser figure](../../assets/teaser.png).
-   - Checkout Blender's [API documentation](https://docs.blender.org/api/current/index.html), try to reproduce the figure in Python.
+```
+2-ddg
+├── package.json
+├── package-lock.json
+├── README.md          <--- You work on this file
+├── src
+│   ├── assets
+│   │   └── bunny_tri.obj
+│   ├── colors.js
+│   ├── halfedge.js    <--- You work on this file
+│   ├── main.js
+│   ├── renderer.js
+│   └── vector.js
+└── webpack.config.js
+```
 
-3. Extend the rasterizer, implement an .obj file loader that loads the model into your mesh data structure instead using [THREE.OBJLoader](https://threejs.org/docs/#examples/en/loaders/OBJLoader)
+You coding tasks are located in the `halfedge.js`.
+Please look for `TODO:` in these two files and complete them to archive
+the reference results listed below.
 
-   - Think about how would you turn the learned data structure to code.
-   - Read blender's [developer documentation](https://wiki.blender.org/wiki/Source/Modeling/BMesh/Design), try to answer these questions:
-     - What is the blender's internal mesh data structure?
-     - How it works and what are the differences compare to what we learned in the kick-off session?
+> It might be useful to read the code in `main.js`.
 
-4. Start think about your individual project
+You should also document your implementation process. Specifically, you
+should answer the following questions:
+
+1. Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
+
+```
+TODO: your answer goes here
+```
+
+2. Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
+
+```
+TODO: your answer goes here
+```
+
+## Reference Results
+
+|None|Mean|Gauss|Kmin|Kmax|
+|:--:|:--:|:--:|:--:|:--:|
+|<img src="./reference/cur-none.png" height="120"/>|<img src="./reference/cur-mean.png" height="120"/>|<img src="./reference/cur-guass.png" height="120"/>|<img src="./reference/cur-kmin.png" height="120"/>|<img src="./reference/cur-kmax.png" height="120"/>|
 
 ## Submission
 
-**This homework is not mandatory, but we highly recommend you to do it.** Feel free to send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) and submit your answers.
+Before you submit, please read [this](../README.md) document and understand
+how you should organize your submitted files.
+
+For this project, you should submit the following files (i.e. exclude the `assets` folder):
+
+```
+├── package.json
+├── package-lock.json
+├── README.md
+├── src
+│   ├── colors.js
+│   ├── halfedge.js
+│   ├── main.js
+│   ├── renderer.js
+│   └── vector.js
+└── webpack.config.js
+```
+
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 30.11.2020 00:00:00.
+
+If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp-ws2021/issues/2).

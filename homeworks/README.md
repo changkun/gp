@@ -11,8 +11,8 @@ but it is always welcome to submit them all.
 
 | Proportion | Item | Deadline |
 |:----------:|:-----|:--------:|
-| 0% | Kick-off Homework | 15.11.2020 00:00:00 |
-| 10% | Coding Project 1 | 30.11.2020 00:00:00 |
+| 0% | [Getting Started with Mesh](./1-intro/README.md) | 15.11.2020 00:00:00 |
+| 10% | [Visualizing Curvatures](./2-ddg/README.md) | 30.11.2020 00:00:00 |
 | 10% | Coding Project 2 | 14.12.2020 00:00:00 |
 | 10% | Coding Project 3 | 11.01.2021 00:00:00 |
 | 10% | Coding Project 4 | 25.01.2021 00:00:00 |
