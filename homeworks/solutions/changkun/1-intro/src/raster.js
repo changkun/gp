@@ -4,9 +4,6 @@
  * found in the LICENSE file.
  */
 
-// Note: you are not allowed to import any other APIs, you must only use
-// the Vector and Matrix class.
-
 import Vector from './vec'
 import Matrix from './mat'
 

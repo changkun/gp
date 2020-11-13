@@ -4,8 +4,6 @@
  * found in the LICENSE file.
  */
 
-// Note: you are not allowed to import any other APIs here.
-
 /**
 * Vector uses homogeneous coordinates (x, y, z, w) that represents
 * either a point or a vector.

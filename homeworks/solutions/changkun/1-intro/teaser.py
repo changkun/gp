@@ -211,7 +211,7 @@ def main():
     color_wireframe = [0.147027, 0.116971, 0.0865, 1]
     input_mesh_mat  = '../../../1-intro/assets/texture.jpg'
     input_mesh_tri  = '../../../1-intro/assets/bunny_tri.obj'
-    input_mesh_quad = '../../../1-intro/assets/bunny_quad1.obj'
+    input_mesh_quad = '../../../1-intro/assets/bunny_quad.obj'
     output_figure   = './assets/teaser.png'
     output_blend    = './assets/bunnies.blend'
 
@@ -274,7 +274,7 @@ def main():
     create_vertices(bpcloud, dot)
     apply_material(dot, mat_body)
 
-    # 3. create quad bunny
+    # 4. create quad bunny
     bquad = duplicate(bquad_ref)
     bquad.rotation_euler = bquad_ref.rotation_euler
     bquad.location.x += 0.2
@@ -286,14 +286,14 @@ def main():
     apply_material(bquad, mat_body)
     apply_material(bquad_wire, mat_wire)
 
-    # 4. create textured bunny
+    # 5. create textured bunny
     btex = duplicate(btri_ref)
     btex.location.x += 0.4
     btex.rotation_euler = bquad_ref.rotation_euler
 
     apply_material(btex, mat_tex)
 
-    # render it!#
+    # render it!
     bpy.ops.wm.save_mainfile(filepath=output_blend)
     render(output_figure, camera)
 

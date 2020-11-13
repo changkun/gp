@@ -4,9 +4,7 @@
  * found in the LICENSE file.
  */
 
-import Vector from "./vec"
-
-// Note: you are not allowed to import any other APIs here.
+import Vector from './vec'
 
 /**
  * Matrix represents a 4x4 matrix.
