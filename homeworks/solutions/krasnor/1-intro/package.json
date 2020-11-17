@@ -1,0 +1,37 @@
+{
+  "name": "cg1-grading-assignment-3-implement-rasterizer",
+  "main": "src/main.js",
+  "description": "LMU Munich CG1 SS20",
+  "scripts": {
+    "start": "webpack-dev-server --host localhost --open",
+    "build": "webpack --env.prod",
+    "test": "jest --verbose"
+  },
+  "repository": "mimuc/cg1-ss20",
+  "author": "Changkun Ou <hi@changkun.us>",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "dat.gui": "^0.7.7",
+    "stats.js": "^0.17.0",
+    "three": "^0.115.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.9.5",
+    "babel-eslint": "^10.1.0",
+    "babel-jest": "^26.1.0",
+    "babel-loader": "^8.1.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "eslint": "^7.6.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-loader": "^4.0.2",
+    "html-webpack-plugin": "^4.2.0",
+    "jest": "^26.1.0",
+    "regenerator-runtime": "^0.13.5",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3",
+    "webpack-obfuscator": "^1.1.1"
+  }
+}
