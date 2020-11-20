@@ -43,6 +43,10 @@ TODO: your answer goes here
 ```
 TODO: your answer goes here
 ```
+I gave edges, vertices and faces ids, starting from zero, which resulted in the first coordnitate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow. 
+I fixed the first issue by counting from 0 and the second one by triangulatingthe faces of my test cube.
+
+<img src="./src/Bug_Picture.png" height="120"/>
 
 ## Reference Results
 
