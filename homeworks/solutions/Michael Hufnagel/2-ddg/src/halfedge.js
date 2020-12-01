@@ -130,7 +130,7 @@ class Vertex {
             case 'angle-weighted':
                 // TODO: compute angle weighted normal of this vertex
                 this.forEachHalfEdge((currentHalfEdge) =>{
-                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.vertex.getAngle()), sum);
+                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.getAngle()), sum);
                 })
                 break;
             default: // undefined
@@ -144,7 +144,7 @@ class Vertex {
         switch (method) {
             case 'Mean':
                 // TODO: compute mean curvature
-                return this.cotanLaplaceBeltrami()
+                return this.calculateMeanCurvature()
             case 'Gaussian':
                 // TODO: compute Guassian curvature
                 return this.calculateGaussianCurvature()
@@ -162,7 +162,7 @@ class Vertex {
     // NOTE: you can add more methods if you need here
 
     calculateK(num){
-        let h = this.cotanLaplaceBeltrami()
+        let h = this.calculateMeanCurvature()
         let k = this.calculateGaussianCurvature()
 
         switch (num) {
@@ -214,10 +214,10 @@ class Vertex {
         }
     }
 
-    cotanLaplaceBeltrami() {
+    calculateMeanCurvature() {
         const area = this.calculateVoronoiArea()
         let sum = new Vector()
-        this.forEachHalfEdge(currentHalfedge => { sum = sum.add(currentHalfedge.getVector().scale(currentHalfedge.cotan() + currentHalfedge.twin.cotan())) })
+        this.forEachHalfEdge(currentHalfEdge => { sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan())) })
         return sum.norm()*0.5/area
     }
 
