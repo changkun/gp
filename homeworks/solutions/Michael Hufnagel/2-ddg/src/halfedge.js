@@ -111,47 +111,33 @@ class Vertex {
     }
 
     normal(method = 'equal-weighted') {
+        let sum = null
+
         switch (method) {
             case 'equal-weighted':
                 // TODO: compute euqally weighted normal of this vertex
-                var sum = null
-                this.forEachHalfEdge((currentHalfEdge, i) =>{
-                    var addition = currentHalfEdge.face.getNormalTriangle()
-                    if(sum!==null){
-                        sum = sum.add(addition)
-                    }else{
-                        sum = addition
-                    }
+                this.forEachHalfEdge((currentHalfEdge) =>{
+                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle(), sum);
                 })
-                return sum.scale(1/sum.norm())
+                break;
             case 'area-weighted':
                 // TODO: compute area weighted normal of this vertex
-                var sum = null
-                this.forEachHalfEdge((currentHalfEdge, i) =>{
-                    var addition = currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle())
-                    if(sum!==null){
-                        sum = sum.add(addition)
-                    }else{
-                        sum = addition
-                    }
+                this.forEachHalfEdge((currentHalfEdge) =>{
+                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle()), sum);
                 })
 
-                return sum.scale(1/sum.norm())
+                break;
             case 'angle-weighted':
                 // TODO: compute angle weighted normal of this vertex
-                var sum = null
-                this.forEachHalfEdge((currentHalfEdge, i) =>{
-                    var addition = currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.vertex.getAngle())
-                    if(sum!==null){
-                        sum = sum.add(addition)
-                    }else{
-                        sum = addition
-                    }
+                this.forEachHalfEdge((currentHalfEdge) =>{
+                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.vertex.getAngle()), sum);
                 })
-                return sum.scale(1/sum.norm())
+                break;
             default: // undefined
                 return new Vector()
         }
+
+        return sum.scale(1/sum.norm())
     }
 
     curvature(method = 'Mean') {
@@ -233,6 +219,15 @@ class Vertex {
         let sum = new Vector()
         this.forEachHalfEdge(currentHalfedge => { sum = sum.add(currentHalfedge.getVector().scale(currentHalfedge.cotan() + currentHalfedge.twin.cotan())) })
         return sum.norm()*0.5/area
+    }
+
+    sumVector(vector, sum) {
+        if (sum !== null) {
+            sum = sum.add(vector)
+        } else {
+            sum = vector
+        }
+        return sum;
     }
 }
 
