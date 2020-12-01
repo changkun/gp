@@ -111,26 +111,26 @@ class Vertex {
     }
 
     normal(method = 'equal-weighted') {
-        let sum = null
+        let sum = new Vector()
 
         switch (method) {
             case 'equal-weighted':
                 // TODO: compute euqally weighted normal of this vertex
                 this.forEachHalfEdge((currentHalfEdge) =>{
-                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle(), sum);
+                    sum = sum.add(currentHalfEdge.face.getNormalTriangle());
                 })
                 break;
             case 'area-weighted':
                 // TODO: compute area weighted normal of this vertex
                 this.forEachHalfEdge((currentHalfEdge) =>{
-                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle()), sum);
+                    sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle()));
                 })
 
                 break;
             case 'angle-weighted':
                 // TODO: compute angle weighted normal of this vertex
                 this.forEachHalfEdge((currentHalfEdge) =>{
-                    sum = this.sumVector(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.getAngle()), sum);
+                    sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.getAngle()));
                 })
                 break;
             default: // undefined
@@ -219,15 +219,6 @@ class Vertex {
         let sum = new Vector()
         this.forEachHalfEdge(currentHalfEdge => { sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan())) })
         return sum.norm()*0.5/area
-    }
-
-    sumVector(vector, sum) {
-        if (sum !== null) {
-            sum = sum.add(vector)
-        } else {
-            sum = vector
-        }
-        return sum;
     }
 }
 
