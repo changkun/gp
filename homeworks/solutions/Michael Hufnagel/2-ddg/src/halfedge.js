@@ -29,12 +29,12 @@ class Halfedge {
 
     // NOTE: you can add more methods if you need here
 
-    getVector(){
+    getVector() {
         return this.twin.vertex.position.sub(this.vertex.position)
     }
 
 
-    cotan(){
+    cotan() {
         if (this.onBoundary) {
             return 0
         }
@@ -43,7 +43,7 @@ class Halfedge {
         return u.dot(v) / u.cross(v).norm()
     }
 
-    getAngle(){
+    getAngle() {
         let a = this.getVector()
         let b = this.prev.twin.getVector()
         let dot = a.unit().dot(b.unit())
@@ -68,15 +68,14 @@ class Face {
 
     // NOTE: you can add more methods if you need here
 
-    getAreaTriangle()
-    {
+    getAreaTriangle() {
         const a = this.halfedge.vertex.position
         const b = this.halfedge.next.vertex.position
         let c = a.cross(b)
-        return Math.abs(Math.pow(c.x,2)+Math.pow(c.y,2)+Math.pow(c.z,2)) / 2
+        return Math.abs(Math.pow(c.x, 2) + Math.pow(c.y, 2) + Math.pow(c.z, 2)) / 2
     }
 
-    vertices(fn){
+    vertices(fn) {
         try {
             const firstHalfEdge = this.halfedge
             const secondHalfEdge = firstHalfEdge.next
@@ -94,7 +93,7 @@ class Face {
         }
     }
 
-    getNormalTriangle(){
+    getNormalTriangle() {
         let x = this.halfedge.getVector()
         let y = this.halfedge.prev.twin.getVector()
 
@@ -116,20 +115,20 @@ class Vertex {
         switch (method) {
             case 'equal-weighted':
                 // TODO: compute euqally weighted normal of this vertex
-                this.forEachHalfEdge((currentHalfEdge) =>{
+                this.forEachHalfEdge((currentHalfEdge) => {
                     sum = sum.add(currentHalfEdge.face.getNormalTriangle());
                 })
                 break;
             case 'area-weighted':
                 // TODO: compute area weighted normal of this vertex
-                this.forEachHalfEdge((currentHalfEdge) =>{
+                this.forEachHalfEdge((currentHalfEdge) => {
                     sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle()));
                 })
 
                 break;
             case 'angle-weighted':
                 // TODO: compute angle weighted normal of this vertex
-                this.forEachHalfEdge((currentHalfEdge) =>{
+                this.forEachHalfEdge((currentHalfEdge) => {
                     sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.getAngle()));
                 })
                 break;
@@ -137,7 +136,7 @@ class Vertex {
                 return new Vector()
         }
 
-        return sum.scale(1/sum.norm())
+        return sum.scale(1 / sum.norm())
     }
 
     curvature(method = 'Mean') {
@@ -161,52 +160,47 @@ class Vertex {
 
     // NOTE: you can add more methods if you need here
 
-    calculateK(num){
+    calculateK(num) {
         let h = this.calculateMeanCurvature()
         let k = this.calculateGaussianCurvature()
 
         switch (num) {
             case 1:
-                return h - Math.sqrt(Math.pow(h,2)-k)
+                return h - Math.sqrt(Math.pow(h, 2) - k)
             case 2:
-                return h + Math.sqrt(Math.pow(h,2)-k)
+                return h + Math.sqrt(Math.pow(h, 2) - k)
             default:
                 return 0
         }
     }
 
-    calculateGaussianCurvature(){
-        let start = true
-        var sum = 0
-        for (let currentHalfEdge = this.halfedge; start || currentHalfEdge != this.halfedge; currentHalfEdge = currentHalfEdge.twin.next) {
-            if(currentHalfEdge === null || currentHalfEdge === undefined)
-                break;
+    calculateGaussianCurvature() {
+        let sum = 0
+        this.forEachHalfEdge((currentHalfEdge) => {
+            sum += currentHalfEdge.getAngle();
+        })
 
-            sum += currentHalfEdge.getAngle()
-            start = false
-
-        }
         return (2 * Math.PI) - sum
     }
 
-    calculateVoronoiArea(){
+    calculateVoronoiArea() {
         let area = 0
 
-        this.forEachHalfEdge((currentHalfEdge) =>{
+        this.forEachHalfEdge((currentHalfEdge) => {
             let u = currentHalfEdge.prev.getVector().norm()
-            let v = currentHalfEdge.next.getVector().norm()
-            area += (Math.pow(u,2)*currentHalfEdge.prev.cotan() + Math.pow(v,2)*currentHalfEdge.cotan()) / 8
+            let v = currentHalfEdge.getVector().norm()
+            area += (Math.pow(u, 2) * currentHalfEdge.prev.cotan() + Math.pow(v, 2) * currentHalfEdge.cotan()) / 8
         })
 
         return area
     }
 
-    forEachHalfEdge(fn){
+    forEachHalfEdge(fn) {
         let start = true
         let i = 0
 
         for (let currentHalfEdge = this.halfedge; start || currentHalfEdge != this.halfedge; currentHalfEdge = currentHalfEdge.twin.next) {
-            if(currentHalfEdge === null || currentHalfEdge === undefined)
+            if (currentHalfEdge === null || currentHalfEdge === undefined)
                 return;
             fn(currentHalfEdge, i)
             start = false
@@ -215,10 +209,22 @@ class Vertex {
     }
 
     calculateMeanCurvature() {
+        const clb = this.cotanLaplaceBeltrami()
+        if (this.calculateGaussianCurvature() < 0) {
+            return -clb
+        }
+        return clb
+    }
+
+    cotanLaplaceBeltrami() {
         const area = this.calculateVoronoiArea()
         let sum = new Vector()
-        this.forEachHalfEdge(currentHalfEdge => { sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan())) })
-        return sum.norm()*0.5/area
+        this.forEachHalfEdge(currentHalfEdge => {
+            sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan()))
+        })
+        let cotanLaplaceBeltrami = sum.norm() * 0.5 / area
+
+        return cotanLaplaceBeltrami
     }
 }
 
@@ -289,7 +295,7 @@ export class HalfedgeMesh {
         return {values, command};
     }
 
-    createHalfEdges(faceValues, face){
+    createHalfEdges(faceValues, face) {
         let faceVertexIds = []
         let faceVertices = []
         //v: 0 vt: 1 vn: 2
@@ -307,20 +313,20 @@ export class HalfedgeMesh {
 
             let currentVertex = faceVertices[i]
             let nextVertex = null
-            if (i + 1 !== faceVertices.length){
+            if (i + 1 !== faceVertices.length) {
                 nextVertex = faceVertices[i + 1]
-            }else{
+            } else {
                 nextVertex = faceVertices[0]
             }
 
             let existingHalfedge = null
 
             existingHalfedge = this.halfedgesDict[currentVertex.idx + ":" + nextVertex.idx]
-            if(existingHalfedge === null || existingHalfedge === undefined){
+            if (existingHalfedge === null || existingHalfedge === undefined) {
                 existingHalfedge = this.halfedgesDict[nextVertex.idx + ":" + currentVertex.idx]
             }
 
-            if(existingHalfedge !== null && existingHalfedge !== undefined){
+            if (existingHalfedge !== null && existingHalfedge !== undefined) {
                 existingHalfedge.face = face
                 existingHalfedge.onBoundary = false
                 createdHalfEdges.push(existingHalfedge)
@@ -334,10 +340,10 @@ export class HalfedgeMesh {
             let halfEdge = new Halfedge(currentVertex, edge, face, this.halfedges.length)
             edge.halfedge = halfEdge
 
-            if(currentVertex.halfedge === null)
+            if (currentVertex.halfedge === null)
                 currentVertex.halfedge = halfEdge
 
-            halfEdge.twin = new Halfedge(nextVertex, edge, null, this.halfedges.length + 1, null, null, null,true)
+            halfEdge.twin = new Halfedge(nextVertex, edge, null, this.halfedges.length + 1, null, null, null, true)
             halfEdge.twin.twin = halfEdge
 
             createdHalfEdges.push(halfEdge)
