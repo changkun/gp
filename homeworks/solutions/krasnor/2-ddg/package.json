@@ -1,0 +1,29 @@
+{
+  "name": "gp-2-ddg",
+  "version": "1.0.0",
+  "description": "Geometry Processing",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "webpack-dev-server --host localhost --open",
+    "build": "webpack --env.prod"
+  },
+  "author": "Changkun Ou",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "dat.gui": "^0.7.7",
+    "stats.js": "^0.17.0",
+    "three": "^0.118.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.10.4",
+    "@babel/polyfill": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "babel-loader": "^8.1.0",
+    "copy-webpack-plugin": "^6.3.0",
+    "html-webpack-plugin": "^4.3.0",
+    "raw-loader": "^4.0.1",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
