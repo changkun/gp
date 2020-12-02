@@ -146,7 +146,7 @@ class Vertex {
                 return this.calculateMeanCurvature()
             case 'Gaussian':
                 // TODO: compute Guassian curvature
-                return this.calculateGaussianCurvature()
+                return this.calculateK(1)*this.calculateK(2)
             case 'Kmin':
                 // TODO: compute principal curvature and return Kmin
                 return this.calculateK(1)
@@ -209,8 +209,11 @@ class Vertex {
     }
 
     calculateMeanCurvature() {
-        const clb = this.cotanLaplaceBeltrami()
-        if (this.calculateGaussianCurvature() < 0) {
+        const area = this.calculateVoronoiArea()
+        let clb = this.cotanLaplaceBeltramiVector()
+        let angleDefect = clb.dot(this.normal())
+        clb = clb.norm() * 0.5 / area
+        if (angleDefect > 0) {
             return -clb
         }
         return clb
@@ -225,6 +228,15 @@ class Vertex {
         let cotanLaplaceBeltrami = sum.norm() * 0.5 / area
 
         return cotanLaplaceBeltrami
+    }
+
+    cotanLaplaceBeltramiVector() {
+
+        let sum = new Vector()
+        this.forEachHalfEdge(currentHalfEdge => {
+            sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan()))
+        })
+        return sum
     }
 }
 
