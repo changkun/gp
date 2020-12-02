@@ -43,8 +43,8 @@ Organization slides: [Link](https://changkun.de/s/gp-0-org)
 | Date | Topic | Homework & Skeleton |
 |:----:|:------|:-----------------|
 | 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Getting started with Mesh](./homeworks/1-intro) |
-| 16.11.2020 | Discrete Differential Geometry | [Visualizing Curvatures](./homeworks/2-ddg) |
-| 30.11.2020 | Smoothing | TBA |
+| 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) |
+| 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) |
 | 14.12.2020 | Parameterization | TBA |
 | 11.01.2021 | Remeshing | TBA |
 | 25.01.2021 | Deformation | TBA |
