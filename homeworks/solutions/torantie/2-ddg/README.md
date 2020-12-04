@@ -34,17 +34,12 @@ should answer the following questions:
 
 1. Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
-```
-TODO: your answer goes here
-```
+Creating the halfedge structure was the most time consuming (lines 233-385). Specifically line 268-280 of the halfedge structure creation took the longest, since it was about creating and linking the halfedges. Overall errors in the halfedge structure resulted in a harder time implementing everything else. So often times i had to go back to the structure and look for errors, making it very time consuming.
 
 2. Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
-```
-TODO: your answer goes here
-```
-I gave edges, vertices and faces ids, starting from zero, which resulted in the first coordnitate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow. 
-I fixed the first issue by counting from 0 and the second one by triangulatingthe faces of my test cube.
+I gave edges, vertices and faces ids, starting from one, which resulted in the first coordinate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow. 
+I fixed the first issue by counting from 0 and the second one by triangulating the faces of my test cube.
 
 <img src="./src/Bug_Picture.png" height="120"/>
 
