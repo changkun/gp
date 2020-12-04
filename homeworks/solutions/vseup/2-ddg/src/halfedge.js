@@ -199,14 +199,13 @@ class Vertex {
   }
   curvature(method = 'Mean') {
 
-    //something is wrong...
     let H = this.getMeanCurvature();
     let K = this.getGaussianCurvature();
 
     switch (method) {
       case 'Mean':
         // TODO: compute mean curvature
-        return H;
+        return K < 0 ? -H : H
 
       case 'Gaussian':
         // TODO: compute Guassian curvature
@@ -315,14 +314,12 @@ class Vertex {
   }
   /**
    * returns mean curvature at vertex
-   * TOTO: somethings wrong with that
    */
   getMeanCurvature() {
     return 0.5 * this.getLaplaceBeltrami().norm();
   }
   /**
    * returns gaussian curvature at vertex
-   * TOTO: somethings wrong with that
    */
   getGaussianCurvature() {
     let incidentFaces = this.getIncidentFaces();
@@ -330,7 +327,6 @@ class Vertex {
     for (let face of incidentFaces) {
       angleSum += face.getAngle(this.idx);
     }
-    //TODO: sometimes the angle sum is bigger than 2*PI which should not be
     return 2 * Math.PI - angleSum;
   }
 }
