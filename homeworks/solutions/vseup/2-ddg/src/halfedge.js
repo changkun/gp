@@ -395,8 +395,7 @@ export class HalfedgeMesh {
 
     this.definePrevAndNextForHalfedgesAtBoundary();
 
-
-
+    console.log("finished processing obj-file");
 
   }
 
