@@ -282,15 +282,14 @@ class Vertex {
     }
 
     curvature(method = 'Mean') {
-        let def = this.calcMeanCurvatureNormal();
-        let angle_defect = def.dot(this.normal('equal-weighted'));
+        let def = this.calcMeanCurvatureNormal(); // let angle_defect = def.dot(this.normal('equal-weighted')); // using this normal produces a better result, but not 100% sure about the math.
 
         let H = 0.5 * def.norm(); // calculate the actual Mean Curvature value
         let K = this.calcGaussianCurvature();
 
+        let angle_defect = K; // using angle defect as mentioned in the github discussion
         H = angle_defect > 0 ? H : -H; // adjust color;
-        // I use the MeanCurvatureNormal rather than the GaussianCurvature as it produces a much better result
-        // (no red spots where it should be blue and matches the reference picture more closely)
+
 
         let k1 = H - Math.sqrt(H * H - K);
         let k2 = H + Math.sqrt(H * H - K);
@@ -313,7 +312,7 @@ class Vertex {
     // NOTE: you can add more methods if you need here
 
     /**
-     * Computes the Discrete Mean Curvature Normal approximation for this vertex.
+     * Computes the Discrete Mean Curvature Normal approximation for this vertex. Note this normal has not unit length.
      * The mean curvature value can be calculated by calcMeanCurvatureNormal().norm()*0.5
      *
      * @returns {Vector}
