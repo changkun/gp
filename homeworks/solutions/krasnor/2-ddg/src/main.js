@@ -87,7 +87,6 @@ export default class Main extends Renderer {
 
     // just for the first load
     fetch('./assets/bunny_tri.obj')
-    // fetch('./assets/testPlain.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -135,13 +134,6 @@ export default class Main extends Renderer {
       min = Math.min(c, min)
       curvatures[v.idx] = c
     })
-
-    // Debug: mean curvature results
-    // let neg_entries = []; let cntCurvNegative = 0;
-    // curvatures.forEach(c => {
-    //   if(c < 0){ neg_entries.push(c); cntCurvNegative++; }
-    // });
-
     max = Math.max(Math.abs(min), Math.abs(max))
     this.internal.mesh.vertices.forEach(v => {
       let color = new Vector()

@@ -217,88 +217,6 @@ class Face {
 
         return area;
     }
-
-    /**
-     *
-     * @param {Vector} a
-     * @param {Vector} b
-     * @param {Vector} c
-     * @returns {number}
-     */
-    getAreaTri(a, b, c) {
-        let v0 = c.sub(b);
-        let v1 = a.sub(b);
-
-        let area = v0.cross(v1).norm() / 2;
-        return area;
-    }
-
-    /**
-     * @deprecated
-     *
-     * @param hf_i
-     * @returns {number}
-     */
-    getLocalAveragingRegionArea(hf_i) { // not working
-        let area_third = this.getArea() / 3 // approximation
-        return area_third;
-
-        let full_area = this.getArea();
-        // return area_third;
-        // //        2
-        // //      /    \
-        // //     /      \
-        // //    e2--c   e1
-        // //   /  / |    \
-        // //  0  --e0-->  1
-
-
-        let c_midpoint = this.getMidpoint();
-        let c_barycenter = this.getBaryCenter();
-
-        let c = c_barycenter;
-
-        let v0 = hf_i.vertex.position;
-        let v1 = hf_i.next.vertex.position;
-        let v2 = hf_i.next.next.vertex.position;
-
-        let e0 = v0.add(v1.sub(v0).scale(1 / 3));
-        let e2 = v0.add(v2.sub(v0).scale(1 / 3));
-
-        let area_check = this.getAreaTri(v0, v1, v2);
-        let area_p1 = this.getAreaTri(v0, c, e2);
-        let area_p2 = this.getAreaTri(v0, e0, c);
-        let area_sum = area_p1 + area_p2;
-        let area_diff = area_third - area_sum;
-        let area_diff_to_full = full_area - area_sum;
-        return area_sum;
-    }
-
-    getMidpoint() {
-        let v0 = this.halfedge.vertex;
-        let v1 = this.halfedge.next.vertex;
-        let v2 = this.halfedge.next.next.vertex;
-
-        // Barycenter
-        return v0.position.add(v1.position).add(v2.position).scale(1 / 3);
-    }
-
-    getBaryCenter() {
-        let va = this.halfedge.vertex.position;
-        let vb = this.halfedge.next.vertex.position;
-        let vc = this.halfedge.next.next.vertex.position;
-
-        // point at 1/3, 1/3, 1/3
-
-        let w2 = 1 / 3;
-        let w3 = 1 / 3;
-
-        // let p = (1-w2-w3)*va + w2*vb + w3*vc;
-        let p = va.scale(1 / 3)
-            .add(vb.scale(1 / 3))
-            .add(vc.scale(1 / 3))
-        return p;
-    }
 }
 
 class Vertex {
@@ -364,16 +282,25 @@ class Vertex {
     }
 
     curvature(method = 'Mean') {
-        let H = this.calcMean();
-        let K = this.calcGauss();
+        let def = this.calcMeanCurvatureNormal();
+        let angle_defect = def.dot(this.normal('equal-weighted'));
+
+        let H = 0.5 * def.norm(); // calculate the actual Mean Curvature value
+        let K = this.calcGaussianCurvature();
+
+        H = angle_defect > 0 ? H : -H; // adjust color;
+        // I use the MeanCurvatureNormal rather than the GaussianCurvature as it produces a much better result
+        // (no red spots where it should be blue and matches the reference picture more closely)
+
         let k1 = H - Math.sqrt(H * H - K);
         let k2 = H + Math.sqrt(H * H - K);
 
+        let ret = 0.0;
         switch (method) {
             case 'Mean':
-                return H;   // (k1 + k2)*0.5; // no "blue" areas will be rendered
+                return H;
             case 'Gaussian':
-                return K;   // return k1*k2; // works
+                return K; // lighter in color than the reference, but the colors itself match
             case 'Kmin':
                 return k1;
             case 'Kmax':
@@ -383,12 +310,20 @@ class Vertex {
         }
     }
 
-    calcMean() {
+    // NOTE: you can add more methods if you need here
+
+    /**
+     * Computes the Discrete Mean Curvature Normal approximation for this vertex.
+     * The mean curvature value can be calculated by calcMeanCurvatureNormal().norm()*0.5
+     *
+     * @returns {Vector}
+     */
+    calcMeanCurvatureNormal() {
         let outHfEdges = this.getAllOutgoingHalfedges();
 
         let area = 0; // calc area sum in separate loop
         for (let h of outHfEdges.values()) {
-            // area_sum += hfe.face.getArea()/3; // area approximation
+            // area += h.face.getArea()/3; // area approximation
 
             // voronoi vertex area
             const u = h.prev.getVector().norm();
@@ -409,55 +344,31 @@ class Vertex {
             c_sum = c_sum.sub(  hfe.getVector().scale(fac)  );
         }
 
-        let H = c_sum.norm() * 0.5 / area; // by using this variant from the slides there are 9 negative outliers (area negative)
-        // if(H <0)
-        //     return 0; // negative values are not possible -> return lowest possible value
-        return H;
-        // return 0.5 * c_sum.scale( 1/(2*area)).norm(); // using this version does not result in much visual change, but outliers are now dark red
+        return c_sum.scale( 1/(2*area)); // return normal
     }
 
-    // let i = hfe.vertex.position;
-    // let j = hfe.twin.vertex.position;
-    // let h0 = hfe.getVector();
-    // let hfe2 = j.sub(i);
-
-    calcGauss() {
+    /**
+     * Calculates the Discrete Gaussian Curvature Value
+     *
+     * @returns {number} Curvature value between 0 and 1 (360°-0°)
+     */
+    calcGaussianCurvature() {
         let outgoingHfEdges = this.getAllOutgoingHalfedges();
-        let gauss_curv_sum = 0;
-        let currVertexIdx = this.idx;
+        let gauss_curv_sum = 0.0;
+
         for (let hfe of outgoingHfEdges.values()) {
             let hf0 = hfe;
             let hf2 = hfe.prev.twin;
 
-            let vhf0 = hf0.getVector();
-            let vhf2 = hf2.getVector();
             let angle_dot = (hf0.getVector().unit().dot(hf2.getVector().unit()));
             let theta_i = Math.acos(angle_dot);
             // let theta_deg = theta_i * (180 / Math.PI);
+
             gauss_curv_sum += theta_i;
         }
-        let gauss = (2 * Math.PI) - gauss_curv_sum;
-        // let gauss_curv_sum_alt = 0;
-        // this.halfedges(h => {
-        //     let hf0 = h;
-        //     let hf2 = h.prev.twin;
-        //     if(hf0.face == undefined || hf0.face == null)
-        //         throw "hf0 face is null";
-        //     // if(hf2.face == undefined || hf2.face == null)
-        //     //     throw "hf2 face is null";
-        //
-        //     let vhf0 = hf0.getVector();
-        //     let vhf2 = hf2.getVector();
-        //     let angle_dot = (hf0.getVector().unit().dot(hf2.getVector().unit()));
-        //     let theta_i = Math.acos(angle_dot);
-        //
-        //     gauss_curv_sum_alt += theta_i;
-        // });
-        // let gauss_alt = (2 * Math.PI) - gauss_curv_sum_alt; // same as existing
-        return gauss;
-    }
 
-    // NOTE: you can add more methods if you need here
+        return (2 * Math.PI) - gauss_curv_sum;
+    }
 
     /**
      * numAdjacentEdges returns the number of adjacency edges of the given vertex
@@ -468,7 +379,7 @@ class Vertex {
         const e0 = this.halfedge
         let edge_indices = [e0.idx]
         for (let e = e0.twin.next; e != e0; e = e.twin.next) { // FIXME works not for boundraries
-            if (e == null || e == undefined) // boundrary reached
+            if (e == null || e == undefined) // boundary reached
                 return edge_indices.length;
             edge_indices.push(e.idx)
         }
@@ -690,19 +601,6 @@ export class HalfedgeMesh {
         // debug print halfedges
         // console.log(this.halfedges);
         // this.printHalfedgeList()
-    }
-
-    printHalfedgeList() {
-        for (let i = 0; i < this.halfedges.length; i++) {
-            console.log("i: %i v: %i e: %i t: %i - f: %i p: %i n: %i",
-                this.halfedges[i].idx,
-                this.halfedges[i].vertex.idx,
-                this.halfedges[i].edge.idx,
-                this.halfedges[i].twin.idx,
-                this.halfedges[i].face?.idx,
-                this.halfedges[i].prev?.idx,
-                this.halfedges[i].next?.idx);
-        }
     }
 
     /**

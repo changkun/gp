@@ -35,7 +35,11 @@ should answer the following questions:
 1. Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Writing the code for parsing the halfedge mesh (mainly lines 452-633) took the most time as you have to write a lot of code before you can even run a first test. So I had to constatnly double check and rethink if everything I wrote makes sense. After finishing the first version I got a bunny with "holes" (see 2.). Debugging and finding the reason took some time, I created other simpler meshes such as a plane with a few vertices for debugging. 
+
+After the fix, implementing the methods for the normals(lines 236-282) was no problem.
+
+Implementing the curvature methods (lines 284-371) took some time too (but not as much as the parser). First I did interpret the formula completly wrong and did write just something wrong. After I understood the formula correctly, I had problems getting the correct colors. In my renders the bunny was always red. After some time, looking into the coloring code and asking in the Discussion Thread the reason was found :).
 ```
 
 2. Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
