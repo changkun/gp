@@ -42,8 +42,9 @@ because it's much easier to get an overview of what is happening and the process
 In the end the order of how the vertices where modified in vertices function of face was wrong.
 Furthermore the handling of the hole at the bottom of the bunny was a bit tricky.
 
-As there are some problems with my angleSum for gaussian curvature and the overall calculation of the mean curvature,
-they might be equally time consuming to fix.
+I'm not super sure whether my implementations of the curvatures calculations is completely correct, but before knowing that
+we would have to adjust color mapping for getting the reference result I was sure they were wrong and lost a lot of time.
+
 ```
 
 2. Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
