@@ -149,7 +149,7 @@ export class HalfedgeMesh {
     // Hint:
     //
     //   1. Construct the Laplace matrix `L` for the given `weightType`
-    //   2. Let λ=-1, solve linear equation: (I-tλL) f' = f using a Cholesky solver.
+    //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
     //   3. Update the position of mesh vertices based on the solution f'.
     //
 
