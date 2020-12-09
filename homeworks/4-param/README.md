@@ -73,4 +73,4 @@ For this project, you should submit the following files (i.e. exclude the `asset
 
 To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 11.01.2021 00:00:00.
 
-If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp-ws2021/issues/3).
+If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp-ws2021/discussions/4).

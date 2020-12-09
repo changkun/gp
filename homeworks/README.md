@@ -49,4 +49,4 @@ homeworks
 
 ## Questions?
 
-[Submit an issue](https://github.com/mimuc/gp-ws2021/issues/new).
+[Start a new discussion thread](https://github.com/mimuc/gp-ws2021/discussions/new).
