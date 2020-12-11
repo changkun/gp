@@ -75,4 +75,4 @@ To submit your proposal and code, send [pull requests](https://github.com/mimuc/
 
 ## Questions?
 
-[Submit an issue](https://github.com/mimuc/gp-ws2021/issues/new).
+[Submit an issue](https://github.com/mimuc/gp-ws2021/discussions/new).

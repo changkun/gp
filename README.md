@@ -22,7 +22,7 @@ Registration is open at Uni2Work both for [Bachelor students](https://uni2work.i
 
 ## Communication
 
-We use our [GP GitHub repository](https://github.com/mimuc/gp-ws2021) to manage all course resources, submissions, project proposals, etc. and use its [issue tracker](https://github.com/mimuc/gp-ws2021/issues) for online questions and discussions.
+We use our [GP GitHub repository](https://github.com/mimuc/gp-ws2021) to manage all course resources, submissions, project proposals, etc. and use the [discussions](https://github.com/mimuc/gp-ws2021/discussions) feature for online questions and discussions.
 
 Please register yourself on GitHub if you do not have a GitHub account yet. You can use any distinguishable identifier for your username if you do not want your real name to appear on GitHub publicly.
 
