@@ -5,8 +5,8 @@
 >
 > Geometry Processing @ LMU Munich Winter Semester 2020/21
 > - Homepage: [https://mimuc.de/gp](http://mimuc.de/gp)
-> - Professor: [Prof. Dr. Butz](https://www.medien.ifi.lmu.de/team/andreas.butz/)
-> - Assistant: [Changkun Ou](https://www.medien.ifi.lmu.de/team/changkun.ou/)
+> - Instructor: [Changkun Ou](https://www.medien.ifi.lmu.de/team/changkun.ou/)
+> - Responsible Professor: [Prof. Dr. Butz](https://www.medien.ifi.lmu.de/team/andreas.butz/)
 > - Date: Monday, 2 p.m. - 6 p.m. (starts on Nov 2, 2020)
 > - Location: [Zoom](https://lmu-munich.zoom.us/j/98754182746) (Password was sent via Uni2Work Email)
 >
@@ -40,12 +40,12 @@ Along the semester, students should propose a project idea, and by the end of se
 
 Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
-| Date | Topic | Homework & Skeleton |
+| Date | Topic | Homework |
 |:----:|:------|:-----------------|
 | 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Getting started with Mesh](./homeworks/1-intro) |
 | 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) |
 | 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) |
-| 14.12.2020 | Parameterization | TBA |
+| 14.12.2020 | Parameterization | [Tutte's Embedding](./homeworks/4-param/) |
 | 11.01.2021 | Remeshing | TBA |
 | 25.01.2021 | Deformation | TBA |
 | 08.02.2021 | Data-driven Shape Analysis | TBA |

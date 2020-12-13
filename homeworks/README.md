@@ -14,7 +14,7 @@ but it is always welcome to submit them all.
 | 0% | [Getting Started with Mesh](./1-intro/) | 15.11.2020 00:00:00 |
 | 10% | [Visualizing Curvatures](./2-ddg/) | ~~30.11.2020 00:00:00~~ 07.12.2020 00:00:00 |
 | 10% | [Laplacian Smoothing](./3-smooth/) | ~~14.12.2020 00:00:00~~ 21.12.2020 00:00:00 |
-| 10% | Homework 4 | 11.01.2021 00:00:00 |
+| 10% | [Tutte's Embedding](4-param/) | 11.01.2021 00:00:00 |
 | 10% | Homework 5 | 25.01.2021 00:00:00 |
 | 10% | Homework 6 | 08.02.2021 00:00:00 |
 | 10% | Homework 7 | 22.02.2021 00:00:00 |
