@@ -197,47 +197,8 @@ class Vertex {
     return sum.scale(1 / sum.norm())
   }
 
-  curvature(method = 'Mean') {
-    switch (method) {
-      case 'Mean':
-        return this.calculateMeanCurvature()
-      case 'Gaussian':
-        return this.calculateGaussianCurvature()
-      case 'Kmin':
-        return this.calculateK(1)
-      case 'Kmax':
-        return this.calculateK(2)
-      default: // undefined
-        return 0
-    }
-  }
-
   // TODO: you can add more methods if you need here
 
-
-
-  calculateK(num) {
-    let h = this.calculateMeanCurvature()
-    let k = this.calculateGaussianCurvature()
-
-    switch (num) {
-      case 1:
-        return h - Math.sqrt(Math.pow(h, 2) - k)
-      case 2:
-        return h + Math.sqrt(Math.pow(h, 2) - k)
-      default:
-        return 0
-    }
-  }
-
-  calculateGaussianCurvature() {
-    let sum = 0
-    this.forEachHalfEdge((currentHalfEdge) => {
-      sum += currentHalfEdge.getAngle();
-    })
-
-    return (2 * Math.PI) - sum
-  }
 
   calculateVoronoiArea() {
     let area = 0
@@ -262,27 +223,6 @@ class Vertex {
       start = false
       i++
     }
-  }
-
-  calculateMeanCurvature() {
-    let angleDefect = this.calculateGaussianCurvature()
-    let clb = this.cotanLaplaceBeltrami()
-
-    if (angleDefect < 0) {
-      return -clb
-    }
-    return clb
-  }
-
-  cotanLaplaceBeltrami() {
-    const area = this.calculateVoronoiArea()
-    let sum = new Vector()
-    this.forEachHalfEdge(currentHalfEdge => {
-      sum = sum.add(currentHalfEdge.getVector().scale(currentHalfEdge.cotan() + currentHalfEdge.twin.cotan()))
-    })
-    let cotanLaplaceBeltrami = sum.norm() * 0.5 / area
-
-    return cotanLaplaceBeltrami
   }
 }
 
@@ -687,103 +627,6 @@ export class HalfedgeMesh {
       } catch (e) {
         console.error(e)
       }
-    }
-  }
-
-  getValuesAndCommand(line) {
-    //clean up
-    line = line.replace("\r", "")
-    let values = line.split(" ")
-    let command = values[0]
-    //remove command string from values
-    values.shift()
-    return {values, command};
-  }
-
-  createHalfEdges(faceValues, face) {
-    let faceVertices = []
-    this.extractVertices(faceValues, faceVertices);
-
-    let createdHalfEdges = []
-
-    for (let i = 0; i < faceVertices.length; i++) {
-
-      let currentVertex = faceVertices[i]
-      let nextVertex = null
-      if (i + 1 !== faceVertices.length) {
-        nextVertex = faceVertices[i + 1]
-      } else {
-        nextVertex = faceVertices[0]
-      }
-
-      let existingHalfedge = null
-
-      existingHalfedge = this.halfedgesDict[currentVertex.idx + ":" + nextVertex.idx]
-      if (existingHalfedge === null || existingHalfedge === undefined) {
-        existingHalfedge = this.halfedgesDict[nextVertex.idx + ":" + currentVertex.idx]
-      }
-
-      if (existingHalfedge !== null && existingHalfedge !== undefined) {
-        existingHalfedge.face = face
-        existingHalfedge.onBoundary = false
-        createdHalfEdges.push(existingHalfedge)
-        continue;
-      }
-
-      let edge = new Edge()
-      edge.idx = this.edges.length
-      this.edges.push(edge)
-
-      let halfEdge = new Halfedge(currentVertex, edge, face, this.halfedges.length)
-      edge.halfedge = halfEdge
-
-      if (currentVertex.halfedge === null)
-        currentVertex.halfedge = halfEdge
-
-      halfEdge.twin = new Halfedge(nextVertex, edge, null, this.halfedges.length + 1, null, null, null, true)
-      halfEdge.twin.twin = halfEdge
-
-      createdHalfEdges.push(halfEdge)
-      this.halfedgesDict[halfEdge.vertex.idx + ":" + halfEdge.twin.vertex.idx] = halfEdge
-      this.halfedgesDict[halfEdge.twin.vertex.idx + ":" + halfEdge.vertex.idx] = halfEdge.twin
-      this.halfedges.push(halfEdge)
-      this.halfedges.push(halfEdge.twin)
-    }
-
-    return createdHalfEdges
-  }
-
-  extractVertices(faceValues, faceVertices) {
-    let faceVertexIds = []
-
-    //v: 0 vt: 1 vn: 2
-    faceValues.forEach((value) => {
-      faceVertexIds.push(value.split("/"))
-    })
-
-    faceVertexIds.forEach((vertexId) => {
-      faceVertices.push(this.vertices[vertexId[0] - 1])
-    })
-  }
-
-  linkCreatedHalfEdges(createdHalfEdges) {
-    for (let i = 0; i < createdHalfEdges.length; i++) {
-      let nextHalfEdge = null;
-      let prevHalfEdge = null;
-
-      if (i + 1 < createdHalfEdges.length) {
-        nextHalfEdge = createdHalfEdges[i + 1]
-      } else {
-        nextHalfEdge = createdHalfEdges[0]
-      }
-      if (i - 1 >= 0) {
-        prevHalfEdge = createdHalfEdges[i - 1]
-      } else {
-        prevHalfEdge = createdHalfEdges[createdHalfEdges.length - 1]
-      }
-
-      createdHalfEdges[i].next = nextHalfEdge
-      createdHalfEdges[i].prev = prevHalfEdge
     }
   }
 }
