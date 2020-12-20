@@ -37,17 +37,26 @@ should answer the following questions:
 TODO: your answer goes here
 ```
 
+line 562-631 the smooth function: Translating the linear equation into code was very time consuming because i didn't understand or find what some things of the equations ment in the slides. Also debugging the Matrices was extremely hard because you couldn't print sparse matrices.
+
 2. **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
 TODO: your answer goes here
 ```
 
+I worked with the already changed array of vertices and not with the original vertice positions, resulting in incorrect calculations. Also after one smoothing operation the vertice positions were not reset with the original positions, therefore i couldn't do multiple smoothing operations. I fixed it by filling the originalVertices array with the original vertices and their original positions.
+
+
 3. **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
 TODO: your answer goes here
 ```
+
+Mass and weight matrices could have been done in one for loop and not seperately. This was done for clarity reasons but takes more time. To fix this we can create the mass and weight matrices in one for loop.
+
+
 
 ## Reference Results
 
