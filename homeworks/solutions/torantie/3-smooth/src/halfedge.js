@@ -292,7 +292,7 @@ export class HalfedgeMesh {
    *
    * @param {string} data is a text string from an .obj file
    */
-  constructor(data) {
+  /*constructor(data) {
     // properties we plan to cache
     this.vertsOrig = [] // an array of original vertex information
     this.vertices  = [] // an array of Vertex object
@@ -314,7 +314,6 @@ export class HalfedgeMesh {
             vertex.position = new Vector(parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]))
             vertex.idx = this.vertices.length
             this.vertices.push(vertex)
-            this.vertsOrig.push(values)
             break;
 
           case "vt":
@@ -340,16 +339,234 @@ export class HalfedgeMesh {
             break;
         }
       }
+
+      for (const vertex of this.vertices) {
+        let vertexCopy = new Vertex()
+        vertexCopy.idx = vertex.idx
+        vertexCopy.halfedge = vertex.halfedge
+        vertexCopy.position = new Vector(vertex.position.x,vertex.position.y,vertex.position.z)
+        this.vertsOrig.push(vertexCopy)
+      }
+
     } catch (e) {
       console.error(e)
     }
   }
+
+
+
   /**
    * laplaceMatrix returns the Laplace matrix for a given laplaceType
    * @param {string} weightType indicates the type of the weight for
    * constructing the Laplace matrix. Possible value could be:
    * 'uniform', 'cotan'.
    */
+  constructor(data) {
+    // properties we plan to cache
+    this.vertices  = [] // an array of Vertex object
+    this.edges     = [] // an array of Edge object
+    this.faces     = [] // an array of Face object
+    this.halfedges = [] // an array of Halfedge object
+    this.vertsOrig = []
+
+    // TODO: read .obj format and construct its halfedge representation
+
+    // load .obj file
+    let indices   = []
+    let positions = []
+    let lines = data.split('\n')
+    for (let line of lines) {
+      line = line.trim()
+      const tokens = line.split(' ')
+      switch(tokens[0].trim()) {
+        case 'v':
+          positions.push(new Vector(
+              parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3]),
+          ))
+          continue
+        case 'f':
+          // only load indices of vertices
+          for (let i = 1; i < tokens.length; i++) {
+            indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
+          }
+          continue
+      }
+    }
+
+    // build the halfedge connectivity
+    const edges = new Map()
+    for (let i = 0; i < indices.length; i += 3) {
+      for (let j = 0; j < 3; j++) { // check a face
+        let a = indices[i + j]
+        let b = indices[i + (j+1)%3]
+
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
+
+        // store the edge if not exists
+        const e = `${a}-${b}`
+        if (!edges.has(e)) {
+          edges.set(e, [a, b])
+        }
+      }
+    }
+
+    this.vertices   = new Array(positions.length)
+    this.edges      = new Array(edges.size)
+    this.faces      = new Array(indices.length / 3)
+    this.halfedges  = new Array(edges.size*2)
+
+    const idx2vert = new Map()
+    for (let i = 0; i < positions.length; i++) {
+      const v = new Vertex()
+      v.position = positions[i]
+      this.vertices[i] = v
+      idx2vert.set(i, v)
+    }
+
+    let eidx = 0
+    let existedHe = new Map()
+    let hasTwin = new Map()
+
+    // construct halfedges, edges
+    for (let i = 0; i < indices.length; i += 3) {
+      // construct face
+      const f = new Face()
+      this.faces[i / 3] = f
+
+      // construct halfedges of the face
+      for (let j = 0; j < 3; j++) {
+        const he = new Halfedge()
+        this.halfedges[i+j] = he
+      }
+
+      // construct connectivities of the new halfedges
+      for (let j = 0; j < 3; j++) {
+        // halfedge from vertex a to vertex b
+        let a = indices[i + j]
+        let b = indices[i + (j+1)%3]
+
+        // halfedge properties
+        const he = this.halfedges[i + j]
+        he.next = this.halfedges[i + (j+1)%3]
+        he.prev = this.halfedges[i + (j+2)%3]
+        he.onBoundary = false
+        hasTwin.set(he, false)
+
+        const v = idx2vert.get(a)
+        he.vertex = v
+        v.halfedge = he
+
+        he.face = f
+        f.halfedge = he
+
+        // swap if index a > b, for twin checking
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
+        const ek = `${a}-${b}`
+        if (existedHe.has(ek)) {
+          // if a halfedge has been created before, then
+          // it is the twin halfedge of the current halfedge
+          const twin = existedHe.get(ek)
+          he.twin = twin
+          twin.twin = he
+          he.edge = twin.edge
+
+          hasTwin.set(he, true)
+          hasTwin.set(twin, true)
+        } else {
+          // new halfedge
+          const e = new Edge()
+          this.edges[eidx] = e
+          eidx++
+          he.edge = e
+          e.halfedge = he
+
+          existedHe.set(ek, he)
+        }
+
+        // FIXME: non-manifold edge count checking
+      }
+    }
+
+    // create boundary halfedges and hidden faces for the boundary
+    let hidx = indices.length
+    for (let i = 0; i < indices.length; i++) {
+      const he = this.halfedges[i]
+      if (hasTwin.get(he)) {
+        continue
+      }
+
+      // handle halfedge that has no twin
+      const f = new Face() // hidden face
+      let bcycle = []      // boundary cycle
+      let current = he
+      do {
+        const bhe = new Halfedge() // boundary halfedge
+        this.halfedges[hidx] = bhe
+        hidx++
+        bcycle.push(bhe)
+
+        // grab the next halfedge along the boundary that does not
+        // have a twin halfedge
+        let next = current.next
+        while (hasTwin.get(next)) {
+          next = next.twin.next
+        }
+
+        // set the current halfedge's attributes
+        bhe.vertex = next.vertex
+        bhe.edge = current.edge
+        bhe.onBoundary = true
+
+        // point the new halfedge and face to each other
+        bhe.face = f
+        f.halfedge = bhe
+
+        // point the new halfedge and twin to each other
+        bhe.twin = current
+        current.twin = bhe
+
+        current = next
+      } while(current != he)
+
+      // link the cycle of boundary halfedges together
+      const n = bcycle.length
+      for (let j = 0; j < n; j++) {
+        bcycle[j].next = bcycle[(j+n-1)%n]
+        bcycle[j].prev = bcycle[(j+1)%n]
+        hasTwin.set(bcycle[j], true)
+        hasTwin.set(bcycle[j].twin, true)
+      }
+    }
+
+    // reset indices
+    let index = 0
+    this.vertices.forEach(v => { v.idx = index++ })
+    index = 0
+    this.edges.forEach(e => { e.idx = index++ })
+    index = 0
+    this.faces.forEach(f => { f.idx = index++ })
+    index = 0
+    this.halfedges.forEach(h => { h.idx = index++ })
+
+    //Create Copy
+    for (const vertex of this.vertices) {
+      let vertexCopy = new Vertex()
+      vertexCopy.idx = vertex.idx
+      vertexCopy.halfedge = vertex.halfedge
+      vertexCopy.position = new Vector(vertex.position.x,vertex.position.y,vertex.position.z)
+      this.vertsOrig.push(vertexCopy)
+    }
+  }
+
+
   laplaceMatrix(weightType) {
     // TODO: construct the Laplace matrix.
     const numberOfVertices = this.vertices.length
@@ -359,7 +576,7 @@ export class HalfedgeMesh {
       const i = vert.idx
       let sum = 1e-8 // Tikhonov regularization to get strict positive definite
 
-      vert.halfedges(h => {
+      vert.forEachHalfEdge(h => {
         let w = 0
 
         switch (weightType) {
@@ -371,10 +588,11 @@ export class HalfedgeMesh {
         }
 
         sum += w
-
+        //console.log("Value: "+w+" Position: ("+ i+","+h.twin.vertex.idx +")")
         weightTriplet.addEntry(w, i, h.twin.vertex.idx)
       })
       weightTriplet.addEntry(-sum, i, i)
+      //console.log("Value: "+-sum+" Position: ("+ i+","+i +")")
     }
 
     let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
@@ -399,95 +617,17 @@ export class HalfedgeMesh {
           massTriplet.addEntry(neighbours,i,i)
           break
         case 'cotan':
-          massTriplet.addEntry(vert.calculateVoronoiArea(),i,i)
+
+          let area = vert.calculateVoronoiArea()
+          // area alone is very small and destroys the smoothing
+          massTriplet.addEntry(1+area,i,i)
+          break
       }
     }
 
     let massMatrix = SparseMatrix.fromTriplet(massTriplet)
 
     return massMatrix
-  }
-
-
-  getWeightAndMassMatrix(weightType){
-    switch (weightType) {
-      case 'uniform':
-        return this.calcUniformMatrices()
-      case 'cotan':
-        return this.calcCotanMatrices()
-      default:
-        return this.calcUniformMatrices()
-    }
-  }
-
-  calcCotanMatrices(){
-    const numberOfVertices = this.vertices.length
-    let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
-    let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
-
-    for (let i = 0; i < this.vertices.length; i++)
-    {
-      let vertex = this.vertices[i]
-      let neighbours = 0
-      let sum = 1e-8 // Tikhonov regularization to get strict positive definite
-
-
-      vertex.forEachHalfEdge((currentHalfEdge) => {
-        neighbours++
-        let wij= (currentHalfEdge.cotan() + currentHalfEdge.twin.cotan()) / 2
-        sum += wij
-        weightTriplet.addEntry(wij, i,currentHalfEdge.idx)
-      })
-
-      weightTriplet.addEntry(-sum, i,i)
-
-      massTriplet.addEntry(vertex.calculateVoronoiArea(),i,i)
-    }
-
-    let massMatrix = SparseMatrix.fromTriplet(massTriplet)
-    let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
-
-    return [massMatrix,weightMatrix]
-  }
-
-  calcLaplaceCotanMatrix(){
-    let [M,W] = this.calcCotanMatrices()
-    return M.timesSparse(W)
-  }
-
-
-  calcUniformMatrices(){
-    const numberOfVertices = this.vertices.length
-    let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
-    let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
-
-    for (let i = 0; i < numberOfVertices; i++)
-    {
-      let vertex = this.vertices[i]
-      let sum = new Vector()
-
-        let neighbours = 0
-        vertex.forEachHalfEdge((_,neighbourVertex) => {
-          neighbours++
-
-          weightTriplet.addEntry(1, i,neighbourVertex.idx)
-        })
-
-        weightTriplet.addEntry(-neighbours, i,i)
-        massTriplet.addEntry(neighbours,i,i)
-
-
-    }
-
-    let massMatrix = SparseMatrix.fromTriplet(massTriplet)
-    let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
-
-    return [massMatrix,weightMatrix]
-  }
-
-  calcLaplaceUniformMatrix(){
-    let [M,W] = this.calcUniformMatrices()
-    return M.timesSparse(W)
   }
 
 
@@ -500,24 +640,54 @@ export class HalfedgeMesh {
    * @param {Number} smoothStep the smooth step in Laplacian Smoothing algorithm
    */
   smooth(weightType, timeStep, smoothStep) {
-    // TODO: implmeent the Laplacian smoothing algorithm.
-    //
-    // Hint:
-    //
-    //   1. Construct the Laplace matrix `L` for the given `weightType`
+    //reset vertices
+    for (let i = 0; i < this.vertsOrig.length; i++) {
+      this.vertices[i].position.x = this.vertsOrig[i].position.x
+      this.vertices[i].position.y = this.vertsOrig[i].position.y
+      this.vertices[i].position.z = this.vertsOrig[i].position.z
+    }
 
-    let L = this.laplaceMatrix(weightType)
-    let [M, W] = this.getWeightAndMassMatrix(weightType)
-    //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-    let f = M - W.timesReal(timeStep)
-    let cholskyDecompositionMatrix = f.chol()
-    let result = cholskyDecompositionMatrix.solvePositiveDefinite(smoothStep)
+    for (let j = 0; j< smoothStep; j++) {
+      // TODO: implmeent the Laplacian smoothing algorithm.
+      //
+      try {
+        // Hint:
+        //
+        //   1. Construct the Laplace matrix `L` for the given `weightType`
+        let W = this.laplaceMatrix(weightType)
+        let M = this.massMatrix(weightType)
+        //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
+        let f = M.minus(W.timesReal(timeStep))
+        let cholskyDecompositionMatrix = f.chol()
+        const numberOfVertices = this.vertices.length
+        let b = DenseMatrix.zeros(numberOfVertices, 3)
 
-    //   3. Update the position of mesh vertices based on the solution f'.
-    //
+        for (const v of this.vertices) {
+          b.set(v.position.x, v.idx, 0)
+          b.set(v.position.y, v.idx, 1)
+          b.set(v.position.z, v.idx, 2)
+        }
 
 
+        b = M.timesDense(b)
 
+        let result = cholskyDecompositionMatrix.solvePositiveDefinite(b)
+
+        //   3. Update the position of mesh vertices based on the solution f'.
+        //
+        for (let i = 0; i < numberOfVertices; i++) {
+          let resultX = result.get(i, 0)
+          let resultY = result.get(i, 1)
+          let resultZ = result.get(i, 2)
+          let currentPosition = this.vertices[i].position
+          currentPosition.x = (resultX)
+          currentPosition.y = (resultY)
+          currentPosition.z = (resultZ)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
   }
 
   getValuesAndCommand(line) {
