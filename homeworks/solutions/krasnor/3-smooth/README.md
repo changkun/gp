@@ -36,7 +36,7 @@ should answer the following questions:
 ```
 The smooth() function (lines 484-523) took longest to implement.
 Most time was spend debugging. 
-E.g. finding out if the generated matrices are correc (Which is not easy as i was not able to inspect the content of the SparseMatrix in runtime, due to internal storage format)
+E.g. finding out if the generated matrices are correct (Which is not easy as I was not able to inspect the content of the SparseMatrix in runtime, due to its internal storage format)
 But most time took finding the Bug described in 2 (lines 405-414).
 ```
 
@@ -55,7 +55,7 @@ After fixing this rendering was correct.
 3. **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-Mass and Wheight Matrix are calculated seperately (2 loops). This could be done in one loop.
+Mass and Weight Matrix are calculated seperately (2 loops). This could be done in one loop.
 ```
 
 ## Reference Results
