@@ -34,19 +34,25 @@ should answer the following questions:
 1. **Implementation complexity**: Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+The smooth() function took longest.
 ```
 
 2. **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+Smothing changes were not or only in unnoticable stength applied.
+Reason:
+My resetVertexArray() function did not reset the vertex array correctly.
+- I created new Vertex objects, and stored them in this.vertices
+- However Halfedge.vertex had still a reference to the old vertice -> no/small changes
+
+
 ```
 
 3. **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+Mass and Wheight Matrix are calculated seperately (2 loops). This could be done in one loop.
 ```
 
 ## Reference Results
