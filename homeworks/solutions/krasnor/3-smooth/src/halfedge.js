@@ -436,7 +436,7 @@ export class HalfedgeMesh {
             w = 1
             break
           case 'cotan':
-            w = (h.cotan() + h.twin.cotan())
+            w = (h.cotan() + h.twin.cotan())/2
         }
         sum += w
         T.addEntry(w, i, h.twin.vertex.idx)
@@ -465,7 +465,7 @@ export class HalfedgeMesh {
         case 'cotan':
           // surrounding area
           w = vert.voronoiCell();
-
+          // if I implement it according to the slides (only Area) the result becomes too smooth
           T.addEntry(1+w,i,i); // only w is too small -> too big changes in mesh; 1/w too big -> no noticeable changes
           break;
       }
