@@ -8,7 +8,7 @@ for mesh parameterization for different types of boundary and Laplacian weights.
 The skeleton for this homework is structured as follows:
 
 ```
-3-smooth
+4-param
 ├── package.json
 ├── package-lock.json
 ├── README.md             <--- You work on this file
