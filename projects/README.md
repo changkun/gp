@@ -16,7 +16,7 @@ The timeline for individual projects are as follows:
 
 | Submission        | Deadline            |
 |:------------------|:-------------------:|
-| Proposal Document | 01.01.2021 00:00:00 |
+| Proposal Document | ~~01.01.2021 00:00:00~~ 15.01.2021 00:00:00 |
 | Code              | 16.02.2021 00:00:00 |
 | Video Demo        | 01.03.2021 00:00:00 |
 
