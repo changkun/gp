@@ -42,11 +42,27 @@ class Halfedge {
     this.twin = null   // Halfedge
     this.idx  = -1     // Number
 
-    // Hint: try use this variable to record if a halfedge is on the boundary
     this.onBoundary = false // Boolean
   }
-  // TODO: you can add more methods if you need here
-
+  vector() {
+    // HACK: using the original vertex
+    const a = this.vertsOrig[this.next.vertex.idx]
+    const b = this.vertsOrig[this.vertex.idx]
+    return a.position.sub(b.position)
+  }
+  cotan() {
+    if (this.onBoundary) {
+      return 0
+    }
+    const u = this.prev.vector()
+    const v = this.next.vector().scale(-1)
+    return u.dot(v) / u.cross(v).norm()
+  }
+  angle() {
+    const u = this.prev.vector().unit()
+    const v = this.next.vector().scale(-1).unit()
+    return Math.acos(Math.max(-1, Math.min(1, u.dot(v))))
+  }
 }
 
 class Edge {
@@ -54,7 +70,6 @@ class Edge {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
   }
-  // TODO: you can add more methods if you need here
 }
 
 class Face {
@@ -75,11 +90,32 @@ class Face {
   //
   //    f.vertices(v => { ... })
   vertices(fn) {
-    // TODO: iterate all vertices.
-
+    let start = true
+    let i = 0
+    for (let h = this.halfedge; start || h != this.halfedge; h = h.next) {
+      fn(h.vertex, i)
+      start = false
+      i++
+    }
   }
-  // TODO: you can add more methods if you need here
-
+  normal() {
+    if (this.halfedge.onBoundary) {
+      return new Vector(0, 0, 0)
+    }
+    const h = this.halfedge
+    let a = h.vertex.position.sub(h.next.vertex.position)
+    let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
+    return a.cross(b).unit()
+  }
+  area() {
+    const h = this.halfedge
+    if (h.onBoundary) {
+      return 0
+    }
+    let a = h.vertex.position.sub(h.next.vertex.position)
+    let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
+    return a.cross(b).norm() * 0.5
+  }
 }
 
 class Vertex {
@@ -92,20 +128,106 @@ class Vertex {
     let n = new Vector()
     switch (method) {
     case 'equal-weighted':
-      // TODO: compute euqally weighted normal of this vertex
+      this.faces(f => {
+        n = n.add(f.normal())
+      })
+      return n.unit()
 
     case 'area-weighted':
-      // TODO: compute area weighted normal of this vertex
+      this.faces(f => {
+        n = n.add(f.normal().scale(f.area()))
+      })
+      return n.unit()
 
     case 'angle-weighted':
-      // TODO: compute angle weighted normal of this vertex
+      this.halfedges(h => {
+        n = n.add(h.face.normal().scale(h.next.angle()))
+      })
+      return n.unit()
 
     default: // undefined
-      return new Vector()
+      return n
     }
   }
-  // TODO: you can add more methods if you need here
-
+  faces(fn) {
+    let start = true
+    let i = 0
+    for (let h = this.halfedge; start || h != this.halfedge; h = h.twin.next) {
+      if(h.onBoundary) {
+        continue
+      }
+      fn(h.face, i)
+      start = false
+      i++
+    }
+  }
+  halfedges(fn) {
+    let start = true
+    let i = 0
+    for (let h = this.halfedge; start || h != this.halfedge; h = h.twin.next) {
+      fn(h, i)
+      start = false
+      i++
+    }
+  }
+  curvature(method='Mean') {
+    const [k1, k2] = this.principalCurvature()
+    switch (method) {
+    case 'Mean':
+      return (k1+k2)*0.5
+    case 'Gaussian':
+      return k1*k2
+    case 'Kmin':
+      return k1
+    case 'Kmax':
+      return k2
+    default: // undefined
+      return 0
+    }
+  }
+  principalCurvature() {
+    const H = this.meanCurvature()
+    const K = this.angleDefect()
+    let d = H*H - K
+    if (d > 0) {
+      d = Math.sqrt(d)
+    } else {
+      d = 0
+    }
+    return [H - d, H + d]
+  }
+  meanCurvature() {
+    const clb = this.cotanLaplaceBeltrami()
+    if (this.angleDefect() > 0) {
+      return clb
+    } else {
+      return -clb
+    }
+  }
+  cotanLaplaceBeltrami() {
+    const a = this.voronoiCell()
+    let sum = new Vector()
+    this.halfedges(h => {
+      sum = sum.add(h.vector().scale(h.cotan() + h.twin.cotan()))
+    })
+    return sum.norm()*0.5/a
+  }
+  voronoiCell() {
+    let a = 0
+    this.halfedges(h => {
+      const u = h.prev.vector().norm()
+      const v = h.vector().norm()
+      a += (u*u*h.prev.cotan() + v*v*h.cotan()) / 8
+    })
+    return a
+  }
+  angleDefect() {
+    let sum = 0.0
+    this.halfedges(h => {
+      sum += h.next.angle()
+    })
+    return (2 * Math.PI - sum)/this.voronoiCell()
+  }
 }
 
 export class HalfedgeMesh {
@@ -122,8 +244,221 @@ export class HalfedgeMesh {
     this.faces     = [] // an array of Face object
     this.halfedges = [] // an array of Halfedge object
 
-    // TODO: read .obj format and construct its halfedge representation
+    // load .obj file
+    let indices   = []
+    let positions = []
+    let lines = data.split('\n')
+    for (let line of lines) {
+      line = line.trim()
+      const tokens = line.split(' ')
+      switch(tokens[0].trim()) {
+      case 'v':
+        positions.push(new Vector(
+          parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3]),
+        ))
+        continue
+      case 'f':
+        // only load indices of vertices
+        for (let i = 1; i < tokens.length; i++) {
+          indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
+        }
+        continue
+      }
+    }
 
+    // build the halfedge connectivity
+    const edges = new Map()
+    for (let i = 0; i < indices.length; i += 3) {
+      for (let j = 0; j < 3; j++) { // check a face
+        const a = indices[i + j]
+        const b = indices[i + (j+1)%3]
+
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
+
+        // store the edge if not exists
+        const e = `${a}-${b}`
+        if (!edges.has(e)) {
+          edges.set(e, [a, b])
+        }
+      }
+    }
+
+    this.vertsOrig  = new Array(positions.length) // original
+    this.vertices   = new Array(positions.length) // for update
+    this.edges      = new Array(edges.size)
+    this.faces      = new Array(indices.length / 3)
+    this.halfedges  = new Array(edges.size*2)
+
+    const idx2vert = new Map()
+    for (let i = 0; i < positions.length; i++) {
+      const v = new Vertex()
+      v.position = positions[i]
+      this.vertices[i] = v
+      const vorig = new Vertex()
+      vorig.position = new Vector(positions[i].x, positions[i].y, positions[i].z)
+      this.vertsOrig[i] = vorig
+      idx2vert.set(i, v)
+    }
+
+    let edgeIndex = 0
+    let edgeCount = new Map()
+    let existedHalfedges = new Map()
+    let hasTwinHalfedge = new Map()
+
+    // construct halfedges, edges
+    for (let i = 0; i < indices.length; i += 3) {
+      // construct face
+      const f = new Face()
+      this.faces[i / 3] = f
+
+      // construct halfedges of the face
+      for (let j = 0; j < 3; j++) {
+        const he = new Halfedge()
+        this.halfedges[i+j] = he
+      }
+
+      // construct connectivities of the new halfedges
+      for (let j = 0; j < 3; j++) {
+        // halfedge from vertex a to vertex b
+        const a = indices[i + j]
+        const b = indices[i + (j+1)%3]
+
+        // halfedge properties
+        const he = this.halfedges[i + j]
+        he.next = this.halfedges[i + (j+1)%3]
+        he.prev = this.halfedges[i + (j+2)%3]
+        he.onBoundary = false
+        hasTwinHalfedge.set(he, false) // record if the twin of this half edge is constructed
+
+        // point halfedge and vertex a to each other
+        const v = idx2vert.get(a)
+        he.vertex = v
+        v.halfedge = he
+
+        // point halfedge and face to each other
+        he.face = f
+        f.halfedge = he
+
+        // swap if index a > b, for twin checking
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
+        const edgeKey = `${a}-${b}`
+        if (existedHalfedges.has(edgeKey)) {
+          // if a halfedge between a and b has been created before, then
+          // it is the twin halfedge of the current halfedge
+          const twin = existedHalfedges.get(edgeKey)
+          he.twin = twin
+          twin.twin = he
+          he.edge = twin.edge
+
+          hasTwinHalfedge.set(he, true)
+          hasTwinHalfedge.set(twin, true)
+          edgeCount.set(edgeKey, edgeCount.get(edgeKey)+1)
+        } else {
+          // this is a new halfedge, create the edge
+          const e = new Edge()
+          this.edges[edgeIndex] = e
+          edgeIndex++
+          he.edge = e
+          e.halfedge = he
+
+          // record newly created edge and halfedge from a to b
+          existedHalfedges.set(edgeKey, he)
+          edgeCount.set(edgeKey, 1)
+        }
+
+        // error checking
+        if (edgeCount.get(edgeKey) > 2) {
+          throw 'the mesh contains non-manifold edges'
+        }
+      }
+    }
+
+    // create boundary halfedges and "fake" faces for the boundary cycles
+    let halfedgeIndex = indices.length
+    for (let i = 0; i < indices.length; i++) {
+      // if a halfedge has no twin, create a new face and link it
+      // the corresponding boundary cycle
+
+      const he = this.halfedges[i]
+      if (!hasTwinHalfedge.get(he)) {
+
+        // create face
+        const f = new Face()
+
+        // walk along boundary cycle
+        let boundaryCycle = []
+        let current = he
+        do {
+          const boundaryHalfedge = new Halfedge()
+          this.halfedges[halfedgeIndex] = boundaryHalfedge
+          halfedgeIndex++
+          boundaryCycle.push(boundaryHalfedge)
+
+          // grab the next halfedge along the boundary that does not
+          // have a twin halfedge
+          let nextHe = current.next
+          while (hasTwinHalfedge.get(nextHe)) {
+            nextHe = nextHe.twin.next
+          }
+
+          // set the current halfedge's attributes
+          boundaryHalfedge.vertex = nextHe.vertex
+          boundaryHalfedge.edge = current.edge
+          boundaryHalfedge.onBoundary = true
+
+          // point the new halfedge and face to each other
+          boundaryHalfedge.face = f
+          f.halfedge = boundaryHalfedge
+
+          // point the new halfedge and twin to each other
+          boundaryHalfedge.twin = current
+          current.twin = boundaryHalfedge
+
+          current = nextHe
+        } while(current != he)
+
+        // link the cycle of boundary halfedges together
+        const n = boundaryCycle.length
+        for (let j = 0; j < n; j++) {
+          boundaryCycle[j].next = boundaryCycle[(j+n-1)%n]
+          boundaryCycle[j].prev = boundaryCycle[(j+1)%n]
+          hasTwinHalfedge.set(boundaryCycle[j], true)
+          hasTwinHalfedge.set(boundaryCycle[j].twin, true)
+        }
+      }
+    }
+
+    // allocate indices for all elements
+    let index = 0
+    this.vertices.forEach(v => {
+      v.idx = index++
+    })
+    index = 0
+    this.vertsOrig.forEach(v => {
+      v.idx = index++
+    })
+    index = 0
+    this.edges.forEach(e => {
+      e.idx = index++
+    })
+    index = 0
+    this.faces.forEach(f => {
+      f.idx = index++
+    })
+    index = 0
+    this.halfedges.forEach(he => {
+      // HACK: all halfedge now accessible to the original vertices
+      he.vertsOrig = this.vertsOrig
+      he.idx = index++
+    })
   }
   /**
    * laplaceMatrix returns the Laplace matrix for a given laplaceType
@@ -132,8 +467,26 @@ export class HalfedgeMesh {
    * 'uniform', 'cotan'.
    */
   laplaceMatrix(weightType) {
-    // TODO: construct the Laplace matrix.
-
+    const n = this.vertices.length
+    let T = new Triplet(n, n)
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      let sum = 1e-8
+      vert.halfedges(h => {
+        let w = 0
+        switch (weightType) {
+        case 'uniform':
+          w = 1
+          break
+        case 'cotan':
+          w = (h.cotan() + h.twin.cotan())/2
+        }
+        sum += w
+        T.addEntry(-w, i, h.twin.vertex.idx)
+      })
+      T.addEntry(sum, i, i)
+    }
+    return SparseMatrix.fromTriplet(T)
   }
   /**
    * smooth performs the Laplacian smoothing algorithm.
@@ -149,9 +502,62 @@ export class HalfedgeMesh {
     // Hint:
     //
     //   1. Construct the Laplace matrix `L` for the given `weightType`
-    //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
+    //   2. Solve linear equation: (M+tλW) f' = Mf using a Cholesky solver.
     //   3. Update the position of mesh vertices based on the solution f'.
     //
+
+    // build f(t)
+    let f = DenseMatrix.zeros(this.vertsOrig.length, 3)
+    for (const v of this.vertsOrig) {
+      f.set(v.position.x, v.idx, 0)
+      f.set(v.position.y, v.idx, 1)
+      f.set(v.position.z, v.idx, 2)
+    }
+
+    // build the mean curvature flow matrix
+    // solve linear system (M + tL)f' = Mf(t)
+    const n = this.vertices.length
+    let T = new Triplet(n, n)
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      switch (weightType) {
+      case 'uniform':
+        T.addEntry(1, i, i)
+        continue
+      case 'cotan':
+        // amplify mass a little to avoid numeric issue
+        T.addEntry(vert.voronoiCell()*100, i, i)
+      }
+    }
+    const M = SparseMatrix.fromTriplet(T)
+    const W = this.laplaceMatrix(weightType)
+
+    // In classic laplacian smooth, smooth step should not directly
+    // multiply with time step, this is because: after each step, 
+    // the position of vertices has changed, and thus resulting the
+    // laplace matrix should also be changed after each step.
+    //
+    // Here we implement a mofidied version of mean curvature flow, see:
+    //
+    // Kazhdan, Michael, Jake Solomon, and Mirela Ben‐Chen.
+    // "Can mean‐curvature flow be modified to be non‐singular?."
+    // Computer Graphics Forum. 2012.
+    // https://arxiv.org/pdf/1203.6819.pdf
+    //
+    // for more details.
+    //
+    // The key difference of the modified laplacian smooth is to use
+    // original Laplace matrix all the time, which results that we
+    // can use time step * smooth step.
+    const F = M.plus(W.timesReal(timeStep*smoothStep))
+    const f_ = F.chol().solvePositiveDefinite(M.timesDense(f))
+
+    // update vertex positions
+    for (const v of this.vertices) {
+      v.position.x = f_.get(v.idx, 0)
+      v.position.y = f_.get(v.idx, 1)
+      v.position.z = f_.get(v.idx, 2)
+    }
 
   }
 }
