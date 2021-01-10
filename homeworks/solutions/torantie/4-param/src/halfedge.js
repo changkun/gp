@@ -522,8 +522,8 @@ export class HalfedgeMesh {
         const r = 0.5 // disk radius
         boundaryVertices.forEach((vertex,i) =>{
             if(vertex !==null){
-              let x = (r*Math.cos(2*Math.PI*i/boundaryHalfEdgesLength)) + 0.5
-              let y = (r*Math.sin(2*Math.PI*i/boundaryHalfEdgesLength)) + 0.5
+              let x = (r*Math.cos(2*Math.PI*i/boundaryVertices.length)) + 0.5
+              let y = (r*Math.sin(2*Math.PI*i/boundaryVertices.length)) + 0.5
               vertex.uv.x= x
               vertex.uv.y= y
               u.set(x, vertex.idx, 0)
@@ -548,27 +548,27 @@ export class HalfedgeMesh {
         break;
 
       case "rect":
-        let pointDistance = 4/boundaryHalfEdgesLength
+        let pointDistance = 4/boundaryVertices.length
 
-        let prevX = -pointDistance
-        let prevY = 0
+        let prevX = 1 + pointDistance
+        let prevY = 1
         boundaryVertices.forEach((vertex, i) =>{
           if(vertex !==null) {
             let vertexUV = vertex.uv
             let x = 0
             let y = 0
-            if (prevX < 1 && prevY === 0) {
+            if (prevX  > 0 && prevX  <= 1+pointDistance && prevY >= 1) {
+              x = prevX - pointDistance
+              y = 1
+            } else if(prevX <= 0 && prevY >= 0){
+              x = 0
+              y = prevY - pointDistance
+            }else if (prevX < 1 && prevY <= 0) {
               x = prevX + pointDistance
               y = 0
             } else if (prevX >= 1 && prevY < 1) {
               x = 1
               y = prevY + pointDistance
-            } else if (prevX > 0 && prevY >= 1) {
-              x = prevX - pointDistance
-              y = 1
-            } else {
-              x = 0
-              y = prevY - pointDistance
             }
             vertexUV.x = x
             vertexUV.y = y
