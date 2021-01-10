@@ -551,7 +551,7 @@ export class HalfedgeMesh {
         let pointDistance = 4/boundaryHalfEdgesLength
 
         let prevX = -pointDistance
-        let prevY = pointDistance
+        let prevY = 0
         boundaryVertices.forEach((vertex, i) =>{
           if(vertex !==null) {
             let vertexUV = vertex.uv
