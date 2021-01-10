@@ -36,12 +36,14 @@ should answer the following questions:
 ```
 TODO: your answer goes here
 ```
+line 519 to 527: Calculating the boundary was very hard since there wasn't something explicit in the slides to go by. Additionally, how to find the boundary vertices was really hard.
 
 2. **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
 TODO: your answer goes here
 ```
+My uv coordinates were shifted for the disk calculation. This was fixed by translating the solution of the linear equation upwards by 0.5 on the u and v coordinates (or x and y).
 
 ## Reference Results
 
