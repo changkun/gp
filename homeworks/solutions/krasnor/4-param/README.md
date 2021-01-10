@@ -45,13 +45,6 @@ TODO: your answer goes here
 
 ## Reference Results
 
-The UV coordinates of the bunny mesh computed by Tutte's barycentric embeeding:
-
-|Laplacian|Disk|Square|
-|:--:|:--:|:--:|
-|Uniform|![](./references/uniform-disk.png)|![](./references/uniform-rect.png)|
-|Cotan|![](./references/cotan-disk.png)|![](./references/cotan-rect.png)|
-
 ## Submission
 
 Before you submit, please read [this](../README.md) document and understand

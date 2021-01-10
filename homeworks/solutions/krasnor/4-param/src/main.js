@@ -128,6 +128,7 @@ export default class Main extends Renderer {
 
     // just for the first load
     fetch('./assets/bunny_small.obj')
+    // fetch('./assets/cube.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }

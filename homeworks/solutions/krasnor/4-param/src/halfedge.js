@@ -207,6 +207,8 @@ export class HalfedgeMesh {
     this.faces     = [] // an array of Face object
     this.halfedges = [] // an array of Halfedge object
     this.boundaries= [] // an array of boundary loops
+    let n_bcycles = 0;
+
 
     // TODO: read .obj format and construct its halfedge representation
     // load .obj file
@@ -351,7 +353,7 @@ export class HalfedgeMesh {
 
       const he = this.halfedges[i]
       if (!hasTwinHalfedge.get(he)) {
-
+        n_bcycles++
         // create face
         const f = new Face()
 
@@ -363,6 +365,7 @@ export class HalfedgeMesh {
           this.halfedges[halfedgeIndex] = boundaryHalfedge
           halfedgeIndex++
           boundaryCycle.push(boundaryHalfedge)
+          // this.boundaries.push(boundaryHalfedge)
 
           // grab the next halfedge along the boundary that does not
           // have a twin halfedge
@@ -386,6 +389,7 @@ export class HalfedgeMesh {
 
           current = nextHe
         } while (current != he)
+        this.boundaries.push(boundaryCycle)
 
         // link the cycle of boundary halfedges together
         const n = boundaryCycle.length
@@ -395,6 +399,12 @@ export class HalfedgeMesh {
           hasTwinHalfedge.set(boundaryCycle[j], true)
           hasTwinHalfedge.set(boundaryCycle[j].twin, true)
         }
+
+        // TODO add to boundaries
+        // for (let i = 0; i < this.halfedges.length; i++){
+        //   if(this.halfedges[i].onBoundary) // TODO integrate into boundary linking a few steps before
+        //     this.boundaries.push(this.halfedges[i])
+        // }
       }
     }
     // allocate indices for all elements
@@ -415,7 +425,18 @@ export class HalfedgeMesh {
       he.idx = index++
     })
 
+    console.log("n_bcycles: " + n_bcycles)
+    console.log("calc boundary")
+
+    // calc boundary
+    // for (let i = 0; i < this.halfedges.length; i++){
+    //   if(this.halfedges[i].onBoundary) // TODO integrate into boundary linking a few steps before
+    //     this.boundaries.push(this.halfedges[i])
+    // }
+    console.log("boundrary length: " + this.boundaries.length)
+
     console.log("finished mesh parsing")
+
   }
 
   /**
@@ -436,7 +457,216 @@ export class HalfedgeMesh {
     // 3. compute matrix depending on the laplacian weight type
     // 4. solve linear equation and assing computed uv as vertex uv
     //
+
+    // 1.
     if(this.boundaries.length <= 0)
       return;
+
+    // 2. compute boundary UVs
+    let U = DenseMatrix.zeros(this.vertices.length,1)
+    let V = DenseMatrix.zeros(this.vertices.length,1)
+
+    // let r2 = 1
+    // let utest = function(step) {
+    //   return (r2*Math.cos(2*Math.PI * step/80) +1)/2
+    // }
+    // console.log("ustest: %f / %f / %f / %f", utest(0),utest(20),utest(40),utest(60))
+    //
+    // let vtest = function(step) {
+    //   return (r2*Math.sin(2*Math.PI * step/80) +1)/2
+    // }
+    // console.log("vstest: %f / %f / %f / %f", vtest(0),vtest(20),vtest(40),vtest(60))
+
+    let n_bound_edges = this.boundaries[0].length
+
+    switch (boundaryType) {
+      case 'disk':
+        const r = 0.5
+          console.log("n_bound_edges: %f",n_bound_edges);
+        this.boundaries[0].forEach((hf, i) => {
+          let angle = 2*Math.PI*i/n_bound_edges
+          // v1
+          // let u = (r*Math.cos(2*Math.PI * i/n_bound_edges)) +0.5
+          // let v = (r*Math.sin(2*Math.PI * i/n_bound_edges)) +0.5
+          let u = (Math.cos(2*Math.PI * i/n_bound_edges))
+          let v = (Math.sin(2*Math.PI * i/n_bound_edges))
+          // u= Math.min(Math.max(u, -1), 1)
+          // v= Math.min(Math.max(v, -1), 1)
+          u = (u+1)/2 // normalize to [0,1]
+          v = (-v+1)/2
+          hf.vertex.uv.x = u
+          hf.vertex.uv.y = v
+          U.set(u, hf.vertex.idx,0)
+          V.set(v, hf.vertex.idx,0)
+
+          // v2
+          // let x = (r*Math.cos(2*Math.PI*i/n_bound_edges)) + 0.5
+          // let y = (r*Math.sin(2*Math.PI*i/n_bound_edges)) + 0.5
+          // hf.vertex.uv.x= x
+          // hf.vertex.uv.y= y
+          // U.set(x, hf.vertex.idx, 0)
+          // V.set(y, hf.vertex.idx, 0)
+
+          // console.log("i: %i uv [%f,%f] angle: %f",i,u,v,angle*(180/Math.PI))
+        })
+        break
+      case 'rect':
+        let verts_per_side = n_bound_edges / 4
+        this.boundaries[0].forEach((hf, i) => {
+          let deg_rad_u = (Math.cos(2*Math.PI * i/n_bound_edges))
+          let deg_rad_v = (Math.sin(2*Math.PI * i/n_bound_edges))
+
+          let u = deg_rad_u;
+          let v = deg_rad_v;
+
+          let sq = Math.sqrt(2)/2 //0.7071067812// // sqrt(2)/2M
+
+          // works but could be nicer
+          if(deg_rad_u < -sq){
+            u = 0; // l
+            v = (v+1)/2
+          } else if (deg_rad_u > sq){
+            u = 1; // r
+            v = (v+1)/2
+          } else if (deg_rad_v >= sq){
+            u = (u+1)/2 // normalize to [0,1]
+            v = 1; // t
+          } else { //if (deg_rad_v <= -sq){
+            u = (u+1)/2 // normalize to [0,1]
+            v = 0; // b
+          }
+          // fixme edges are cutoff
+          // TODO instead of calculating angle use an offset ( no calcs needed similar result)
+
+          // u = (u+1)/2 // normalize to [0,1]
+          // v = (v+1)/2
+          hf.vertex.uv.x = u
+          hf.vertex.uv.y = v
+          U.set(u, hf.vertex.idx,0)
+          V.set(v, hf.vertex.idx,0)
+        })
+        break
+      default:
+          break
+    }
+
+    // 3. calc laplace matrix
+    let mat_L = this.laplaceMatrixAlt(laplaceWeight, U, V)
+    let mat_M = this.massMatrix(laplaceWeight)
+
+      // 4. solve equation
+    let lu = mat_L.lu()
+    let solved_u =  lu.solveSquare(U)
+    let solved_v =  lu.solveSquare(V)
+
+    // apply
+    let min_u = 99999999999
+    let max_u = -99999999999
+    // this.printHalfedges()
+
+
+    for (let i = 0; i < this.vertices.length; i++) {
+      let current_uv = this.vertices[i].uv
+      min_u = Math.min(solved_u.get(i),min_u)
+      max_u = Math.max(solved_u.get(i),max_u)
+      if(i == 976){
+        let foo = solved_u.get(976)
+        let bar = solved_v.get(976)
+        console.log("976: [%f,%f]",foo,bar)
+      }
+
+      current_uv.x = solved_u.get(i)
+      current_uv.y = solved_v.get(i)
+    }
+    console.log("min: %f max: %f", min_u, max_u)
   }
+
+  /**
+   * laplaceMatrix returns the Laplace matrix for a given laplaceType
+   * @param {string} weightType indicates the type of the weight for
+   * constructing the Laplace matrix. Possible value could be:
+   * 'uniform', 'cotan'.
+   *
+   * @returns {SparseMatrix}
+   */
+  laplaceMatrix(weightType) {
+    const n = this.vertices.length
+    let T = new Triplet(n, n)
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      let sum = 1e-8
+        vert.halfedges(h => {
+          let w = 0
+          switch (weightType) {
+            case 'uniform':
+              w = 1
+              break
+            case 'cotan':
+              w = (h.cotan() + h.twin.cotan()) / 2
+          }
+          sum += w
+          T.addEntry(-w, i, h.twin.vertex.idx)
+        })
+        T.addEntry(sum, i, i)
+
+    }
+
+    return SparseMatrix.fromTriplet(T)
+  }
+
+  laplaceMatrixAlt(weightType, U, V) {
+    const n = this.vertices.length
+    let T = new Triplet(n, n)
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      let sum = 1e-8
+
+      if (U.get(i) !== 0 || V.get(i) !== 0) {
+        T.addEntry(1, i, i);
+      }else {
+        vert.halfedges(h => {
+          let w = 0
+          switch (weightType) {
+            case 'uniform':
+              w = 1
+              break
+            case 'cotan':
+              w = (h.cotan() + h.twin.cotan()) / 2
+          }
+          sum += w
+          T.addEntry(-w, i, h.twin.vertex.idx)
+        })
+        T.addEntry(sum, i, i)
+      }
+    }
+
+    return SparseMatrix.fromTriplet(T)
+  }
+  massMatrix(weightType){
+    const n = this.vertices.length;
+    let T = new Triplet(n, n);
+
+    for (const vert of this.vertices) {
+      const i = vert.idx;
+
+      let w = 0;
+      switch (weightType) {
+        case 'uniform':
+          // count neighbors
+          vert.halfedges(() => {
+            w++
+          });
+          T.addEntry(w,i,i);
+          break;
+        case 'cotan':
+          // surrounding area
+          w = vert.voronoiCell();
+          // if I implement it according to the slides (only Area) the result becomes too smooth
+          T.addEntry(1+w,i,i); // only w is too small -> too big changes in mesh; 1/w too big -> no noticeable changes
+          break;
+      }
+    }
+    return SparseMatrix.fromTriplet(T);
+  }
+
 }
