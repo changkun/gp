@@ -365,7 +365,6 @@ export class HalfedgeMesh {
           this.halfedges[halfedgeIndex] = boundaryHalfedge
           halfedgeIndex++
           boundaryCycle.push(boundaryHalfedge)
-          // this.boundaries.push(boundaryHalfedge)
 
           // grab the next halfedge along the boundary that does not
           // have a twin halfedge
@@ -389,7 +388,7 @@ export class HalfedgeMesh {
 
           current = nextHe
         } while (current != he)
-        this.boundaries.push(boundaryCycle)
+        this.boundaries.push(boundaryCycle) // ## adding boundary cycle array
 
         // link the cycle of boundary halfedges together
         const n = boundaryCycle.length
@@ -399,12 +398,6 @@ export class HalfedgeMesh {
           hasTwinHalfedge.set(boundaryCycle[j], true)
           hasTwinHalfedge.set(boundaryCycle[j].twin, true)
         }
-
-        // TODO add to boundaries
-        // for (let i = 0; i < this.halfedges.length; i++){
-        //   if(this.halfedges[i].onBoundary) // TODO integrate into boundary linking a few steps before
-        //     this.boundaries.push(this.halfedges[i])
-        // }
       }
     }
     // allocate indices for all elements
@@ -426,15 +419,8 @@ export class HalfedgeMesh {
     })
 
     console.log("n_bcycles: " + n_bcycles)
-    console.log("calc boundary")
-
-    // calc boundary
-    // for (let i = 0; i < this.halfedges.length; i++){
-    //   if(this.halfedges[i].onBoundary) // TODO integrate into boundary linking a few steps before
-    //     this.boundaries.push(this.halfedges[i])
-    // }
-    console.log("boundrary length: " + this.boundaries.length)
-
+    console.log("boundary cycles: " + this.boundaries.length)
+    console.log("boundary[0] length: " + this.boundaries[0]?.length)
     console.log("finished mesh parsing")
 
   }
@@ -466,17 +452,6 @@ export class HalfedgeMesh {
     let U = DenseMatrix.zeros(this.vertices.length,1)
     let V = DenseMatrix.zeros(this.vertices.length,1)
 
-    // let r2 = 1
-    // let utest = function(step) {
-    //   return (r2*Math.cos(2*Math.PI * step/80) +1)/2
-    // }
-    // console.log("ustest: %f / %f / %f / %f", utest(0),utest(20),utest(40),utest(60))
-    //
-    // let vtest = function(step) {
-    //   return (r2*Math.sin(2*Math.PI * step/80) +1)/2
-    // }
-    // console.log("vstest: %f / %f / %f / %f", vtest(0),vtest(20),vtest(40),vtest(60))
-
     let n_bound_edges = this.boundaries[0].length
     let uv_origin_vertex = -1;
     switch (boundaryType) {
@@ -484,30 +459,16 @@ export class HalfedgeMesh {
         const r = 0.5
           console.log("n_bound_edges: %f",n_bound_edges);
         this.boundaries[0].forEach((hf, i) => {
-          let angle = 2*Math.PI*i/n_bound_edges
-          // v1
           // let u = (r*Math.cos(2*Math.PI * i/n_bound_edges)) +0.5
           // let v = (r*Math.sin(2*Math.PI * i/n_bound_edges)) +0.5
           let u = (Math.cos(2*Math.PI * i/n_bound_edges))
           let v = (Math.sin(2*Math.PI * i/n_bound_edges))
-          // u= Math.min(Math.max(u, -1), 1)
-          // v= Math.min(Math.max(v, -1), 1)
           u = (u+1)/2 // normalize to [0,1]
           v = (-v+1)/2
           hf.vertex.uv.x = u
           hf.vertex.uv.y = v
           U.set(u, hf.vertex.idx,0)
           V.set(v, hf.vertex.idx,0)
-
-          // v2
-          // let x = (r*Math.cos(2*Math.PI*i/n_bound_edges)) + 0.5
-          // let y = (r*Math.sin(2*Math.PI*i/n_bound_edges)) + 0.5
-          // hf.vertex.uv.x= x
-          // hf.vertex.uv.y= y
-          // U.set(x, hf.vertex.idx, 0)
-          // V.set(y, hf.vertex.idx, 0)
-
-          // console.log("i: %i uv [%f,%f] angle: %f",i,u,v,angle*(180/Math.PI))
         })
         break
       case 'rect':
@@ -520,11 +481,14 @@ export class HalfedgeMesh {
 
         console.log("rect case: hf: %f offset: %f",n_bound_edges,step_offset)
         this.boundaries[0].forEach((hf, i) => {
+          let u = 0
+          let v = 0
+
           // let deg_rad_u = (Math.cos(2*Math.PI * i/n_bound_edges))
           // let deg_rad_v = (Math.sin(-2*Math.PI * i/n_bound_edges))
           //
-          // let u = deg_rad_u;
-          // let v = deg_rad_v;
+          // u = deg_rad_u;
+          // v = deg_rad_v;
           //
           // let sq = Math.sqrt(2)/2 //0.7071067812// // sqrt(2)/2M
           //
@@ -574,8 +538,7 @@ export class HalfedgeMesh {
 
           // u = (u+1)/2 // normalize to [0,1]
           // v = (v+1)/2
-          let u = 0
-          let v = 0
+
 
           // TODO rewrite
           // works but not nice
@@ -643,25 +606,11 @@ export class HalfedgeMesh {
     let solved_v =  lu.solveSquare(V)
 
     // apply
-    let min_u = 99999999999
-    let max_u = -99999999999
-    // this.printHalfedges()
-
-
     for (let i = 0; i < this.vertices.length; i++) {
       let current_uv = this.vertices[i].uv
-      min_u = Math.min(solved_u.get(i),min_u)
-      max_u = Math.max(solved_u.get(i),max_u)
-      if(i == 976){
-        let foo = solved_u.get(976)
-        let bar = solved_v.get(976)
-        console.log("976: [%f,%f]",foo,bar)
-      }
-
       current_uv.x = solved_u.get(i)
       current_uv.y = solved_v.get(i)
     }
-    console.log("min: %f max: %f", min_u, max_u)
   }
 
   /**
@@ -672,31 +621,6 @@ export class HalfedgeMesh {
    *
    * @returns {SparseMatrix}
    */
-  laplaceMatrix(weightType) {
-    const n = this.vertices.length
-    let T = new Triplet(n, n)
-    for (const vert of this.vertices) {
-      const i = vert.idx
-      let sum = 1e-8
-        vert.halfedges(h => {
-          let w = 0
-          switch (weightType) {
-            case 'uniform':
-              w = 1
-              break
-            case 'cotan':
-              w = (h.cotan() + h.twin.cotan()) / 2
-          }
-          sum += w
-          T.addEntry(-w, i, h.twin.vertex.idx)
-        })
-        T.addEntry(sum, i, i)
-
-    }
-
-    return SparseMatrix.fromTriplet(T)
-  }
-
   laplaceMatrixAlt(weightType, U, V, uv_origin_vertex = -1) {
     const n = this.vertices.length
     let T = new Triplet(n, n)
@@ -705,7 +629,7 @@ export class HalfedgeMesh {
       let sum = 1e-8
 
       if (U.get(i) !== 0 || V.get(i) !== 0 || (i === uv_origin_vertex && i !== -1)) {
-        T.addEntry(1, i, i);
+        T.addEntry(1, i, i); // for the Border vertices value should be 1 and not anything else e.g. count of edges (in uniform case)
       }else {
         vert.halfedges(h => {
           let w = 0
