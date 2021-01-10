@@ -34,13 +34,14 @@ should answer the following questions:
 1. **Implementation complexity**: Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
+Mostly because debugging the laplace matrix is difficult.
 Most time consuming was to implement the disk parameterization (~line 457) and finding the bug in the laplace matrix.
-Mostly because the results could not be debugged.
+First I always thought my border-uv-mapping is wrong.
 After just plotting my calculated border-uvs I was also able to check if my border-uv-mapping was correct.
-Then after a while I found out, that my matrix is incorrect (values in the millions -> nothing rendered). 
+Then after a while I found out, that my matrix was incorrect (values in the millions -> nothing rendered). 
 
-Square parameterization (~line 469) took some time too, mostly because it was always a differently rotated (than in the reference pictures).
-Creating a version that is rotated in the same was took some time.
+Square parameterization (~line 469) took some time too, mostly because it was always a differently rotated (than in the reference pictures). My first attempt was based on a sine/cosine function for even spacing.
+Creating a version that is rotated in the same way as the reference took some time.
 ```
 
 2. **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
@@ -48,8 +49,10 @@ Creating a version that is rotated in the same was took some time.
 ```
 Very hard to debug.
 Mostly because of the difficult matrix debugging.
+
 Bug: My Laplace Matrix was wrong
-For the Border vertices value should be 1 and not anything else e.g. should not include count of edges (in uniform case)  
+The Border vertice values should be 1 (at i,j) and nothing else e.g. should not include count of edges (as uniform case would set).
+In my case the border vertices had weights != 1 => wrong calculations.
 ```
 
 ## Reference Results
