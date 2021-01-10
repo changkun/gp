@@ -499,6 +499,7 @@ export class HalfedgeMesh {
     let numberOfVertices = this.vertices.length
     let u = DenseMatrix.zeros(numberOfVertices, 1)
     let v = DenseMatrix.zeros(numberOfVertices, 1)
+
     let boundaryVerticesCache =new Array(numberOfVertices)
     let boundaryVertices = []
 
@@ -511,73 +512,17 @@ export class HalfedgeMesh {
           boundaryVerticesCache[vertex.idx] = vertex
           boundaryVertices.push(vertex)
         }
-
       })
     })
 
     // 2. compute boundary uv coordinates depending on the boundary type
     switch (boundaryType) {
       case "disk":
-        let count = 0
-        const r = 0.5 // disk radius
-        boundaryVertices.forEach((vertex,i) =>{
-            if(vertex !==null){
-              let x = (r*Math.cos(2*Math.PI*i/boundaryVertices.length)) + 0.5
-              let y = (r*Math.sin(2*Math.PI*i/boundaryVertices.length)) + 0.5
-              vertex.uv.x= x
-              vertex.uv.y= y
-              u.set(x, vertex.idx, 0)
-              v.set(y, vertex.idx, 0)
-
-              count++
-            }
-        })
-        /**console.log(count)
-        count = 0
-        boundaryVerticesCache.forEach((t,i)=>{
-          console.log(t)
-          count++
-        })
-        console.log(count)
-        count = 0
-        boundaryVertices.forEach((t,i)=>{
-          console.log(t)
-          count++
-        })
-        console.log(count)**/
+        this.calculateDiskBoundary(boundaryVertices, u, v);
         break;
 
       case "rect":
-        let pointDistance = 4/boundaryVertices.length
-
-        let prevX = 1 + pointDistance
-        let prevY = 1
-        boundaryVertices.forEach((vertex, i) =>{
-          if(vertex !==null) {
-            let vertexUV = vertex.uv
-            let x = 0
-            let y = 0
-            if (prevX  > 0 && prevX  <= 1+pointDistance && prevY >= 1) {
-              x = prevX - pointDistance
-              y = 1
-            } else if(prevX <= 0 && prevY >= 0){
-              x = 0
-              y = prevY - pointDistance
-            }else if (prevX < 1 && prevY <= 0) {
-              x = prevX + pointDistance
-              y = 0
-            } else if (prevX >= 1 && prevY < 1) {
-              x = 1
-              y = prevY + pointDistance
-            }
-            vertexUV.x = x
-            vertexUV.y = y
-            prevX = vertexUV.x
-            prevY = vertexUV.y
-            u.set(vertexUV.x, vertex.idx, 0)
-            v.set(vertexUV.y, vertex.idx, 0)
-          }
-        })
+        this.calculateRectBoundary(boundaryVertices, u, v);
         break;
     }
 
@@ -589,33 +534,69 @@ export class HalfedgeMesh {
     // 4. solve linear equation and assing computed uv as vertex uv
     let solvedSquareU= luDecomposition.solveSquare(u)
     let solvedSquareV= luDecomposition.solveSquare(v)
-    let c = 0
+
     for(let index = 0; index<this.vertices.length;index++)
     {
-        let vertex = this.vertices[index]
-        let resultU = solvedSquareU.get(index, 0) //+ 0.5
-        let resultV = solvedSquareV.get(index, 0) //+ 0.5
-        let currentUV = vertex.uv
+      this.updateUVPosition(index, solvedSquareU, solvedSquareV, boundaryVerticesCache);
+    }
+  }
 
-        //console.log("vertex.halfedge.twin.next.onBoundary:" + vertex.halfedge.twin.next.onBoundary
-         // +" vertex.halfedge.onBoundary: " + vertex.halfedge.onBoundary)
+  calculateDiskBoundary(boundaryVertices, u, v) {
+    const r = 0.5 // disk radius
+    boundaryVertices.forEach((vertex, i) => {
+      if (vertex !== null) {
+        let x = (r * Math.cos(2 * Math.PI * i / boundaryVertices.length)) + 0.5
+        let y = (r * Math.sin(2 * Math.PI * i / boundaryVertices.length)) + 0.5
+        vertex.uv.x = x
+        vertex.uv.y = y
+        u.set(x, vertex.idx, 0)
+        v.set(y, vertex.idx, 0)
+      }
+    })
+  }
 
-       /* if(!vertex.halfedge.twin.next.onBoundary
-            && !vertex.halfedge.prev.twin.onBoundary
-            && !vertex.halfedge.onBoundary
-            && !vertex.halfedge.twin.onBoundary)
-        {*/
-       if(boundaryVerticesCache[vertex.idx] === undefined){
-          currentUV.x = resultU
-          currentUV.y = resultV
+  calculateRectBoundary(boundaryVertices, u, v) {
+    let pointDistance = 4 / boundaryVertices.length
+
+    let prevX = 1 + pointDistance
+    let prevY = 1
+    boundaryVertices.forEach((vertex, i) => {
+      if (vertex !== null) {
+        let vertexUV = vertex.uv
+        let x = 0
+        let y = 0
+        if (prevX > 0 && prevX <= 1 + pointDistance && prevY >= 1) {
+          x = prevX - pointDistance
+          y = 1
+        } else if (prevX <= 0 && prevY >= 0) {
+          x = 0
+          y = prevY - pointDistance
+        } else if (prevX < 1 && prevY <= 0) {
+          x = prevX + pointDistance
+          y = 0
+        } else if (prevX >= 1 && prevY < 1) {
+          x = 1
+          y = prevY + pointDistance
         }
-        else{
+        vertexUV.x = x
+        vertexUV.y = y
+        prevX = vertexUV.x
+        prevY = vertexUV.y
+        u.set(vertexUV.x, vertex.idx, 0)
+        v.set(vertexUV.y, vertex.idx, 0)
+      }
+    })
+  }
 
-          //currentUV.x += 0.5
-          //currentUV.y += 0.5
-         /*c++
-         console.log("x:" + currentUV.x +" y:"+currentUV.y + " c:" + c)*/
-        }
+  updateUVPosition(index, solvedSquareU, solvedSquareV, boundaryVerticesCache) {
+    let vertex = this.vertices[index]
+    let resultU = solvedSquareU.get(index, 0) //+ 0.5
+    let resultV = solvedSquareV.get(index, 0) //+ 0.5
+    let currentUV = vertex.uv
+
+    if (boundaryVerticesCache[vertex.idx] === undefined) {
+      currentUV.x = resultU
+      currentUV.y = resultV
     }
   }
 
