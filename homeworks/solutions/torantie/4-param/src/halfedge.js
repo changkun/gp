@@ -617,9 +617,8 @@ export class HalfedgeMesh {
     for (const vert of this.vertices) {
       const i = vert.idx
       let sum = 1e-8 // Tikhonov regularization to get strict positive definite
-      /*if(!vert.halfedge.twin.next.onBoundary
-          && !vert.halfedge.prev.twin.onBoundary
-          && !vert.halfedge.onBoundary){*/
+
+      //give boundary vertices only 1 in the diagonal of the resulting matrix
       if(boundaryVerticesCache[vert.idx] == null){
         vert.halfedges(h => {
           let w = 0
@@ -633,11 +632,9 @@ export class HalfedgeMesh {
           }
 
           sum += w
-          //console.log("Value: "+w+" Position: ("+ i+","+h.twin.vertex.idx +")")
           weightTriplet.addEntry(w, i, h.twin.vertex.idx)
         })
         weightTriplet.addEntry(-sum, i, i)
-        //console.log("Value: "+-sum+" Position: ("+ i+","+i +")")
       }
       else{
         weightTriplet.addEntry(1, i, i)
