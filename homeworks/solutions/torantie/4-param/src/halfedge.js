@@ -58,6 +58,9 @@ class Halfedge {
     const v = this.next.vector().scale(-1).unit()
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))))
   }
+
+
+
 }
 
 class Edge {
@@ -118,7 +121,7 @@ class Face {
 class Vertex {
   constructor() {
     this.position = null // Vector
-    this.uv       = null // Vector
+    this.uv       = new Vector(0,0) // Vector
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
   }
@@ -449,6 +452,9 @@ export class HalfedgeMesh {
         current.twin = bhe
 
         current = next
+
+        this.boundaries.push(f)
+
       } while(current != he)
 
       // link the cycle of boundary halfedges together
@@ -459,6 +465,7 @@ export class HalfedgeMesh {
         hasTwin.set(bcycle[j], true)
         hasTwin.set(bcycle[j].twin, true)
       }
+
     }
 
     // reset indices
@@ -470,6 +477,7 @@ export class HalfedgeMesh {
     this.faces.forEach(f => { f.idx = index++ })
     index = 0
     this.halfedges.forEach(h => { h.idx = index++ })
+
   }
 
 
@@ -487,10 +495,197 @@ export class HalfedgeMesh {
     //
     // Hint:
     // 1. check if the mesh contains a boundary
-    // 2. compute boundary uv coordinates depending on the boundary type
-    // 3. compute matrix depending on the laplacian weight type
-    // 4. solve linear equation and assing computed uv as vertex uv
-    //
+    let boundaryHalfEdgesLength = this.boundaries.length
+    let numberOfVertices = this.vertices.length
+    let u = DenseMatrix.zeros(numberOfVertices, 1)
+    let v = DenseMatrix.zeros(numberOfVertices, 1)
+    let boundaryVerticesCache =new Array(numberOfVertices)
+    let boundaryVertices = []
 
+    if(boundaryHalfEdgesLength == 0)
+      return
+
+    this.boundaries.forEach((face, i) =>{
+      face.vertices((vertex) =>{
+        if(boundaryVerticesCache[vertex.idx] === undefined){
+          boundaryVerticesCache[vertex.idx] = vertex
+          boundaryVertices.push(vertex)
+        }
+
+      })
+    })
+
+    // 2. compute boundary uv coordinates depending on the boundary type
+    switch (boundaryType) {
+      case "disk":
+        let count = 0
+        const r = 0.5 // disk radius
+        boundaryVertices.forEach((vertex,i) =>{
+            if(vertex !==null){
+              let x = (r*Math.cos(2*Math.PI*i/boundaryHalfEdgesLength)) + 0.5
+              let y = (r*Math.sin(2*Math.PI*i/boundaryHalfEdgesLength)) + 0.5
+              vertex.uv.x= x
+              vertex.uv.y= y
+              u.set(x, vertex.idx, 0)
+              v.set(y, vertex.idx, 0)
+
+              count++
+            }
+        })
+        /**console.log(count)
+        count = 0
+        boundaryVerticesCache.forEach((t,i)=>{
+          console.log(t)
+          count++
+        })
+        console.log(count)
+        count = 0
+        boundaryVertices.forEach((t,i)=>{
+          console.log(t)
+          count++
+        })
+        console.log(count)**/
+        break;
+
+      case "rect":
+        let pointDistance = 4/boundaryHalfEdgesLength
+
+        let prevX = -pointDistance
+        let prevY = pointDistance
+        boundaryVertices.forEach((vertex, i) =>{
+          if(vertex !==null) {
+            let vertexUV = vertex.uv
+            let x = 0
+            let y = 0
+            if (prevX < 1 && prevY === 0) {
+              x = prevX + pointDistance
+              y = 0
+            } else if (prevX >= 1 && prevY < 1) {
+              x = 1
+              y = prevY + pointDistance
+            } else if (prevX > 0 && prevY >= 1) {
+              x = prevX - pointDistance
+              y = 1
+            } else {
+              x = 0
+              y = prevY - pointDistance
+            }
+            vertexUV.x = x
+            vertexUV.y = y
+            prevX = vertexUV.x
+            prevY = vertexUV.y
+            u.set(vertexUV.x, vertex.idx, 0)
+            v.set(vertexUV.y, vertex.idx, 0)
+          }
+        })
+        break;
+    }
+
+    // 3. compute matrix depending on the laplacian weight type
+    let L = this.laplaceMatrix(laplaceWeight,boundaryVerticesCache)
+
+    let luDecomposition = L.lu()
+
+    // 4. solve linear equation and assing computed uv as vertex uv
+    let solvedSquareU= luDecomposition.solveSquare(u)
+    let solvedSquareV= luDecomposition.solveSquare(v)
+    let c = 0
+    for(let index = 0; index<this.vertices.length;index++)
+    {
+        let vertex = this.vertices[index]
+        let resultU = solvedSquareU.get(index, 0) //+ 0.5
+        let resultV = solvedSquareV.get(index, 0) //+ 0.5
+        let currentUV = vertex.uv
+
+        //console.log("vertex.halfedge.twin.next.onBoundary:" + vertex.halfedge.twin.next.onBoundary
+         // +" vertex.halfedge.onBoundary: " + vertex.halfedge.onBoundary)
+
+       /* if(!vertex.halfedge.twin.next.onBoundary
+            && !vertex.halfedge.prev.twin.onBoundary
+            && !vertex.halfedge.onBoundary
+            && !vertex.halfedge.twin.onBoundary)
+        {*/
+       if(boundaryVerticesCache[vertex.idx] === undefined){
+          currentUV.x = resultU
+          currentUV.y = resultV
+        }
+        else{
+
+          //currentUV.x += 0.5
+          //currentUV.y += 0.5
+         /*c++
+         console.log("x:" + currentUV.x +" y:"+currentUV.y + " c:" + c)*/
+        }
+    }
+  }
+
+  laplaceMatrix(weightType,boundaryVerticesCache) {
+    const numberOfVertices = this.vertices.length
+    let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
+
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      let sum = 1e-8 // Tikhonov regularization to get strict positive definite
+      /*if(!vert.halfedge.twin.next.onBoundary
+          && !vert.halfedge.prev.twin.onBoundary
+          && !vert.halfedge.onBoundary){*/
+      if(boundaryVerticesCache[vert.idx] == null){
+        vert.halfedges(h => {
+          let w = 0
+
+          switch (weightType) {
+            case 'uniform':
+              w = 1
+              break
+            case 'cotan':
+              w = (h.cotan() + h.twin.cotan())/2
+          }
+
+          sum += w
+          //console.log("Value: "+w+" Position: ("+ i+","+h.twin.vertex.idx +")")
+          weightTriplet.addEntry(w, i, h.twin.vertex.idx)
+        })
+        weightTriplet.addEntry(-sum, i, i)
+        //console.log("Value: "+-sum+" Position: ("+ i+","+i +")")
+      }
+      else{
+        weightTriplet.addEntry(1, i, i)
+      }
+
+    }
+
+    let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
+
+    return weightMatrix
+  }
+
+  massMatrix(weightType){
+    const numberOfVertices = this.vertices.length
+    let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
+
+    for (const vert of this.vertices) {
+      const i = vert.idx
+
+      switch (weightType) {
+        case 'uniform':
+          let neighbours = 0
+          vert.halfedges(() => {
+            neighbours++
+          })
+
+          massTriplet.addEntry(neighbours,i,i)
+          break
+        case 'cotan':
+
+          let area = vert.voronoiCell()
+          // area alone is very small and destroys the smoothing
+          massTriplet.addEntry(1+area,i,i)
+          break
+      }
+    }
+
+    let massMatrix = SparseMatrix.fromTriplet(massTriplet)
+
+    return massMatrix
   }
 }
