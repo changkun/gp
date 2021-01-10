@@ -566,17 +566,17 @@ export class HalfedgeMesh {
         let x = 0
         let y = 0
         if (prevX > 0 && prevX <= 1 + pointDistance && prevY >= 1) {
-          x = prevX - pointDistance
+          x = this.roundTo0or1(prevX - pointDistance)
           y = 1
-        } else if (prevX <= 0 && prevY >= 0) {
+        } else if (prevX <= 0 && prevY > 0) {
           x = 0
-          y = prevY - pointDistance
+          y = this.roundTo0or1(prevY - pointDistance)
         } else if (prevX < 1 && prevY <= 0) {
-          x = prevX + pointDistance
+          x = this.roundTo0or1(prevX + pointDistance)
           y = 0
         } else if (prevX >= 1 && prevY < 1) {
           x = 1
-          y = prevY + pointDistance
+          y = this.roundTo0or1(prevY + pointDistance)
         }
         vertexUV.x = x
         vertexUV.y = y
@@ -586,6 +586,16 @@ export class HalfedgeMesh {
         v.set(vertexUV.y, vertex.idx, 0)
       }
     })
+  }
+
+  roundTo0or1(value){
+    if(value > 1){
+      return 1
+    }else if(value < 0){
+      return 0
+    }else{
+      return value
+    }
   }
 
   updateUVPosition(index, solvedSquareU, solvedSquareV, boundaryVerticesCache) {
