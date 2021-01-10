@@ -34,13 +34,13 @@ should answer the following questions:
 1. **Implementation complexity**: Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-Most time consuming was to implement the disk parameterization and finding the bug in the laplace matrix.
+Most time consuming was to implement the disk parameterization (~line 457) and finding the bug in the laplace matrix.
 Mostly because the results could not be debugged.
 After just plotting my calculated border-uvs I was also able to check if my border-uv-mapping was correct.
 Then after a while I found out, that my matrix is incorrect (values in the millions -> nothing rendered). 
 
-Square parameterization took some time too, mostly because it was always a differently rotated (than in the reference pictures).
-Creating a version is rotated in the same was took some time.
+Square parameterization (~line 469) took some time too, mostly because it was always a differently rotated (than in the reference pictures).
+Creating a version that is rotated in the same was took some time.
 ```
 
 2. **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
@@ -48,8 +48,8 @@ Creating a version is rotated in the same was took some time.
 ```
 Very hard to debug.
 Mostly because of the difficult matrix debugging.
-Bug: Laplace Matrix was wrong
-for the Border vertices value should be 1 and not anything else e.g. count of edges (in uniform case)  
+Bug: My Laplace Matrix was wrong
+For the Border vertices value should be 1 and not anything else e.g. should not include count of edges (in uniform case)  
 ```
 
 ## Reference Results

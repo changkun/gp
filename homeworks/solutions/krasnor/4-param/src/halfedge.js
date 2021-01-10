@@ -418,11 +418,10 @@ export class HalfedgeMesh {
       he.idx = index++
     })
 
-    console.log("n_bcycles: " + n_bcycles)
+    console.log("finished mesh parsing")
     console.log("boundary cycles: " + this.boundaries.length)
     console.log("boundary[0] length: " + this.boundaries[0]?.length)
-    console.log("finished mesh parsing")
-
+    console.log("")
   }
 
   /**
@@ -456,11 +455,7 @@ export class HalfedgeMesh {
     let uv_origin_vertex = -1;
     switch (boundaryType) {
       case 'disk':
-        const r = 0.5
-          console.log("n_bound_edges: %f",n_bound_edges);
         this.boundaries[0].forEach((hf, i) => {
-          // let u = (r*Math.cos(2*Math.PI * i/n_bound_edges)) +0.5
-          // let v = (r*Math.sin(2*Math.PI * i/n_bound_edges)) +0.5
           let u = (Math.cos(2*Math.PI * i/n_bound_edges))
           let v = (Math.sin(2*Math.PI * i/n_bound_edges))
           u = (u+1)/2 // normalize to [0,1]
@@ -472,73 +467,14 @@ export class HalfedgeMesh {
         })
         break
       case 'rect':
-        let verts_per_side = n_bound_edges / 4
         const step_offset = 1/(n_bound_edges/4)
-        let corner_snap = 0
-        let lock_u = false
-        let lock_val = 1
+        let corner_snap_stage = 0
         let counter = 1
 
-        console.log("rect case: hf: %f offset: %f",n_bound_edges,step_offset)
+        // console.log("rect case: hf: %f offset: %f",n_bound_edges,step_offset)
         this.boundaries[0].forEach((hf, i) => {
           let u = 0
           let v = 0
-
-          // let deg_rad_u = (Math.cos(2*Math.PI * i/n_bound_edges))
-          // let deg_rad_v = (Math.sin(-2*Math.PI * i/n_bound_edges))
-          //
-          // u = deg_rad_u;
-          // v = deg_rad_v;
-          //
-          // let sq = Math.sqrt(2)/2 //0.7071067812// // sqrt(2)/2M
-          //
-          // // works but could be nicer
-          // if(deg_rad_u < -sq){
-          //   console.log("side l")
-          //   u = 0; // l
-          //   v = (v+1)/2
-          //   if(corner_snap === 1){
-          //     u = 0
-          //     v = 0.0000000000001
-          //     corner_snap++
-          //     console.log("corner l")
-          //   }
-          // } else if (deg_rad_u > sq){
-          //   console.log("side r")
-          //   u = 1; // r
-          //   v = (v+1)/2
-          //   if(corner_snap === 3){
-          //     u = 1
-          //     v = 1
-          //     corner_snap++
-          //     console.log("corner r")
-          //   }
-          // } else if (deg_rad_v > 0){
-          //   console.log("side t")
-          //   u = (u+1)/2 // normalize to [0,1]
-          //   v = 1; // t
-          //
-          //   if(corner_snap === 2){
-          //     u = 0
-          //     v = 1
-          //     console.log("corner t")
-          //     corner_snap++
-          //   }
-          // } else { //if (deg_rad_v <= -sq){
-          //   console.log("side b")
-          //   u = (u+1)/2 // normalize to [0,1]
-          //   v = 0; // b
-          //   if(corner_snap === 0){
-          //     u = 1
-          //     v = 0
-          //     corner_snap++
-          //     console.log("corner b")
-          //   }
-          // }
-
-          // u = (u+1)/2 // normalize to [0,1]
-          // v = (v+1)/2
-
 
           // TODO rewrite
           // works but not nice
@@ -551,8 +487,8 @@ export class HalfedgeMesh {
             counter -= step_offset
             v = counter
           }else if(i <= Math.floor(1/2*n_bound_edges)){
-            if(corner_snap === 0){
-              corner_snap++
+            if(corner_snap_stage === 0){
+              corner_snap_stage++
               counter = 1
               u = 1
               v = 0
@@ -562,8 +498,8 @@ export class HalfedgeMesh {
               u = counter
             }
           }else if(i <= Math.floor(3/4*n_bound_edges)){
-            if(corner_snap === 1){
-              corner_snap++
+            if(corner_snap_stage === 1){
+              corner_snap_stage++
               counter = 0
               u = 0
               v = 0
@@ -574,8 +510,8 @@ export class HalfedgeMesh {
               v = counter
             }
           } else {
-            if(corner_snap === 2){
-              corner_snap++
+            if(corner_snap_stage === 2){
+              corner_snap_stage++
               counter = 0
               u = 0
               v = 1
@@ -585,9 +521,6 @@ export class HalfedgeMesh {
               u = counter
             }
           }
-
-          hf.vertex.uv.x = u
-          hf.vertex.uv.y = v
           U.set(u, hf.vertex.idx,0)
           V.set(v, hf.vertex.idx,0)
         })
@@ -597,10 +530,9 @@ export class HalfedgeMesh {
     }
 
     // 3. calc laplace matrix
-    let mat_L = this.laplaceMatrixAlt(laplaceWeight, U, V, uv_origin_vertex)
-    let mat_M = this.massMatrix(laplaceWeight)
+    let mat_L = this.laplaceMatrix(laplaceWeight, U, V, uv_origin_vertex)
 
-      // 4. solve equation
+    // 4. solve equation
     let lu = mat_L.lu()
     let solved_u =  lu.solveSquare(U)
     let solved_v =  lu.solveSquare(V)
@@ -619,9 +551,12 @@ export class HalfedgeMesh {
    * constructing the Laplace matrix. Possible value could be:
    * 'uniform', 'cotan'.
    *
+   * @param {DenseMatrix} U
+   * @param {DenseMatrix} V
+   * @param {number} uv_origin_vertex index of vertex at uv-position [0,0]
    * @returns {SparseMatrix}
    */
-  laplaceMatrixAlt(weightType, U, V, uv_origin_vertex = -1) {
+  laplaceMatrix(weightType, U, V, uv_origin_vertex = -1) {
     const n = this.vertices.length
     let T = new Triplet(n, n)
     for (const vert of this.vertices) {
@@ -629,7 +564,7 @@ export class HalfedgeMesh {
       let sum = 1e-8
 
       if (U.get(i) !== 0 || V.get(i) !== 0 || (i === uv_origin_vertex && i !== -1)) {
-        T.addEntry(1, i, i); // for the Border vertices value should be 1 and not anything else e.g. count of edges (in uniform case)
+        T.addEntry(1, i, i); // for the Border vertices value should be 1 and not anything else e.g. should not include count of edges (in uniform case)
       }else {
         vert.halfedges(h => {
           let w = 0
@@ -648,32 +583,6 @@ export class HalfedgeMesh {
     }
 
     return SparseMatrix.fromTriplet(T)
-  }
-  massMatrix(weightType){
-    const n = this.vertices.length;
-    let T = new Triplet(n, n);
-
-    for (const vert of this.vertices) {
-      const i = vert.idx;
-
-      let w = 0;
-      switch (weightType) {
-        case 'uniform':
-          // count neighbors
-          vert.halfedges(() => {
-            w++
-          });
-          T.addEntry(w,i,i);
-          break;
-        case 'cotan':
-          // surrounding area
-          w = vert.voronoiCell();
-          // if I implement it according to the slides (only Area) the result becomes too smooth
-          T.addEntry(1+w,i,i); // only w is too small -> too big changes in mesh; 1/w too big -> no noticeable changes
-          break;
-      }
-    }
-    return SparseMatrix.fromTriplet(T);
   }
 
 }
