@@ -46,7 +46,7 @@ Organization slides: [Link](https://changkun.de/s/gp-0-org)
 | 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) |
 | 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) |
 | 14.12.2020 | [Parameterization](https://changkun.de/s/gp-4-param) | [Tutte's Embedding](./homeworks/4-param/) |
-| 11.01.2021 | Remeshing | TBA |
+| 11.01.2021 | Remeshing | [Quadric Error Metric Simplification](./homeworks/5-remesh/) |
 | 25.01.2021 | Deformation | TBA |
 | 08.02.2021 | Data-driven Shape Analysis | TBA |
 | 22.02.2021 | Guest Talk: Industrial Modeling Practice | - |

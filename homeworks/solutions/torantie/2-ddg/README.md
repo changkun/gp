@@ -41,6 +41,7 @@ Creating the halfedge structure was the most time consuming (lines 233-385). Spe
 I gave edges, vertices and faces ids, starting from one, which resulted in the first coordinate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow. 
 I fixed the first issue by counting from 0 and the second one by triangulating the faces of my test cube.
 
+
 <img src="./src/Bug_Picture.png" height="120"/>
 
 ## Reference Results
