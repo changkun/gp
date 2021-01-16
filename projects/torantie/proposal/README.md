@@ -8,6 +8,8 @@
 
 A short abstract that summarizes your proposal. Maximum 200 words.
 
+The aim of this object is to give the existing halfedge structure from our exercises quadrilateral support and implement the Laplacian smooth with mean value weights.
+
 ## Motivation
 
 In this section, you should write a good introduction to the background of your project.
