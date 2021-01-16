@@ -1,3 +1,9 @@
+/**
+ * Copyright 2021 Changkun Ou <https://changkun.de>. All rights reserved.
+ * Use of this source code is governed by a GNU GLPv3 license that can be
+ * found in the LICENSE file.
+ */
+
 // API Usage about @penrose/linear-algebra:
 //
 //   - There are two types of matrices: SparseMatrix and DenseMatrix
