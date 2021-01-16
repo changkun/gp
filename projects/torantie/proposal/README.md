@@ -48,7 +48,10 @@ This section should discuss a concrete plan about how you plan to implement your
 5. How are you plan to solve all these issues and challenges?
 6. If you cannot solve them, what are your alternative solutions (Plan B)?
 
-The programming language will be JavaScript and three.js.
+The programming language will be JavaScript and three.js. These will be the milestones.
+1. building/adjusting the halfedge connectivity
+2. adjust handling of boundary edges
+3. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
 
 ## References
 
