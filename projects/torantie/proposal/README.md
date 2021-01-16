@@ -27,7 +27,8 @@ Note that it is acceptable if there is an existing implementation. What's import
 The programming language will be JavaScript and three.js. These will be the milestones.
 1. building/adjusting the halfedge connectivity
 2. adjust handling of boundary edges
-3. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
+3. edit normal calculation based on mesh type (triangular or quadrilateral)
+4. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
 
 ## References
 
