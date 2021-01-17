@@ -17,10 +17,8 @@ Our lecture already introduced the halfedge structure to us. This was inteded as
 
 I want to implement quadrilateral support for the existing halfedge structure we were using in our exercises and implement Laplacian smoothing with mean value weights.
 The project is mostly related to the content provided in lecture 1, 3 and 4. Specifically for the mean value weights of the Laplacian smooth, the paper of Floater describing mean value coordinates is relevant.
-This is releavnt to geometry processing since it extends a data structure used for storing geometry and shows a different represantion of a geometry object. Furthermore, it concerns itself with mesh smoothing which is releavnt to decrease noise in the mesh.
+This is relevant to geometry processing since it extends a data structure used for storing geometry and shows a different represantion of a geometry object. Furthermore, it concerns itself with mesh smoothing which is releavnt to decrease noise in the mesh.
 Half edge structures can be implemented in a multitude of ways (see Lutz Kettner and Kalle Rutanen) and the smoothing will be based on the paper from Floater and the lecture slides, therefore this project will not be based on an existing solution.
-
-Note that it is acceptable if there is an existing implementation. What's important is, you must do your implementation differently, e.g., an existing implementation was written in C++ and OpenGL, and you propose to implement it using JavaScript and three.js.
 
 ## Implementation
 
@@ -28,13 +26,14 @@ The programming language will be JavaScript and three.js. These will be the mile
 1. building/adjusting the halfedge connectivity
 2. adjust handling of boundary edges
 3. edit normal calculation based on mesh type (triangular or quadrilateral)
-4. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
+4. Implement a wireframe representation for the quad mesh
+5. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
+
+The 4th milestone could be a challenge since three.js doesn't have quad support (see K41) but subdivides the mesh into triangles. Since this is an exclusively cosmetic problem and doesn't concern the halfedge structures quad support, this might not be a priority to implement.
 
 ## References
 
-The reference section should list all possible resources (e.g., Research papers, blog posts, development documentation, YouTube videos, etc.) that can help you finish the implementation. All resources should be formulated in the following format and ordered by name: 
-
-- Author name. Title. Publish date. https://link.to.the/resource.
-- Floater MS. Mean value coordinates. Computer aided geometric design. 2003 Mar. http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.95.6026&rep=rep1&type=pdf
-- Lutz Kettner, Chapter 29 Halfedge Data Structures Tue, December 21, 2004 https://www.ics.uci.edu/~dock/manuals/cgal_manual/HalfedgeDS/Chapter_main.html
-- Kalle Rutanen, Half-edge structure, 16.12.2014 https://kaba.hilvi.org/homepage/blog/halfedge/halfedge.htm
+- Floater MS. Mean value coordinates. Computer aided geometric design. March, 2003 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.95.6026&rep=rep1&type=pdf
+- Lutz Kettner, Chapter 29 Halfedge Data Structures. December 21, 2004  https://www.ics.uci.edu/~dock/manuals/cgal_manual/HalfedgeDS/Chapter_main.html
+- Kalle Rutanen, Half-edge structure. December 16, 2014 https://kaba.hilvi.org/homepage/blog/halfedge/halfedge.htm
+- K41, Rendering quad mesh and it’s edges. May, 2017 https://discourse.threejs.org/t/rendering-quad-mesh-and-its-edges/424
