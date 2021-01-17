@@ -36,12 +36,13 @@ Milestones will be:
 4. Implement the Catmull–Clark Subdivision algorithm
 5. Add support to compare the original mesh and subdivided mesh, along with additional information (such as vertex count)
 
-Bigger challenge may encountered in Milestones 1, 3 and 4. 
+Bigger challenges may encountered in Milestones 1, 3 and 4:
 
 - Milestone 1: a lot of code has to be adjusted to enable the support for quadrilateral faces, checking validity and debugging the generated mesh will be difficult.
-- Milestone 3: Three.js does not support rendering of quadrilateral faces anymore,  thus another way has to be found to still render the halfedge structure with three.js. As this is mostly a visual problem and OpenGl typically would render the quadrilateral face as a pair of triangles my current approach will be to triangulate the mesh and overlay an wireframe material, that does only render the edges of the quadrilateral version of the mesh. This way the quadliteral version of the mesh can still be viewed.
+- Milestone 3: Three.js does not support rendering of quadrilateral faces anymore, thus another way has to be found to still render the halfedge structure with three.js. 
+  As this is mostly a visual problem and OpenGl/WebGL typically would render the quadrilateral face as a pair of triangles my current approach will be to triangulate the mesh and overlay an wireframe material, which only renders the edges of the quadrilateral mesh version. This way the quadrilateral mesh structure can still be observed.
 
-- Milestone4:  The Catmull–Clark Subdivision algorithm is a major component of the project, thus must work. A big difficulty will be to correctly linkup all newly generated vertices with the current mesh-structure.  
+- Milestone 4: The Catmull–Clark Subdivision algorithm is a major component of the project, thus must work. A big difficulty will be to correctly linkup all newly generated vertices with the current mesh structure.  
 
 ## References
 
