@@ -11,7 +11,7 @@ The aim of this project is to give the existing half-edge structure from our exe
 ## Motivation
 
 Our lecture already introduced the half-edge structure to us. This was intended as storage for a triangular mesh. Since the structure can also be used for quadrilateral meshes it could be interesting to extend the current implementation. Additionally, I want to focus on smoothing the different mesh structure. In the lectures and through our exercises we were introduced to Laplacian smoothing with uniform and cotan weight. I want to implement this smoothing and add the option of mean value weights, since i find the resulting mesh interesting.
-
+![see Floater](https://github.com/torantie/gp-ws2021/tree/project-proposal/projects/torantie/proposal/assets/mean_value.png)
 
 ## Proposal
 
