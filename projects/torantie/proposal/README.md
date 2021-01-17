@@ -6,11 +6,11 @@
 
 ## Abstract
 
-The aim of this object is to give the existing halfedge structure from our exercises quadrilateral support and implement the Laplacian smooth with mean value weights.
+The aim of this project is to give the existing halfedge structure from our exercises quadrilateral support and implement the Laplacian smooth with mean value weights.
 
 ## Motivation
 
-Our lecture already introduced the halfedge structure to us. This was inteded as storage for a triangular mesh. Since the structure can also be used for quadrilateral meshes it could be interseting to extend the current implementation. Additionally, i want to focus on smoothing the different mesh structure. In the lectures and through  our exercises we were introduced to Laplacian smoothing with uniform and cotan weight. I want to implement this smoothing and add the option of mean value weights, since i find the resulting mesh interesting.
+Our lecture already introduced the halfedge structure to us. This was inteded as storage for a triangular mesh. Since the structure can also be used for quadrilateral meshes it could be interesting to extend the current implementation. Additionally, i want to focus on smoothing the different mesh structure. In the lectures and through  our exercises we were introduced to Laplacian smoothing with uniform and cotan weight. I want to implement this smoothing and add the option of mean value weights, since i find the resulting mesh interesting.
 
 
 ## Proposal
