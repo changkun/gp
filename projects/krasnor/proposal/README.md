@@ -26,7 +26,7 @@ The implementation of the halfedge structure will be based on the already known 
 
 ## Implementation
 
-The project will be implemented in by the usage of HTML5, JavaScript, [Node.js](https://nodejs.org/) and [three.js](http://threejs.org/). 
+The project will be implemented by the usage of HTML5, JavaScript, [Node.js](https://nodejs.org/) and [three.js](http://threejs.org/). 
 
 Milestones will be:
 
@@ -39,7 +39,7 @@ Milestones will be:
 Bigger challenges may encountered in Milestones 1, 3 and 4:
 
 - Milestone 1: a lot of code has to be adjusted to enable the support for quadrilateral faces, checking validity and debugging the generated mesh will be difficult.
-- Milestone 3: Three.js does not support rendering of quadrilateral faces anymore, thus another way has to be found to still render the halfedge structure with three.js. 
+- Milestone 3: Three.js does not support rendering of quadrilateral faces, thus another way has to be found to still render the halfedge structure with three.js. 
   As this is mostly a visual problem and OpenGl/WebGL typically would render the quadrilateral face as a pair of triangles my current approach will be to triangulate the mesh and overlay an wireframe material, which only renders the edges of the quadrilateral mesh version. This way the quadrilateral mesh structure can still be observed.
 
 - Milestone 4: The Catmull–Clark Subdivision algorithm is a major component of the project, thus must work. A big difficulty will be to correctly linkup all newly generated vertices with the current mesh structure.  
