@@ -1,3 +1,9 @@
+/**
+ * Copyright 2021 Changkun Ou <https://changkun.de>. All rights reserved.
+ * Use of this source code is governed by a GNU GLPv3 license that can be
+ * found in the LICENSE file.
+ */
+
 const path = require('path')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
