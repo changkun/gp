@@ -23,11 +23,11 @@ Half edge structures can be implemented in a multitude of ways (see Lutz Kettner
 ## Implementation
 
 The programming language will be JavaScript and three.js. These will be the milestones.
-1. building/adjusting the halfedge connectivity
-2. adjust handling of boundary edges
-3. edit normal calculation based on mesh type (triangular or quadrilateral)
-4. Implement a wireframe representation for the quad mesh
-5. adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights
+1. Building/adjusting the halfedge connectivity.
+2. Adjust handling of boundary edges.
+3. Edit normal calculation based on mesh type (triangular or quadrilateral).
+4. Implement a wireframe representation for the quad mesh.
+5. Adapt smoothing calculations based on mesh type (triangular or quadrilateral) for cotan, uniform and mean value weights.
 
 The 4th milestone could be a challenge since three.js doesn't have quad support (see K41) but subdivides the mesh into triangles. Since this is an exclusively cosmetic problem and doesn't concern the halfedge structures quad support, this might not be a priority to implement.
 
