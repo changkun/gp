@@ -20,12 +20,13 @@ Our lecture already introduced the half-edge structure to us. This was intended 
 
 I want to implement quadrilateral support for the existing half-edge structure we were using in our exercises and implement Laplacian smoothing with mean value weights.
 The project is mostly related to the content provided in lecture 1, 3 and 4. Specifically for the mean value weights of the Laplacian smooth, the paper of Floater describing mean value coordinates is relevant.
-This is relevant to geometry processing since it extends a data structure used for storing geometry and shows a different representation of a geometry object. Furthermore, it concerns itself with mesh smoothing which is relevant to decrease noise in the mesh.
-Half edge structures can be implemented in a multitude of ways (see Lutz Kettner and Kalle Rutanen) and the smoothing will be based on the paper from Floater and the lecture slides, therefore this project will not be based on an existing solution.
+This is relevant to geometry processing since it extends a data structure used for storing geometry and shows a different representation of a geometry object. Furthermore, it concerns itself with mesh smoothing which is relevant to decrease noise in the mesh (see lecture 3, slide 5).
+Half edge structures can be implemented in a multitude of ways (see Lutz Kettner and Kalle Rutanen) and the smoothing will be based on the paper from Floater and the lecture slides, therefore this project will not be based on an existing code solution.
 
 ## Implementation
 
 The programming language will be JavaScript and three.js. These will be the milestones.
+
 1. Building/adjusting the half-edge connectivity.
 2. Adjust handling of boundary edges.
 3. Edit normal calculation based on mesh type (triangular or quadrilateral).
