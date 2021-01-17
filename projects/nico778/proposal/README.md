@@ -30,7 +30,7 @@ Originally(and ultimately) my plan was using C++, OpenGL and the QT Framework. B
 Like already mentioned, the proposed approach is the obvious naive solution. Using a plane as reference for the slicing process, we go through all the faces of the triangle mesh. We can then calculate which faces of the mesh are on which side of the plane. Based on that we the create the two resulting meshes. These meshes are not finished. We have to iterate through all faces of the original mesh that are intersected by the plane.
 These faces are split into 3 new faces(see section Implementation[1]). The main difficulty will probably be the building of these boundary faces. Considering my struggle with HW4, this part will take the most time. 
 Lastly our new meshes, whose number depends on the slice thickness) will be displayed as separate slices.
-Should this project turn out to be too easy(I doubt it), the algorithm could be improved "indefinitely" to handle genus >0 meshes[3]/more complex meshes, and work faster.
+Should this project turn out to be too easy(I doubt it), the algorithm could be improved "indefinitely" to handle genus > 0 meshes[3]/more complex meshes, and work faster.
 
 ## References
 
