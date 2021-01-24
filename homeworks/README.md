@@ -15,8 +15,8 @@ but it is always welcome to submit them all.
 | 10% | [Visualizing Curvatures](./2-ddg/) | ~~30.11.2020 00:00:00~~ 07.12.2020 00:00:00 |
 | 10% | [Laplacian Smoothing](./3-smooth/) | ~~14.12.2020 00:00:00~~ 21.12.2020 00:00:00 |
 | 10% | [Tutte's Embedding](4-param/) | 11.01.2021 00:00:00 |
-| 10% | [Quadric Error Metric Simplification](5-remesh/) | 25.01.2021 00:00:00 |
-| 10% | Homework 6 | 08.02.2021 00:00:00 |
+| 10% | [Quadric Error Metric Simplification](5-remesh/) | ~~25.01.2021~~ 08.02.2021 00:00:00 |
+| 10% | Homework 6 | ~~08.02.2021~~ 22.02.2021 00:00:00 |
 | 10% | Homework 7 | 22.02.2021 00:00:00 |
 
 ## Submission Instruction
