@@ -41,7 +41,8 @@ Think and answer the following questions:
 1. The complexity of the collapse algorithm and the calculations for the edgeError and target Vertex. 
 I do not think that the provided lecture adequately described what had to be done to solve the tasks/homework and the amount
 of work required far exceeded that of the previous homeworks. Most challenging was the task of collapsing edges, since it is hard to restructure
-the halfedge structure without braking something.
+the halfedge structure without breaking something. I was able to solve the edgeERror Problem i had. I forgot to to add the last row of edgeQuadric matrix times vector v 
+to the edge error, since the mulpos function only works with 3-dimensional vectors.
 
 2. In case the edgeQuadric was not invertible, I used a binary search inspired solution that searches for the lowest edge error. 
 I devided the space between a point x and a point y in half and searched in the middle of the area to the left and the area to the right 

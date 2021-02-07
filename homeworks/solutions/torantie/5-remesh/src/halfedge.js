@@ -108,24 +108,6 @@ class Edge {
     }
 
     return bestVertexPosition
-    /** DEbug
-    const n = 16
-    const a = this.halfedge.vertex.position
-    const b = this.halfedge.next.vertex.position
-    const d = b.sub(a)
-    let beste = -1.0
-    let bestv = new Vector()
-    for (let i = 0; i <= n; i++) {
-      const t = i / n
-      const v = a.add(d.scale(t))
-      const e = this.getQuadricError(edgeQuadric,v) // you need implement this yourself, which is calculating v^T q v :slight_smile:
-      if (beste < 0 || e < beste) {
-        beste = e
-        bestv = v
-      }
-    }
-
-    return bestv **/
   }
 
   isQuadricInvertible(edgeQuadric) {
@@ -206,20 +188,19 @@ class Edge {
     this.halfedge.prev.vertex.halfedge = this.halfedge.next.twin
     this.halfedge.twin.prev.vertex.halfedge = this.halfedge.twin.next.twin
 
-    //edge merge
+    //edge merge: merge the 4 edges by setting their twins
     this.halfedge.next.twin.twin = this.halfedge.prev.twin
     this.halfedge.prev.twin.twin = this.halfedge.next.twin
     //left up edge needs new halfedge as reference
-    if(this.halfedge.prev == this.halfedge.prev.edge.halfedge)
+    if(this.halfedge.prev.idx == this.halfedge.prev.edge.halfedge.idx)
       this.halfedge.prev.edge.halfedge = this.halfedge.next.twin
 
     this.halfedge.twin.next.twin.twin = this.halfedge.twin.prev.twin
     //left down edge needs new halfedge as reference
-    if(this.halfedge.twin.next == this.halfedge.twin.next.edge.halfedge)
+    if(this.halfedge.twin.next.idx == this.halfedge.twin.next.edge.halfedge.idx)
       this.halfedge.twin.next.edge.halfedge = this.halfedge.twin.prev.twin
 
     this.halfedge.twin.prev.twin.twin = this.halfedge.twin.next.twin
-
 
 
     return [vertexToDelete, edgesToDelete, halfedgesToDelete, facesToDelete]
@@ -581,7 +562,7 @@ export class HalfedgeMesh {
     if (reduceRatio === 0)
       return
 
-    const pq = new PriorityQueue( (a, b) => a.quadricError < b.quadricError)
+    let pq = new PriorityQueue( (a, b) => a.quadricError < b.quadricError)
 
 
 
@@ -592,22 +573,17 @@ export class HalfedgeMesh {
     })
 
 
-    let edgesToCollapse = Math.trunc(this.edges.length * reduceRatio)
+    let targetFaces = this.faces.length - Math.round(this.faces.length * reduceRatio)
 
     let allVerticesToDelete = []
     let allEdgesToDelete = []
     let allHalfedgesToDelete = []
     let allFacesToDelete = []
+    let deletedFaces = 0
 
-    for(let k = 0; k < edgesToCollapse; k++) {
+    for(let k = this.faces.length-deletedFaces; k > targetFaces; k=this.faces.length-deletedFaces) {
       const edge = pq.pop()
-      /**if(edge.isDeleted
-          || edge.halfedge.vertex.isDeleted
-          || edge.halfedge.face.isDeleted
-          || edge.halfedge.onBoundary
-          || edge.halfedge.twin.edge.isDeleted) {
-        continue;
-      }**/
+
       if(edge.isDeleted || edge.halfedge.onBoundary) {
         continue;
       }
@@ -617,17 +593,22 @@ export class HalfedgeMesh {
       allEdgesToDelete = allEdgesToDelete.concat(edgesToDelete)
       allHalfedgesToDelete = allHalfedgesToDelete.concat(halfedgesToDelete)
       allFacesToDelete = allFacesToDelete.concat(facesToDelete)
-      console.log("k: " + k)
+
+      deletedFaces = allFacesToDelete.length
+
+      //recalculate quadric errors
+      pq = new PriorityQueue( (a, b) => a.quadricError < b.quadricError)
+      this.edges.forEach(e => {
+
+        if(e.isDeleted) {
+          return;
+        }
+        e.targetVertexPosition = e.getTargetVertex()
+        e.quadricError = e.getQuadricError(e.edgeQuadric ,e.targetVertexPosition)
+        pq.push(e)
+      })
+
     }
-    // Debug Test for duplicates
-    /**let tmp = [this.vertices.length]
-    allVerticesToDelete.forEach((vertexToDelete) => {
-      if(tmp[vertexToDelete.idx] !== undefined){
-        console.log("not undefined")
-        return
-      }
-      tmp[vertexToDelete.idx] = 1
-    })**/
 
     this.vertices = this.vertices.filter((vertex) =>{
       return allVerticesToDelete.find((vertexToDelete) => vertex.idx === vertexToDelete.idx) == undefined
@@ -651,14 +632,6 @@ export class HalfedgeMesh {
     index = 0
     this.halfedges.forEach(h => { h.idx = index++ })
 
-    /*
-    const pq = new PriorityQueue()
-    edges.forEach(e => pq.enqueue(e)) // sort based on quadric error
-    for (; mesh.numFaces() > targetFaces; ) {
-        const edge = pq.dequeue()
-        if (edge is valid) edge.collapse()
-    }
-    * */
   }
 
 
