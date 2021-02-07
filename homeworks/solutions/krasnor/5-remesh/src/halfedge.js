@@ -529,10 +529,6 @@ export class HalfedgeMesh {
       if(e.idx === -1)
         continue; // outdated edge, ignore
 
-      let points = e.getVertices();
-      // if (points[0].idx === -1 || points[1].idx === -1){
-      //   console.log("edge wrong");
-      // }
       let real_face_cnt = 0;
       let deleted_face_cnt = 0;
       this.faces.forEach((v_f, index) => {
@@ -642,7 +638,8 @@ export class HalfedgeMesh {
       );
 
       // TODO instead of recalculating everything just recalculate affected vertices and edges
-      // store latest quadric/error value in a map
+      // store latest quadric/error value in a map then compare popped edge if the error value is the latest.
+      // If not ignore this edge as it has been updated.
 
       // recalc heap
       if(curr_face_cnt === 0 ){
