@@ -35,8 +35,8 @@ export default class Matrix {
     mm.x00 = this.x00 + m.x00
     mm.x10 = this.x10 + m.x10
     mm.x20 = this.x20 + m.x20
-    mm.x30 = this.x00 + m.x30
-    mm.x01 = this.x00 + m.x01
+    mm.x30 = this.x30 + m.x30
+    mm.x01 = this.x01 + m.x01
     mm.x11 = this.x11 + m.x11
     mm.x21 = this.x21 + m.x21
     mm.x31 = this.x31 + m.x31
