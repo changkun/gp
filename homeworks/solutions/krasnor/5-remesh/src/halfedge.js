@@ -2,10 +2,6 @@ import Vector from './vec'
 import Matrix from './mat'
 import PriorityQueue from './pq'
 
-import {
-  Matrix4
-} from "three";
-
 class Halfedge {
   constructor() {
     this.vertex = null // Vertex
@@ -120,18 +116,7 @@ class Vertex {
     case 'equal-weighted':
       // TODO: compute euqally weighted normal of this vertex
       // console.log("vertex: %s (old idx) %s (new idx) - hf: %s",this.oldIdx, this.idx, this.halfedge.oldIdx)
-      this.faces(f => {
-        let f_n = f.normal();
-        // if (f_n === null || Number.isNaN(f_n.x) || Number.isNaN(f_n.y) || Number.isNaN(f_n.z) ){
-        //   console.log("face (%s) normal is null or nan!", f.idx);
-        //   let uv_test = this.uv;
-        //   this.halfedges(
-        //       hf => console.log("hf idx %s, newIDx: %s", hf.oldIdx, hf.idx)
-        //   );
-        //   let f_n2 = f.normal();
-        // }
-        n = n.add(f.normal())
-      })
+      this.faces(f => { n = n.add(f.normal())})
       return n.unit()
     case 'area-weighted':
       // TODO: compute area weighted normal of this vertex
@@ -187,10 +172,7 @@ class Vertex {
           let normal = f.normal(); //.unit();
           let a = normal.x; let b = normal.y; let c = normal.z;
           let d = -(normal.dot(curr_vertex_pos));
-          let d2 = normal.scale(-1).dot(curr_vertex_pos);
 
-          let dbg_cond1 = a*a + b*b + c*c;
-          let dbg_cond2 = a*curr_vertex_pos.x + b*curr_vertex_pos.y + c*curr_vertex_pos.z + d;
           // calc fundamental error quadric
           let k = new Matrix(
               a*a, a*b, a*c, a*d,
@@ -539,15 +521,18 @@ export class HalfedgeMesh {
     }
     console.log("========= Starting to Collapse - current face count: %s - goal: %s", curr_face_cnt, reduce_face_goal);
 
-    // for(let i = 0; (curr_face_cnt >= reduce_face_goal) && i < 3; i++){ // stop after face goal reached or 3 iterations
-    for(let i = 0; (curr_face_cnt >= reduce_face_goal); i++){
+    for(let i = 0; (curr_face_cnt > reduce_face_goal) && (curr_face_cnt > 0); i++){
       let faces_removed = 0;
       let p = heap.pop();
       let e = p.pair; // Edge
       let m = p.mergePoint;
       if(e.idx === -1)
-        continue; // outdated edge
+        continue; // outdated edge, ignore
 
+      let points = e.getVertices();
+      // if (points[0].idx === -1 || points[1].idx === -1){
+      //   console.log("edge wrong");
+      // }
       let real_face_cnt = 0;
       let deleted_face_cnt = 0;
       this.faces.forEach((v_f, index) => {
@@ -558,14 +543,8 @@ export class HalfedgeMesh {
           }
         }
       );
-      // if(i == 3){
-      //   console.log("i is 3")
-      // }
-      // if(i == 4){
-      //   console.log("i is 4")
-      // }
 
-      // console.log("in collapse: %s - current cnt faces %s || real face count: %s, deleted: %s", i, curr_face_cnt, real_face_cnt, deleted_face_cnt);
+      console.log("in collapse: %s - current cnt faces %s || real face count: %s, deleted: %s", i, curr_face_cnt, real_face_cnt, deleted_face_cnt);
       let curr_hf = e.halfedge;
       let curr_hf_twin = curr_hf.twin;
       let curr_p1 = curr_hf.vertex;
@@ -576,6 +555,10 @@ export class HalfedgeMesh {
       new_vertex.idx = nxt_idx_vertices++;
       new_vertex.position = (new Vector()).add(m);
       new_vertex.halfedge = curr_hf.prev.twin;
+
+      if(new_vertex.halfedge.idx === -1){
+        console.log("new_vertex.halfedge.idx is invalid");
+      }
 
       // connect old halfedges to new vertex
       curr_p1.halfedges(
@@ -597,10 +580,12 @@ export class HalfedgeMesh {
           let f = i_hf.face;
           if(f != null){
             //     c
-            //  L / \ R
-            //   / f \
-            //   a--->b
+            //    / ^
+            // L / f \ R
+            //  v     \
+            //  a----->b
             //   i_hf
+
             let currFaceIdx = f.idx;
             let l = i_hf.prev;
             let r = i_hf.next;
@@ -624,8 +609,6 @@ export class HalfedgeMesh {
             r_t.edge.idx = -1;
             l_t.edge = new_edge;
             r_t.edge = new_edge;
-
-
 
             // mark as obsolete
             l.idx = -1;
@@ -657,9 +640,21 @@ export class HalfedgeMesh {
       heap = new PriorityQueue(
           (a, b) => a.error < b.error // min top
       );
-      Qs.set(new_vertex.idx, new_vertex.computeQi())
+
+      // TODO instead of recalculating everything just recalculate affected vertices and edges
+      // store latest quadric/error value in a map
 
       // recalc heap
+      if(curr_face_cnt === 0 ){
+        break; // no more faces left -> no decimation needed
+      }
+      for(let v_i = 0; v_i < this.vertices.length; v_i++){
+        let vert = this.vertices[v_i];
+        if( vert.idx === -1)
+          continue;
+        Qs.set(vert.idx, vert.computeQi())
+      }
+
       for(let h_i = 0; h_i < this.edges.length; h_i++){
         let edge = this.edges[h_i];
         if( edge.idx === -1)
@@ -674,7 +669,6 @@ export class HalfedgeMesh {
       // recalculated edge errors -> continue simplifying
     }
     console.log("========= Finished decimation - current face count: %s - goal was: %s", curr_face_cnt, reduce_face_goal);
-    console.log("Vertices: %d, Edges: %d, Faces: %d", this.vertices.length, this.edges.length, this.faces.length);
 
     // # cleanup - remove outdated data
 
@@ -704,6 +698,8 @@ export class HalfedgeMesh {
     for(let i = 0; i < this.faces.length; i++){
       this.faces[i].idx = i;
     }
+    console.log("Vertices: %d, Edges: %d, Faces: %d", this.vertices.length, this.edges.length, this.faces.length);
+
     // end of simplify
   }
 
@@ -750,19 +746,6 @@ export class HalfedgeMesh {
 
   /**
    *
-   * @param {Edge} edge
-   * @param {Vertex} mergePoint
-   */
-  collapseEdge(edge, mergePoint){
-    // set old vertices to new one
-    // unlink/delete edge, vertex
-
-    // TODO implement
-    return 0;
-  }
-
-  /**
-   *
    * @param q1 Matrix
    * @param q2 Matrix
    * @returns {{mergePoint: Vector, error: Number}}
@@ -803,6 +786,7 @@ export class HalfedgeMesh {
       }
       vbar = bestv
 
+      // alternative - take mid point, or one of the edge points
       // let v0 = edge.halfedge.vertex;
       // let v1 = edge.halfedge.next.vertex;
       // let err_v1 = this.calc_error_v2(Qbar,v0.position);
