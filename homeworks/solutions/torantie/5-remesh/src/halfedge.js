@@ -51,7 +51,7 @@ class Edge {
     this.setEdgeQuadric()
     const edgeQuadric = this.edgeQuadric
 
-    // is invertable
+    // is invertible
     if (this.isQuadricInvertible(edgeQuadric)) {
       edgeQuadric.x30 = 0
       edgeQuadric.x31 = 0
