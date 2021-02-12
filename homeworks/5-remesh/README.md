@@ -62,6 +62,6 @@ For this project, you should submit the following files (i.e. exclude the `asset
 └── webpack.config.js
 ```
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 25.01.2021 00:00:00.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before ~~25.01.2021~~ 08.02.2021 00:00:00.
 
 If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp-ws2021/discussions/5).
