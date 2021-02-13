@@ -402,7 +402,7 @@ export class HalfedgeMesh {
 
       for (let i = 0; i < indices.length; i += nOfEdges) {
 
-        let nFaceEdges = indices[i + nOfEdges] != -1 ? 4 : 3
+        let nFaceEdges = indices[i + (nOfEdges-1)] != -1 ? 4 : 3
 
           for (let j = 0; j < nFaceEdges; j++) { // check a face
               let a = indices[i + j]
@@ -446,7 +446,7 @@ export class HalfedgeMesh {
       this.faces[i / nOfEdges] = f
       // if it contains quads set default value to true else false
       let isQuad = containsQuad
-      let nFaceEdges = indices[i + nOfEdges] != -1 ? 4 : 3
+      let nFaceEdges = indices[i + (nOfEdges-1)] != -1 ? 4 : 3
 
       // construct halfedges of the face
       for (let j = 0; j < nFaceEdges; j++) {
@@ -454,21 +454,30 @@ export class HalfedgeMesh {
         this.halfedges[i+j] = he
       }
 
+        console.log("i: " + i)
+        console.log("nFaceEdges: " + nFaceEdges)
 
       // construct connectivities of the new halfedges
       for (let j = 0; j < nFaceEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
         let b = indices[i + (j+1)%nFaceEdges]
-
+          console.log("j: " + j)
+          console.log("indices[i + j]: " + indices[i + j])
         // halfedge properties
         const he = this.halfedges[i + j]
         he.next = this.halfedges[i + (j+1)%nFaceEdges]
         he.prev = this.halfedges[i + (j+(nFaceEdges-1))%nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
-
+          if(a == undefined){
+              console.log("a: " + a)
+          }
         const v = idx2vert.get(a)
+          if(v == undefined){
+
+              console.log("v: " + v.idx)
+          }
         he.vertex = v
         v.halfedge = he
 
