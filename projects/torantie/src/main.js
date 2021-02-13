@@ -206,10 +206,10 @@ export default class Main extends Renderer {
 
             //0
             idxs[n * f.idx + i] = idxs[n * f.idx]
-            //last vertex (4th) 3
-            idxs[n * f.idx + (i+1)] = v.idx
-            //prev vertex (3rd) 2
-            idxs[n * f.idx + (i+2)] = idxs[n * f.idx + (i-1)]
+          //prev vertex (3rd) 2
+            idxs[n * f.idx + (i+2)] = v.idx
+          //last vertex (4th) 3
+            idxs[n * f.idx + (i+1)] = idxs[n * f.idx + (i-1)]
 
         }else{
           idxs[n * f.idx + i] = v.idx

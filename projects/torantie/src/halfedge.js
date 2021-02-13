@@ -464,7 +464,7 @@ export class HalfedgeMesh {
         // halfedge properties
         const he = this.halfedges[i + j]
         he.next = this.halfedges[i + (j+1)%nFaceEdges]
-        he.prev = this.halfedges[i + (j+2)%nFaceEdges]
+        he.prev = this.halfedges[i + (j+(nFaceEdges-1))%nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
 
