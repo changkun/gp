@@ -161,23 +161,23 @@ class Face {
 
     getNormalQuad(){
         let x = this.halfedge.getVector()
-      let v = this.halfedge.vertex
-      console.log("x vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
+      //let v = this.halfedge.vertex
+      //console.log("x vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
 
         let y = this.halfedge.prev.twin.getVector()
 
-      let v2 = this.halfedge.prev.twin.vertex
-      console.log("y vertex id: "+ v2.idx +" x: "+ v2.position.x + " y: " + v2.position.y + " z: " +v2.position.z)
+      //let v2 = this.halfedge.prev.twin.vertex
+      //console.log("y vertex id: "+ v2.idx +" x: "+ v2.position.x + " y: " + v2.position.y + " z: " +v2.position.z)
         let firstTriangleNormal = (x.cross(y)).unit()
         let x2 = this.halfedge.prev.prev.getVector()
         let y2 = this.halfedge.next.twin.getVector()
         let secondTriangleNormal = (x2.cross(y2)).unit()
         let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5).unit()
-        this.vertices((v,i)=>{
+        /*this.vertices((v,i)=>{
           console.log("vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
         })
         let t = this.getNormalTriangle()
-
+*/
         return quadNormal
     }
 
@@ -401,15 +401,12 @@ export class HalfedgeMesh {
 
 
       for (let i = 0; i < indices.length; i += nOfEdges) {
-          for (let j = 0; j < nOfEdges; j++) { // check a face
-              let a = indices[i + j]
-              let b = indices[i + (j+1)%nOfEdges]
 
-              // if the index is -1 the face is a triangle. in that case set a as the previous index to close
-              // the loop back to the first index
-              if(a == -1){
-                  a = indices[i + j -1]
-              }
+        let nFaceEdges = (i + nOfEdges) != -1 ? 4 : 3
+
+          for (let j = 0; j < nFaceEdges; j++) { // check a face
+              let a = indices[i + j]
+              let b = indices[i + (j+1)%nFaceEdges]
 
               if (a > b) {
                   const tmp = b
@@ -449,30 +446,25 @@ export class HalfedgeMesh {
       this.faces[i / nOfEdges] = f
       // if it contains quads set default value to true else false
       let isQuad = containsQuad
+      let nFaceEdges = (i + nOfEdges) != -1 ? 4 : 3
+
       // construct halfedges of the face
-      for (let j = 0; j < nOfEdges; j++) {
+      for (let j = 0; j < nFaceEdges; j++) {
         const he = new Halfedge()
         this.halfedges[i+j] = he
       }
 
+
       // construct connectivities of the new halfedges
-      for (let j = 0; j < nOfEdges; j++) {
+      for (let j = 0; j < nFaceEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
-        let b = indices[i + (j+1)%nOfEdges]
-
-          // if the index is -1 the face is a triangle. in that case set a as the previous index to close
-          // the loop back to the first index
-          if(a == -1){
-            a = indices[i + j -1]
-            //since it has a -1 it is not a quad
-            isQuad = false
-          }
+        let b = indices[i + (j+1)%nFaceEdges]
 
         // halfedge properties
         const he = this.halfedges[i + j]
-        he.next = this.halfedges[i + (j+1)%nOfEdges]
-        he.prev = this.halfedges[i + (j+2)%nOfEdges]
+        he.next = this.halfedges[i + (j+1)%nFaceEdges]
+        he.prev = this.halfedges[i + (j+2)%nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
 

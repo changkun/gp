@@ -203,14 +203,14 @@ export default class Main extends Renderer {
       f.vertices((v, i) => {
 
         if(this.internal.mesh.isQuadMesh && i == 3){
-/*
+
             //0
             idxs[n * f.idx + i] = idxs[n * f.idx]
             //last vertex (4th) 3
             idxs[n * f.idx + (i+1)] = v.idx
             //prev vertex (3rd) 2
             idxs[n * f.idx + (i+2)] = idxs[n * f.idx + (i-1)]
-*/
+
         }else{
           idxs[n * f.idx + i] = v.idx
         }
