@@ -402,7 +402,7 @@ export class HalfedgeMesh {
 
       for (let i = 0; i < indices.length; i += nOfEdges) {
 
-        let nFaceEdges = (i + nOfEdges) != -1 ? 4 : 3
+        let nFaceEdges = indices[i + nOfEdges] != -1 ? 4 : 3
 
           for (let j = 0; j < nFaceEdges; j++) { // check a face
               let a = indices[i + j]
@@ -446,7 +446,7 @@ export class HalfedgeMesh {
       this.faces[i / nOfEdges] = f
       // if it contains quads set default value to true else false
       let isQuad = containsQuad
-      let nFaceEdges = (i + nOfEdges) != -1 ? 4 : 3
+      let nFaceEdges = indices[i + nOfEdges] != -1 ? 4 : 3
 
       // construct halfedges of the face
       for (let j = 0; j < nFaceEdges; j++) {
