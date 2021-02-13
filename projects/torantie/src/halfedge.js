@@ -146,6 +146,27 @@ class Face {
     return Math.abs(Math.pow(c.x, 2) + Math.pow(c.y, 2) + Math.pow(c.z, 2)) / 2
   }
 
+    getNormal(){
+      if(this.isQuad){
+          return this.getNormalQuad()
+      }else{
+          return this.getNormalTriangle()
+      }
+
+    }
+
+    getNormalQuad(){
+        let x = this.halfedge.getVector()
+        let y = this.halfedge.prev.twin.getVector()
+        let firstTriangleNormal = x.cross(y)
+        let x2 = this.halfedge.prev.prev.getVector()
+        let y2 = this.halfedge.next.twin.getVector()
+        let secondTriangleNormal = x2.cross(y2)
+        let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5)
+
+        return quadNormal
+    }
+
   getNormalTriangle() {
     let x = this.halfedge.getVector()
     let y = this.halfedge.prev.twin.getVector()
@@ -162,41 +183,26 @@ class Vertex {
     this.idx      = -1   // Number
   }
   normal(method='equal-weighted') {
-    /*
-    let n = new Vector()
-    switch (method) {
-    case 'equal-weighted':
-      // TODO: compute euqally weighted normal of this vertex
-
-    case 'area-weighted':
-      // TODO: compute area weighted normal of this vertex
-
-    case 'angle-weighted':
-      // TODO: compute angle weighted normal of this vertex
-
-    default: // undefined
-      return new Vector()
-    }*/
     let sum = new Vector()
 
     switch (method) {
       case 'equal-weighted':
         // TODO: compute euqally weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
-          sum = sum.add(currentHalfEdge.face.getNormalTriangle());
+          sum = sum.add(currentHalfEdge.face.getNormal());
         })
         break;
       case 'area-weighted':
         // TODO: compute area weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
-          sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.face.getAreaTriangle()));
+          sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.face.getAreaTriangle()));
         })
 
         break;
       case 'angle-weighted':
         // TODO: compute angle weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
-          sum = sum.add(currentHalfEdge.face.getNormalTriangle().scale(currentHalfEdge.getAngle()));
+          sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.getAngle()));
         })
         break;
       default: // undefined
@@ -328,7 +334,22 @@ export class HalfedgeMesh {
     let indices   = []
     let positions = []
     let lines = data.split('\n')
-    let isQuad = false
+    let containsQuad = false
+      // search for the a quad in the object file
+      for (let line of lines) {
+          line = line.trim()
+          const tokens = line.split(' ')
+          switch(tokens[0].trim()) {
+              case 'f':
+                  const isQuad = tokens.length == 5
+                  containsQuad = containsQuad || isQuad
+                  break;
+
+          }
+
+          if(containsQuad)
+              break;
+      }
 
     for (let line of lines) {
       line = line.trim()
@@ -340,11 +361,14 @@ export class HalfedgeMesh {
           ))
           continue
         case 'f':
-          isQuad = tokens.length >= 5
+          const isQuad = tokens.length == 5
+
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
+          if(containsQuad && !isQuad)
+              indices.push(-1)
 
           continue
       }
@@ -353,35 +377,40 @@ export class HalfedgeMesh {
     // build the halfedge connectivity
     const edges = new Map()
     let nOfEdges = 3
-    if(isQuad){
+    if(containsQuad){
       this.isQuadMesh = true
       nOfEdges = 4
     }
 
 
-    for (let i = 0; i < indices.length; i += nOfEdges) {
-      for (let j = 0; j < nOfEdges; j++) { // check a face
-        let a = indices[i + j]
-        let b = indices[i + (j+1)%nOfEdges]
+      for (let i = 0; i < indices.length; i += nOfEdges) {
+          for (let j = 0; j < nOfEdges; j++) { // check a face
+              let a = indices[i + j]
+              let b = indices[i + (j+1)%nOfEdges]
 
+              // if the index is -1 the face is a triangle. in that case set a as the previous index to close
+              // the loop back to the first index
+              if(a == -1){
+                  a = indices[i + j -1]
+              }
 
-        if (a > b) {
-          const tmp = b
-          b = a
-          a = tmp
-        }
+              if (a > b) {
+                  const tmp = b
+                  b = a
+                  a = tmp
+              }
 
-        // store the edge if not exists
-        const e = `${a}-${b}`
-        if (!edges.has(e)) {
-          edges.set(e, [a, b])
-        }
+              // store the edge if not exists
+              const e = `${a}-${b}`
+              if (!edges.has(e)) {
+                  edges.set(e, [a, b])
+              }
+          }
       }
-    }
 
     this.vertices   = new Array(positions.length)
     this.edges      = new Array(edges.size)
-    this.faces      = new Array(indices.length / 3)
+    this.faces      = new Array(indices.length / nOfEdges)
     this.halfedges  = new Array(edges.size*2)
 
     const idx2vert = new Map()
@@ -413,6 +442,12 @@ export class HalfedgeMesh {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
         let b = indices[i + (j+1)%nOfEdges]
+
+          // if the index is -1 the face is a triangle. in that case set a as the previous index to close
+          // the loop back to the first index
+          if(a == -1){
+              a = indices[i + j -1]
+          }
 
         // halfedge properties
         const he = this.halfedges[i + j]

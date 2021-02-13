@@ -124,11 +124,10 @@ export default class Main extends Renderer {
   updateNormals() {
     this.internal.mesh.vertices.forEach(v => {
       const n = v.normal(this.params.normalMethod)
-      const nOfEdges = v.face.getNumberOfEdges()
 
-      this.bufnormals[nOfEdges*v.idx+0] = n.x
-      this.bufnormals[nOfEdges*v.idx+1] = n.y
-      this.bufnormals[nOfEdges*v.idx+2] = n.z
+      this.bufnormals[3*v.idx+0] = n.x
+      this.bufnormals[3*v.idx+1] = n.y
+      this.bufnormals[3*v.idx+2] = n.z
     })
     this.internal.mesh3js.geometry.attributes.normal.needsUpdate = true
     this.internal.normalHelper.update()
@@ -166,39 +165,55 @@ export default class Main extends Renderer {
     // prepare new data
     const g = new BufferGeometry()
     const v = this.internal.mesh.vertices.length
-    const isQuadMesh = this.internal.mesh.isQuadMesh
-    let nOfEdges = 3
-    if(isQuadMesh){
-      nOfEdges = 4
-    }
 
-    this.bufpos     = new Float32Array(v*nOfEdges)
-    this.bufcolors  = new Float32Array(v*nOfEdges)
-    this.bufnormals = new Float32Array(v*nOfEdges)
+    this.bufpos     = new Float32Array(v*3)
+    this.bufcolors  = new Float32Array(v*3)
+    this.bufnormals = new Float32Array(v*3)
 
     const [center, radius] = this.computeAABB()
     this.internal.mesh.vertices.forEach(v => {
       const i = v.idx
       // use AABB and rescale to viewport center
       const p = v.position.sub(center).scale(1/radius)
-      this.bufpos[nOfEdges*i+0] = p.x
-      this.bufpos[nOfEdges*i+1] = p.y
-      this.bufpos[nOfEdges*i+2] = p.z
+      this.bufpos[3*i+0] = p.x
+      this.bufpos[3*i+1] = p.y
+      this.bufpos[3*i+2] = p.z
 
       // default GP blue color
-      this.bufcolors[nOfEdges*i+0] = 0
-      this.bufcolors[nOfEdges*i+1] = 0.5
-      this.bufcolors[nOfEdges*i+2] = 1
+      this.bufcolors[3*i+0] = 0
+      this.bufcolors[3*i+1] = 0.5
+      this.bufcolors[3*i+2] = 1
 
       const n = v.normal(this.params.normalMethod)
-      this.bufnormals[nOfEdges*i+0] = n.x
-      this.bufnormals[nOfEdges*i+1] = n.y
-      this.bufnormals[nOfEdges*i+2] = n.z
+      this.bufnormals[3*i+0] = n.x
+      this.bufnormals[3*i+1] = n.y
+      this.bufnormals[3*i+2] = n.z
     })
+    // TODO
 
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*nOfEdges)
+    let n = 3
+    if(this.internal.mesh.isQuadMesh){
+      n = 6
+    }
+
+    const idxs = new Uint32Array(this.internal.mesh.faces.length*n)
     this.internal.mesh.faces.forEach(f => {
-      f.vertices((v, i) => { idxs[nOfEdges * f.idx + i] = v.idx })
+      f.vertices((v, i) => {
+
+        if(this.internal.mesh.isQuadMesh && i == 3){
+
+            //0
+            idxs[n * f.idx + i] = idxs[n * f.idx]
+            //last vertex (4th)
+            idxs[n * f.idx + (i+1)] = v.idx
+            //prev vertex (3rd)
+            idxs[n * f.idx + (i+2)] = idxs[n * f.idx + (i-1)]
+
+        }else{
+          idxs[n * f.idx + i] = v.idx
+        }
+
+      })
     })
 
     g.setIndex(new BufferAttribute(idxs, 1));
