@@ -100,7 +100,7 @@ export default class Main extends Renderer {
     smoothing.open()
 
     // just for the first load
-    fetch('./assets/bunny_tri.obj')
+    fetch('./assets/testCube.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -188,6 +188,8 @@ export default class Main extends Renderer {
       this.bufnormals[3*i+0] = n.x
       this.bufnormals[3*i+1] = n.y
       this.bufnormals[3*i+2] = n.z
+
+      //console.log("vertex id: "+ v.idx +" x: "+ n.x + " y: " + n.y + " z: " +n.z)
     })
     // TODO
 
@@ -201,19 +203,24 @@ export default class Main extends Renderer {
       f.vertices((v, i) => {
 
         if(this.internal.mesh.isQuadMesh && i == 3){
-
+/*
             //0
             idxs[n * f.idx + i] = idxs[n * f.idx]
-            //last vertex (4th)
+            //last vertex (4th) 3
             idxs[n * f.idx + (i+1)] = v.idx
-            //prev vertex (3rd)
+            //prev vertex (3rd) 2
             idxs[n * f.idx + (i+2)] = idxs[n * f.idx + (i-1)]
-
+*/
         }else{
           idxs[n * f.idx + i] = v.idx
         }
 
       })
+    })
+
+    this.internal.mesh.faces.forEach(f => {
+      let n = f.getNormal()
+      console.log("face id: "+ f.idx +" x: "+ n.x + " y: " + n.y + " z: " +n.z)
     })
 
     g.setIndex(new BufferAttribute(idxs, 1));

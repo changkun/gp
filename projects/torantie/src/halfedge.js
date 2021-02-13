@@ -62,7 +62,8 @@ class Halfedge {
 
   // TODO: you can add more methods if you need here
   getVector() {
-    return this.twin.vertex.position.sub(this.vertex.position)
+    const vector = this.twin.vertex.position.sub(this.vertex.position)
+    return vector
   }
 
 
@@ -72,14 +73,18 @@ class Halfedge {
     }
     const u = this.prev.getVector()
     const v = this.next.getVector().scale(-1)
-    return u.dot(v) / u.cross(v).norm()
+    const c = u.dot(v) / u.cross(v).norm()
+
+    return c
   }
 
   getAngle() {
     let a = this.getVector()
     let b = this.prev.twin.getVector()
     let dot = a.unit().dot(b.unit())
-    return Math.acos(dot)
+    let angle = Math.acos(dot)
+
+    return angle
   }
 
 }
@@ -152,17 +157,26 @@ class Face {
       }else{
           return this.getNormalTriangle()
       }
-
     }
 
     getNormalQuad(){
         let x = this.halfedge.getVector()
+      let v = this.halfedge.vertex
+      console.log("x vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
+
         let y = this.halfedge.prev.twin.getVector()
-        let firstTriangleNormal = x.cross(y)
+
+      let v2 = this.halfedge.prev.twin.vertex
+      console.log("y vertex id: "+ v2.idx +" x: "+ v2.position.x + " y: " + v2.position.y + " z: " +v2.position.z)
+        let firstTriangleNormal = (x.cross(y)).unit()
         let x2 = this.halfedge.prev.prev.getVector()
         let y2 = this.halfedge.next.twin.getVector()
-        let secondTriangleNormal = x2.cross(y2)
-        let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5)
+        let secondTriangleNormal = (x2.cross(y2)).unit()
+        let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5).unit()
+        this.vertices((v,i)=>{
+          console.log("vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
+        })
+        let t = this.getNormalTriangle()
 
         return quadNormal
     }
@@ -170,8 +184,9 @@ class Face {
   getNormalTriangle() {
     let x = this.halfedge.getVector()
     let y = this.halfedge.prev.twin.getVector()
+    let triangleNormal = x.cross(y)
 
-    return x.cross(y)
+    return triangleNormal.unit()
   }
 
 }
@@ -209,7 +224,9 @@ class Vertex {
         return new Vector()
     }
 
-    return sum.scale(1 / sum.norm())
+    const normal = sum.scale(1 / sum.norm())
+
+    return normal
   }
 
   // TODO: you can add more methods if you need here
@@ -430,7 +447,8 @@ export class HalfedgeMesh {
       // construct face
       const f = new Face()
       this.faces[i / nOfEdges] = f
-
+      // if it contains quads set default value to true else false
+      let isQuad = containsQuad
       // construct halfedges of the face
       for (let j = 0; j < nOfEdges; j++) {
         const he = new Halfedge()
@@ -446,7 +464,9 @@ export class HalfedgeMesh {
           // if the index is -1 the face is a triangle. in that case set a as the previous index to close
           // the loop back to the first index
           if(a == -1){
-              a = indices[i + j -1]
+            a = indices[i + j -1]
+            //since it has a -1 it is not a quad
+            isQuad = false
           }
 
         // halfedge properties
@@ -493,6 +513,9 @@ export class HalfedgeMesh {
 
         // FIXME: non-manifold edge count checking
       }
+
+
+      f.isQuad = isQuad
     }
 
     // create boundary halfedges and hidden faces for the boundary
