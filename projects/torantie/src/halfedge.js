@@ -96,6 +96,7 @@ class Face {
   constructor() {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
+    this.isQuad = false
   }
   // vertices visit all vertices of the given face, and 
   // fn is a callback that receives the visited vertices
@@ -130,6 +131,14 @@ class Face {
   }
   // TODO: you can add more methods if you need here
 
+  getNumberOfEdges(){
+    let nOfEdges = 3
+
+    if(this.isQuad)
+      nOfEdges = 4
+
+    return nOfEdges
+  }
   getAreaTriangle() {
     const a = this.halfedge.vertex.position
     const b = this.halfedge.next.vertex.position
@@ -273,6 +282,9 @@ export class HalfedgeMesh {
             face.halfedge = createdHalfEdges[0]
 
             this.faces.push(face)
+
+
+
             break;
 
           case "s":
@@ -292,7 +304,7 @@ export class HalfedgeMesh {
       console.error(e)
     }
   }
-
+*/
 
 
   /**
@@ -308,6 +320,7 @@ export class HalfedgeMesh {
     this.faces     = [] // an array of Face object
     this.halfedges = [] // an array of Halfedge object
     this.vertsOrig = []
+    this.isQuadMesh = false
 
     // TODO: read .obj format and construct its halfedge representation
 
@@ -315,6 +328,8 @@ export class HalfedgeMesh {
     let indices   = []
     let positions = []
     let lines = data.split('\n')
+    let isQuad = false
+
     for (let line of lines) {
       line = line.trim()
       const tokens = line.split(' ')
@@ -325,20 +340,30 @@ export class HalfedgeMesh {
           ))
           continue
         case 'f':
+          isQuad = tokens.length >= 5
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
+
           continue
       }
     }
 
     // build the halfedge connectivity
     const edges = new Map()
-    for (let i = 0; i < indices.length; i += 3) {
-      for (let j = 0; j < 3; j++) { // check a face
+    let nOfEdges = 3
+    if(isQuad){
+      this.isQuadMesh = true
+      nOfEdges = 4
+    }
+
+
+    for (let i = 0; i < indices.length; i += nOfEdges) {
+      for (let j = 0; j < nOfEdges; j++) { // check a face
         let a = indices[i + j]
-        let b = indices[i + (j+1)%3]
+        let b = indices[i + (j+1)%nOfEdges]
+
 
         if (a > b) {
           const tmp = b
@@ -372,27 +397,27 @@ export class HalfedgeMesh {
     let hasTwin = new Map()
 
     // construct halfedges, edges
-    for (let i = 0; i < indices.length; i += 3) {
+    for (let i = 0; i < indices.length; i += nOfEdges) {
       // construct face
       const f = new Face()
-      this.faces[i / 3] = f
+      this.faces[i / nOfEdges] = f
 
       // construct halfedges of the face
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < nOfEdges; j++) {
         const he = new Halfedge()
         this.halfedges[i+j] = he
       }
 
       // construct connectivities of the new halfedges
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < nOfEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
-        let b = indices[i + (j+1)%3]
+        let b = indices[i + (j+1)%nOfEdges]
 
         // halfedge properties
         const he = this.halfedges[i + j]
-        he.next = this.halfedges[i + (j+1)%3]
-        he.prev = this.halfedges[i + (j+2)%3]
+        he.next = this.halfedges[i + (j+1)%nOfEdges]
+        he.prev = this.halfedges[i + (j+2)%nOfEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
 
@@ -629,4 +654,104 @@ export class HalfedgeMesh {
       }
     }
   }
+
+
+  getValuesAndCommand(line) {
+    //clean up
+    line = line.replace("\r", "")
+    let values = line.split(" ")
+    let command = values[0]
+    //remove command string from values
+    values.shift()
+    return {values, command};
+  }
+
+  createHalfEdges(faceValues, face) {
+    let faceVertices = []
+    this.extractVertices(faceValues, faceVertices);
+
+    let createdHalfEdges = []
+
+    for (let i = 0; i < faceVertices.length; i++) {
+
+      let currentVertex = faceVertices[i]
+      let nextVertex = null
+      if (i + 1 !== faceVertices.length) {
+        nextVertex = faceVertices[i + 1]
+      } else {
+        nextVertex = faceVertices[0]
+      }
+
+      let existingHalfedge = null
+
+      existingHalfedge = this.halfedgesDict[currentVertex.idx + ":" + nextVertex.idx]
+      if (existingHalfedge === null || existingHalfedge === undefined) {
+        existingHalfedge = this.halfedgesDict[nextVertex.idx + ":" + currentVertex.idx]
+      }
+
+      if (existingHalfedge !== null && existingHalfedge !== undefined) {
+        existingHalfedge.face = face
+        existingHalfedge.onBoundary = false
+        createdHalfEdges.push(existingHalfedge)
+        continue;
+      }
+
+      let edge = new Edge()
+      edge.idx = this.edges.length
+      this.edges.push(edge)
+
+      let halfEdge = new Halfedge(currentVertex, edge, face, this.halfedges.length)
+      edge.halfedge = halfEdge
+
+      if (currentVertex.halfedge === null)
+        currentVertex.halfedge = halfEdge
+
+      halfEdge.twin = new Halfedge(nextVertex, edge, null, this.halfedges.length + 1, null, null, null, true)
+      halfEdge.twin.twin = halfEdge
+
+      createdHalfEdges.push(halfEdge)
+      this.halfedgesDict[halfEdge.vertex.idx + ":" + halfEdge.twin.vertex.idx] = halfEdge
+      this.halfedgesDict[halfEdge.twin.vertex.idx + ":" + halfEdge.vertex.idx] = halfEdge.twin
+      this.halfedges.push(halfEdge)
+      this.halfedges.push(halfEdge.twin)
+    }
+
+    return createdHalfEdges
+  }
+
+  extractVertices(faceValues, faceVertices) {
+    let faceVertexIds = []
+
+    //v: 0 vt: 1 vn: 2
+    faceValues.forEach((value) => {
+      faceVertexIds.push(value.split("/"))
+    })
+
+    faceVertexIds.forEach((vertexId) => {
+      faceVertices.push(this.vertices[vertexId[0] - 1])
+    })
+  }
+
+  linkCreatedHalfEdges(createdHalfEdges) {
+    for (let i = 0; i < createdHalfEdges.length; i++) {
+      let nextHalfEdge = null;
+      let prevHalfEdge = null;
+
+      if (i + 1 < createdHalfEdges.length) {
+        nextHalfEdge = createdHalfEdges[i + 1]
+      } else {
+        nextHalfEdge = createdHalfEdges[0]
+      }
+      if (i - 1 >= 0) {
+        prevHalfEdge = createdHalfEdges[i - 1]
+      } else {
+        prevHalfEdge = createdHalfEdges[createdHalfEdges.length - 1]
+      }
+
+      createdHalfEdges[i].next = nextHalfEdge
+      createdHalfEdges[i].prev = prevHalfEdge
+    }
+  }
+
+
 }
