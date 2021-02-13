@@ -402,7 +402,7 @@ export class HalfedgeMesh {
 
       for (let i = 0; i < indices.length; i += nOfEdges) {
 
-        let nFaceEdges = indices[i + (nOfEdges-1)] != -1 ? 4 : 3
+        let nFaceEdges = indices[i + (nOfEdges-1)] != -1 && containsQuad  ? 4 : 3
 
           for (let j = 0; j < nFaceEdges; j++) { // check a face
               let a = indices[i + j]
@@ -438,6 +438,7 @@ export class HalfedgeMesh {
     let eidx = 0
     let existedHe = new Map()
     let hasTwin = new Map()
+    let trueIndex = 0
 
     // construct halfedges, edges
     for (let i = 0; i < indices.length; i += nOfEdges) {
@@ -445,14 +446,15 @@ export class HalfedgeMesh {
       const f = new Face()
       this.faces[i / nOfEdges] = f
       // if it contains quads set default value to true else false
-      let isQuad = containsQuad
-      let nFaceEdges = indices[i + (nOfEdges-1)] != -1 ? 4 : 3
+      let isQuad = indices[i + (nOfEdges-1)] != -1 && containsQuad
+      let nFaceEdges = isQuad ? 4 : 3
 
       // construct halfedges of the face
       for (let j = 0; j < nFaceEdges; j++) {
         const he = new Halfedge()
-        this.halfedges[i+j] = he
+        this.halfedges[trueIndex+j] = he
       }
+
 
         console.log("i: " + i)
         console.log("nFaceEdges: " + nFaceEdges)
@@ -462,12 +464,13 @@ export class HalfedgeMesh {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
         let b = indices[i + (j+1)%nFaceEdges]
+        console.log("i: " + i)
           console.log("j: " + j)
           console.log("indices[i + j]: " + indices[i + j])
         // halfedge properties
-        const he = this.halfedges[i + j]
-        he.next = this.halfedges[i + (j+1)%nFaceEdges]
-        he.prev = this.halfedges[i + (j+(nFaceEdges-1))%nFaceEdges]
+        const he = this.halfedges[trueIndex + j]
+        he.next = this.halfedges[trueIndex + (j+1)%nFaceEdges]
+        he.prev = this.halfedges[trueIndex + (j+(nFaceEdges-1))%nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
           if(a == undefined){
@@ -515,13 +518,13 @@ export class HalfedgeMesh {
         // FIXME: non-manifold edge count checking
       }
 
-
+      trueIndex += nFaceEdges
       f.isQuad = isQuad
     }
-
+    let halfedgeSize = this.halfedges.length
     // create boundary halfedges and hidden faces for the boundary
-    let hidx = indices.length
-    for (let i = 0; i < indices.length; i++) {
+    let hidx = trueIndex
+    for (let i = 0; i < trueIndex; i++) {
       const he = this.halfedges[i]
       if (hasTwin.get(he)) {
         continue
@@ -539,6 +542,9 @@ export class HalfedgeMesh {
 
         // grab the next halfedge along the boundary that does not
         // have a twin halfedge
+        if(current == undefined){
+          console.log("bound i: " + i)
+        }
         let next = current.next
         while (hasTwin.get(next)) {
           next = next.twin.next
