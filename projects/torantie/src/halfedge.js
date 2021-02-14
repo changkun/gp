@@ -78,6 +78,20 @@ class Halfedge {
     return c
   }
 
+  meanValueWeight(){
+    if (this.onBoundary) {
+      return 0
+    }
+
+    const gamma = this.getAngle()
+    const delta = this.twin.next.getAngle()
+    const weight =Math.tan(gamma/2) + Math.tan(delta/2)
+    //||vi -v0||
+    const viMv0 = this.getVector().norm()
+
+    return weight / viMv0
+  }
+
   getAngle() {
     let a = this.getVector()
     let b = this.prev.twin.getVector()
@@ -116,7 +130,6 @@ class Face {
   //
   //    f.vertices(v => { ... })
   vertices(fn) {
-    // TODO: iterate all vertices.
     try {
       const firstHalfEdge = this.halfedge
       const secondHalfEdge = firstHalfEdge.next
@@ -134,16 +147,7 @@ class Face {
     }
 
   }
-  // TODO: you can add more methods if you need here
 
-  getNumberOfEdges(){
-    let nOfEdges = 3
-
-    if(this.isQuad)
-      nOfEdges = 4
-
-    return nOfEdges
-  }
   getAreaTriangle() {
     const a = this.halfedge.vertex.position
     const b = this.halfedge.next.vertex.position
@@ -159,25 +163,19 @@ class Face {
       }
     }
 
+    /**
+   * Get the average of the two triangles making up the quad.
+   */
     getNormalQuad(){
         let x = this.halfedge.getVector()
-      //let v = this.halfedge.vertex
-      //console.log("x vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
-
         let y = this.halfedge.prev.twin.getVector()
 
-      //let v2 = this.halfedge.prev.twin.vertex
-      //console.log("y vertex id: "+ v2.idx +" x: "+ v2.position.x + " y: " + v2.position.y + " z: " +v2.position.z)
         let firstTriangleNormal = (x.cross(y)).unit()
         let x2 = this.halfedge.prev.prev.getVector()
         let y2 = this.halfedge.next.twin.getVector()
         let secondTriangleNormal = (x2.cross(y2)).unit()
         let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5).unit()
-        /*this.vertices((v,i)=>{
-          console.log("vertex id: "+ v.idx +" x: "+ v.position.x + " y: " + v.position.y + " z: " +v.position.z)
-        })
-        let t = this.getNormalTriangle()
-*/
+
         return quadNormal
     }
 
@@ -263,78 +261,6 @@ export class HalfedgeMesh {
    * constructor constructs the halfedge-based mesh representation.
    *
    * @param {string} data is a text string from an .obj file
-   */
-  /*constructor(data) {
-    // properties we plan to cache
-    this.vertsOrig = [] // an array of original vertex information
-    this.vertices  = [] // an array of Vertex object
-    this.edges     = [] // an array of Edge object
-    this.faces     = [] // an array of Face object
-    this.halfedges = [] // an array of Halfedge object
-    this.halfedgesDict = {}
-
-    // TODO: read .obj format and construct its halfedge representation
-    let lines = data.split("\n")
-
-    try {
-      for (let i = 0; i < lines.length; i++) {
-        let {values, command} = this.getValuesAndCommand(lines[i]);
-
-        switch (command) {
-          case "v":
-            let vertex = new Vertex()
-            vertex.position = new Vector(parseFloat(values[0]), parseFloat(values[1]), parseFloat(values[2]))
-            vertex.idx = this.vertices.length
-            this.vertices.push(vertex)
-            break;
-
-          case "vt":
-            break;
-
-          case "vn":
-            break;
-
-          case "f":
-            let face = new Face()
-            face.idx = this.faces.length
-
-            let createdHalfEdges = this.createHalfEdges(values, face)
-
-            this.linkCreatedHalfEdges(createdHalfEdges);
-
-            face.halfedge = createdHalfEdges[0]
-
-            this.faces.push(face)
-
-
-
-            break;
-
-          case "s":
-            break;
-        }
-      }
-
-      for (const vertex of this.vertices) {
-        let vertexCopy = new Vertex()
-        vertexCopy.idx = vertex.idx
-        vertexCopy.halfedge = vertex.halfedge
-        vertexCopy.position = new Vector(vertex.position.x,vertex.position.y,vertex.position.z)
-        this.vertsOrig.push(vertexCopy)
-      }
-
-    } catch (e) {
-      console.error(e)
-    }
-  }
-*/
-
-
-  /**
-   * laplaceMatrix returns the Laplace matrix for a given laplaceType
-   * @param {string} weightType indicates the type of the weight for
-   * constructing the Laplace matrix. Possible value could be:
-   * 'uniform', 'cotan'.
    */
   constructor(data) {
     // properties we plan to cache
@@ -455,32 +381,21 @@ export class HalfedgeMesh {
         this.halfedges[trueIndex+j] = he
       }
 
-
-        console.log("i: " + i)
-        console.log("nFaceEdges: " + nFaceEdges)
-
       // construct connectivities of the new halfedges
       for (let j = 0; j < nFaceEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
         let b = indices[i + (j+1)%nFaceEdges]
-        console.log("i: " + i)
-          console.log("j: " + j)
-          console.log("indices[i + j]: " + indices[i + j])
+
         // halfedge properties
         const he = this.halfedges[trueIndex + j]
         he.next = this.halfedges[trueIndex + (j+1)%nFaceEdges]
         he.prev = this.halfedges[trueIndex + (j+(nFaceEdges-1))%nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
-          if(a == undefined){
-              console.log("a: " + a)
-          }
-        const v = idx2vert.get(a)
-          if(v == undefined){
 
-              console.log("v: " + v.idx)
-          }
+        const v = idx2vert.get(a)
+
         he.vertex = v
         v.halfedge = he
 
@@ -521,7 +436,7 @@ export class HalfedgeMesh {
       trueIndex += nFaceEdges
       f.isQuad = isQuad
     }
-    let halfedgeSize = this.halfedges.length
+
     // create boundary halfedges and hidden faces for the boundary
     let hidx = trueIndex
     for (let i = 0; i < trueIndex; i++) {
@@ -542,9 +457,6 @@ export class HalfedgeMesh {
 
         // grab the next halfedge along the boundary that does not
         // have a twin halfedge
-        if(current == undefined){
-          console.log("bound i: " + i)
-        }
         let next = current.next
         while (hasTwin.get(next)) {
           next = next.twin.next
@@ -612,16 +524,20 @@ export class HalfedgeMesh {
         switch (weightType) {
           case 'uniform':
             w = 1
-            break
+            break;
           case 'cotan':
             w = (h.cotan() + h.twin.cotan())/2
+                break;
+          case 'mean value':
+            w = h.meanValueWeight()
+                break;
         }
 
         sum += w
         //console.log("Value: "+w+" Position: ("+ i+","+h.twin.vertex.idx +")")
-        weightTriplet.addEntry(w, i, h.twin.vertex.idx)
+        weightTriplet.addEntry(-w, i, h.twin.vertex.idx)
       })
-      weightTriplet.addEntry(-sum, i, i)
+      weightTriplet.addEntry(sum, i, i)
       //console.log("Value: "+-sum+" Position: ("+ i+","+i +")")
     }
 
@@ -636,22 +552,21 @@ export class HalfedgeMesh {
 
     for (const vert of this.vertices) {
       const i = vert.idx
+      let neighbours = 0
 
       switch (weightType) {
         case 'uniform':
-          let neighbours = 0
-          vert.forEachHalfEdge(() => {
-            neighbours++
-          })
-
+          vert.forEachHalfEdge(() => { neighbours++ })
           massTriplet.addEntry(neighbours,i,i)
-          break
+          continue;
         case 'cotan':
-
           let area = vert.calculateVoronoiArea()
           // area alone is very small and destroys the smoothing
-          massTriplet.addEntry(1+area,i,i)
-          break
+          massTriplet.addEntry(100*area,i,i)
+          continue;
+        case 'mean value':
+          massTriplet.addEntry(1,i,i)
+          continue;
       }
     }
 
@@ -670,6 +585,7 @@ export class HalfedgeMesh {
    * @param {Number} smoothStep the smooth step in Laplacian Smoothing algorithm
    */
   smooth(weightType, timeStep, smoothStep) {
+    console.log("in Smooth")
     //reset vertices
     for (let i = 0; i < this.vertsOrig.length; i++) {
       this.vertices[i].position.x = this.vertsOrig[i].position.x
@@ -678,145 +594,47 @@ export class HalfedgeMesh {
     }
 
     for (let j = 0; j< smoothStep; j++) {
-      // TODO: implmeent the Laplacian smoothing algorithm.
-      //
       try {
         // Hint:
-        //
         //   1. Construct the Laplace matrix `L` for the given `weightType`
         let W = this.laplaceMatrix(weightType)
         let M = this.massMatrix(weightType)
         //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-        let f = M.minus(W.timesReal(timeStep))
-        let cholskyDecompositionMatrix = f.chol()
-        const numberOfVertices = this.vertices.length
-        let b = DenseMatrix.zeros(numberOfVertices, 3)
-
-        for (const v of this.vertices) {
-          b.set(v.position.x, v.idx, 0)
-          b.set(v.position.y, v.idx, 1)
-          b.set(v.position.z, v.idx, 2)
-        }
-
-
-        b = M.timesDense(b)
-
-        let result = cholskyDecompositionMatrix.solvePositiveDefinite(b)
-
+        let result = this.solveLinearEquation(M, W, timeStep);
         //   3. Update the position of mesh vertices based on the solution f'.
-        //
-        for (let i = 0; i < numberOfVertices; i++) {
-          let resultX = result.get(i, 0)
-          let resultY = result.get(i, 1)
-          let resultZ = result.get(i, 2)
-          let currentPosition = this.vertices[i].position
-          currentPosition.x = (resultX)
-          currentPosition.y = (resultY)
-          currentPosition.z = (resultZ)
-        }
+        this.updateVertexPositions(result);
       } catch (e) {
         console.error(e)
       }
     }
   }
 
-
-  getValuesAndCommand(line) {
-    //clean up
-    line = line.replace("\r", "")
-    let values = line.split(" ")
-    let command = values[0]
-    //remove command string from values
-    values.shift()
-    return {values, command};
-  }
-
-  createHalfEdges(faceValues, face) {
-    let faceVertices = []
-    this.extractVertices(faceValues, faceVertices);
-
-    let createdHalfEdges = []
-
-    for (let i = 0; i < faceVertices.length; i++) {
-
-      let currentVertex = faceVertices[i]
-      let nextVertex = null
-      if (i + 1 !== faceVertices.length) {
-        nextVertex = faceVertices[i + 1]
-      } else {
-        nextVertex = faceVertices[0]
-      }
-
-      let existingHalfedge = null
-
-      existingHalfedge = this.halfedgesDict[currentVertex.idx + ":" + nextVertex.idx]
-      if (existingHalfedge === null || existingHalfedge === undefined) {
-        existingHalfedge = this.halfedgesDict[nextVertex.idx + ":" + currentVertex.idx]
-      }
-
-      if (existingHalfedge !== null && existingHalfedge !== undefined) {
-        existingHalfedge.face = face
-        existingHalfedge.onBoundary = false
-        createdHalfEdges.push(existingHalfedge)
-        continue;
-      }
-
-      let edge = new Edge()
-      edge.idx = this.edges.length
-      this.edges.push(edge)
-
-      let halfEdge = new Halfedge(currentVertex, edge, face, this.halfedges.length)
-      edge.halfedge = halfEdge
-
-      if (currentVertex.halfedge === null)
-        currentVertex.halfedge = halfEdge
-
-      halfEdge.twin = new Halfedge(nextVertex, edge, null, this.halfedges.length + 1, null, null, null, true)
-      halfEdge.twin.twin = halfEdge
-
-      createdHalfEdges.push(halfEdge)
-      this.halfedgesDict[halfEdge.vertex.idx + ":" + halfEdge.twin.vertex.idx] = halfEdge
-      this.halfedgesDict[halfEdge.twin.vertex.idx + ":" + halfEdge.vertex.idx] = halfEdge.twin
-      this.halfedges.push(halfEdge)
-      this.halfedges.push(halfEdge.twin)
-    }
-
-    return createdHalfEdges
-  }
-
-  extractVertices(faceValues, faceVertices) {
-    let faceVertexIds = []
-
-    //v: 0 vt: 1 vn: 2
-    faceValues.forEach((value) => {
-      faceVertexIds.push(value.split("/"))
-    })
-
-    faceVertexIds.forEach((vertexId) => {
-      faceVertices.push(this.vertices[vertexId[0] - 1])
-    })
-  }
-
-  linkCreatedHalfEdges(createdHalfEdges) {
-    for (let i = 0; i < createdHalfEdges.length; i++) {
-      let nextHalfEdge = null;
-      let prevHalfEdge = null;
-
-      if (i + 1 < createdHalfEdges.length) {
-        nextHalfEdge = createdHalfEdges[i + 1]
-      } else {
-        nextHalfEdge = createdHalfEdges[0]
-      }
-      if (i - 1 >= 0) {
-        prevHalfEdge = createdHalfEdges[i - 1]
-      } else {
-        prevHalfEdge = createdHalfEdges[createdHalfEdges.length - 1]
-      }
-
-      createdHalfEdges[i].next = nextHalfEdge
-      createdHalfEdges[i].prev = prevHalfEdge
+  updateVertexPositions(result) {
+    for (const v of this.vertices) {
+      let resultX = result.get(v.idx, 0)
+      let resultY = result.get(v.idx, 1)
+      let resultZ = result.get(v.idx, 2)
+      let currentPosition = v.position
+      currentPosition.x = (resultX)
+      currentPosition.y = (resultY)
+      currentPosition.z = (resultZ)
     }
   }
 
+  solveLinearEquation(M, W, timeStep) {
+    let f = M.plus(W.timesReal(timeStep))
+    let cholskyDecompositionMatrix = f.chol()
 
+    let b = DenseMatrix.zeros(this.vertsOrig.length, 3)
+
+    for (const v of this.vertsOrig) {
+      b.set(v.position.x, v.idx, 0)
+      b.set(v.position.y, v.idx, 1)
+      b.set(v.position.z, v.idx, 2)
+    }
+
+    let result = cholskyDecompositionMatrix.solvePositiveDefinite(M.timesDense(b))
+
+    return result;
+  }
 }
