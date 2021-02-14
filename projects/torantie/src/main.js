@@ -10,7 +10,7 @@ import {
   BufferAttribute,
   VertexColors,
   DoubleSide,
-  MeshPhongMaterial,
+  MeshPhongMaterial, Vector3,
 } from 'three'
 import {
   VertexNormalsHelper
@@ -27,6 +27,7 @@ export default class Main extends Renderer {
   constructor() {
     super()
 
+    this.meshType = ""
     // a hidden input field that responsible for loading meshes
     this.input = document.createElement('input')
     this.input.setAttribute('type', 'file')
@@ -36,7 +37,15 @@ export default class Main extends Renderer {
         alert('Only .OBJ files are supported')
       }
       const r = new FileReader()
-      r.onload = () => this.loadMesh(r.result)
+      r.onload = () => {
+        this.loadMesh(r.result)
+        this.params["showWireframe"] = true
+        if(this.internal.mesh.isQuadMesh)
+          this.params["meshType"] = "Quadrilateral Mesh"
+
+        else
+          this.params["meshType"]  = "Triangle Mesh"
+      }
       r.onerror = () => alert('Cannot import your obj mesh')
       r.readAsText(file)
     })
@@ -55,14 +64,17 @@ export default class Main extends Renderer {
       showWireframe: false,
       normalMethod: 'equal-weighted',
       laplacian: 'uniform',
+      massMatrixType: 'identity',
       timeStep: 0.001,
       smoothStep: 1,
+      meshType: "None"
     }
 
     this.gui = new GUI()
     const io = this.gui.addFolder('I/O')
     io.add(this.params, 'import').name('import mesh')
     io.add(this.params, 'export').name('export screenshot')
+    io.add(this.params, 'meshType')
 
     const vis = this.gui.addFolder('Visualization')
     vis.add(this.params, 'showNormals').name('show normals').listen()
@@ -90,6 +102,9 @@ export default class Main extends Renderer {
     methods.add(this.params, 'laplacian', [
       'uniform', 'cotan', 'mean value'
     ]).listen().onChange(() => this.updateSmoothing())
+    methods.add(this.params, 'massMatrixType', [
+      'identity', 'neighbours', 'voronoi area'
+    ]).listen().onChange(() => this.updateSmoothing())
     methods.open()
 
     const smoothing = this.gui.addFolder('Laplacian Smoothing')
@@ -100,7 +115,7 @@ export default class Main extends Renderer {
     smoothing.open()
 
     // just for the first load
-    fetch('./assets/bunny_tri.obj')
+    fetch('./assets/deformed sphere triangulated.obj')
         .then(resp => resp.text())
         .then(data => this.loadMesh(data))
   }
@@ -132,7 +147,7 @@ export default class Main extends Renderer {
     this.internal.normalHelper.update()
   }
   updateSmoothing() {
-    this.internal.mesh.smooth(this.params.laplacian, this.params.timeStep, this.params.smoothStep)
+    this.internal.mesh.smooth(this.params.laplacian, this.params.timeStep, this.params.smoothStep, this.params.massMatrixType)
     this.renderMesh()
   }
   computeAABB() {
@@ -189,10 +204,23 @@ export default class Main extends Renderer {
     })
 
     let n = this.internal.mesh.isQuadMesh ? 6 : 3
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*n)
+    let idxs = new Uint32Array(this.internal.mesh.faces.length*n)
     this.internal.mesh.faces.forEach(f => {
-      f.vertices((v, i) => { this.prepareIndexes(n, i, idxs, f, v) })
-    })
+
+      if(f.isQuad){
+        let i = 0
+        f.getTriangulation().forEach((triangle)=>{
+          triangle.forEach((vertex)=>{
+            idxs[n * f.idx + i] = vertex.idx
+            i++
+          })
+        })
+      }else{
+        f.vertices((v, i) => { idxs[n * f.idx + i] = v.idx})
+        }
+
+      })
+
 
     g.setIndex(new BufferAttribute(idxs, 1));
     g.setAttribute('position', new BufferAttribute(this.bufpos, 3))
@@ -209,6 +237,30 @@ export default class Main extends Renderer {
     this.internal.normalHelper = new VertexNormalsHelper(
         this.internal.mesh3js, 0.03, 0xaa0000,
     )
+/*
+    let positions = []
+    this.internal.mesh.faces.forEach(f => {
+      let tmp = []
+        f.vertices((v, i) => {
+          tmp.push(v.position)
+        })
+      tmp.forEach((pos, i) => {
+        positions.push(pos)
+        if(i != tmp.length-1){
+          positions.push(tmp[i+1])
+        }else{
+          positions.push(tmp[0])
+        }
+
+      })
+      console.log(tmp)
+    })
+    const g2 = new BufferGeometry()
+    g2.setAttribute('position', new BufferAttribute(this.bufpos, 3))
+    g2.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
+    g2.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
+    g2.setFromPoints(positions)
+        */
     this.internal.wireframeHelper = new LineSegments(
         new WireframeGeometry(g),
         new LineBasicMaterial({color: 0x000000, linewidth: 1})
@@ -223,19 +275,5 @@ export default class Main extends Renderer {
     }
   }
 
-  prepareIndexes(n, i, idxs, f, v) {
-    if (this.internal.mesh.isQuadMesh && i == 3) {
-
-      //0
-      idxs[n * f.idx + i] = idxs[n * f.idx]
-      //prev vertex (3rd) 2
-      idxs[n * f.idx + (i + 2)] = v.idx
-      //last vertex (4th) 3
-      idxs[n * f.idx + (i + 1)] = idxs[n * f.idx + (i - 1)]
-
-    } else {
-      idxs[n * f.idx + i] = v.idx
-    }
-  }
 }
 new Main().render()

@@ -32,20 +32,6 @@ import {
 import Vector from './vec'
 
 class Halfedge {
-  /**constructor() {
-    this.vertex = null // Vertex
-    this.edge   = null // Edge
-    this.face   = null // Face
-
-    this.prev = null   // Halfedge
-    this.next = null   // Halfedge
-    this.twin = null   // Halfedge
-    this.idx  = -1     // Number
-
-    // Hint: try use this variable to record if a halfedge is on the boundary
-    this.onBoundary = false // Boolean
-  }**/
-
   constructor(vertex = null, edge = null, face = null, idx = -1, prev = null, next = null, twin = null, onBoundary = false) {
     this.vertex = vertex // Vertex
     this.edge = edge // Edge
@@ -60,7 +46,6 @@ class Halfedge {
     this.onBoundary = onBoundary // Boolean
   }
 
-  // TODO: you can add more methods if you need here
   getVector() {
     const vector = this.twin.vertex.position.sub(this.vertex.position)
     return vector
@@ -85,11 +70,23 @@ class Halfedge {
 
     const gamma = this.getAngle()
     const delta = this.twin.next.getAngle()
-    const weight =Math.tan(gamma/2) + Math.tan(delta/2)
-    //||vi -v0||
-    const viMv0 = this.getVector().norm()
+    const angles =Math.tan(gamma/2) + Math.tan(delta/2)
+    //||vi - v0||
+    const viMv0 = this.next.vertex.position.sub(this.vertex.position).norm()
+    const weight = angles/viMv0
 
-    return weight / viMv0
+    return weight
+  }
+  wachspress(){
+    if (this.onBoundary) {
+      return 0
+    }
+    let cotf = (this.prev.twin.cotan() + this.twin.next.cotan())
+    //||vi - v0||
+    const viMv0 = this.next.vertex.position.sub(this.vertex.position).norm()
+    const weight = cotf/ Math.pow(viMv0, 2)
+
+    return weight
   }
 
   getAngle() {
@@ -108,7 +105,6 @@ class Edge {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
   }
-  // TODO: you can add more methods if you need here
 }
 
 class Face {
@@ -117,6 +113,25 @@ class Face {
     this.idx      = -1   // Number
     this.isQuad = false
   }
+
+  //Triangulation in case of QuadMesh
+  getTriangulation(){
+    let firstTriangle = []
+    let secondTriangle = []
+    if( this.isQuad)
+      this.vertices((v, i) => {
+        if (i == 3) {
+          secondTriangle.push(firstTriangle[0])
+          secondTriangle.push(firstTriangle[2])
+          secondTriangle.push(v)
+        } else {
+          firstTriangle.push(v)
+        }
+      })
+
+    return [firstTriangle,secondTriangle]
+  }
+
   // vertices visit all vertices of the given face, and 
   // fn is a callback that receives the visited vertices
   // and order index. For example, the usage could be:
@@ -155,29 +170,29 @@ class Face {
     return Math.abs(Math.pow(c.x, 2) + Math.pow(c.y, 2) + Math.pow(c.z, 2)) / 2
   }
 
-    getNormal(){
-      if(this.isQuad){
-          return this.getNormalQuad()
-      }else{
-          return this.getNormalTriangle()
-      }
+  getNormal(){
+    if(this.isQuad){
+      return this.getNormalQuad()
+    }else{
+      return this.getNormalTriangle()
     }
+  }
 
-    /**
+  /**
    * Get the average of the two triangles making up the quad.
    */
-    getNormalQuad(){
-        let x = this.halfedge.getVector()
-        let y = this.halfedge.prev.twin.getVector()
+  getNormalQuad(){
+    let x = this.halfedge.getVector()
+    let y = this.halfedge.prev.twin.getVector()
 
-        let firstTriangleNormal = (x.cross(y)).unit()
-        let x2 = this.halfedge.prev.prev.getVector()
-        let y2 = this.halfedge.next.twin.getVector()
-        let secondTriangleNormal = (x2.cross(y2)).unit()
-        let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5).unit()
+    let firstTriangleNormal = (x.cross(y)).unit()
+    let x2 = this.halfedge.prev.prev.getVector()
+    let y2 = this.halfedge.next.twin.getVector()
+    let secondTriangleNormal = (x2.cross(y2)).unit()
+    let quadNormal = firstTriangleNormal.add(secondTriangleNormal).scale(0.5).unit()
 
-        return quadNormal
-    }
+    return quadNormal
+  }
 
   getNormalTriangle() {
     let x = this.halfedge.getVector()
@@ -278,21 +293,21 @@ export class HalfedgeMesh {
     let positions = []
     let lines = data.split('\n')
     let containsQuad = false
-      // search for the a quad in the object file
-      for (let line of lines) {
-          line = line.trim()
-          const tokens = line.split(' ')
-          switch(tokens[0].trim()) {
-              case 'f':
-                  const isQuad = tokens.length == 5
-                  containsQuad = containsQuad || isQuad
-                  break;
+    // search for the a quad in the object file
+    for (let line of lines) {
+      line = line.trim()
+      const tokens = line.split(' ')
+      switch(tokens[0].trim()) {
+        case 'f':
+          const isQuad = tokens.length == 5
+          containsQuad = containsQuad || isQuad
+          break;
 
-          }
-
-          if(containsQuad)
-              break;
       }
+
+      if(containsQuad)
+        break;
+    }
 
     for (let line of lines) {
       line = line.trim()
@@ -311,7 +326,7 @@ export class HalfedgeMesh {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
           if(containsQuad && !isQuad)
-              indices.push(-1)
+            indices.push(-1)
 
           continue
       }
@@ -326,27 +341,27 @@ export class HalfedgeMesh {
     }
 
 
-      for (let i = 0; i < indices.length; i += nOfEdges) {
+    for (let i = 0; i < indices.length; i += nOfEdges) {
 
-        let nFaceEdges = indices[i + (nOfEdges-1)] != -1 && containsQuad  ? 4 : 3
+      let nFaceEdges = indices[i + (nOfEdges-1)] != -1 && containsQuad  ? 4 : 3
 
-          for (let j = 0; j < nFaceEdges; j++) { // check a face
-              let a = indices[i + j]
-              let b = indices[i + (j+1)%nFaceEdges]
+      for (let j = 0; j < nFaceEdges; j++) { // check a face
+        let a = indices[i + j]
+        let b = indices[i + (j+1)%nFaceEdges]
 
-              if (a > b) {
-                  const tmp = b
-                  b = a
-                  a = tmp
-              }
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
 
-              // store the edge if not exists
-              const e = `${a}-${b}`
-              if (!edges.has(e)) {
-                  edges.set(e, [a, b])
-              }
-          }
+        // store the edge if not exists
+        const e = `${a}-${b}`
+        if (!edges.has(e)) {
+          edges.set(e, [a, b])
+        }
       }
+    }
 
     this.vertices   = new Array(positions.length)
     this.edges      = new Array(edges.size)
@@ -517,28 +532,33 @@ export class HalfedgeMesh {
     for (const vert of this.vertices) {
       const i = vert.idx
       let sum = 1e-8 // Tikhonov regularization to get strict positive definite
-
+      let count = 0
       vert.forEachHalfEdge(h => {
         let w = 0
 
+        count++
         switch (weightType) {
           case 'uniform':
             w = 1
             break;
           case 'cotan':
             w = (h.cotan() + h.twin.cotan())/2
-                break;
+            break;
           case 'mean value':
             w = h.meanValueWeight()
-                break;
+            break;
         }
 
         sum += w
-        //console.log("Value: "+w+" Position: ("+ i+","+h.twin.vertex.idx +")")
-        weightTriplet.addEntry(-w, i, h.twin.vertex.idx)
+        if(weightType == 'mean value'){
+          w = 1
+        }
+        weightTriplet.addEntry(w, i, h.twin.vertex.idx)
       })
-      weightTriplet.addEntry(sum, i, i)
-      //console.log("Value: "+-sum+" Position: ("+ i+","+i +")")
+      if(weightType == 'mean value'){
+        sum = sum/count
+      }
+      weightTriplet.addEntry(-sum, i, i)
     }
 
     let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
@@ -546,7 +566,7 @@ export class HalfedgeMesh {
     return weightMatrix
   }
 
-  massMatrix(weightType){
+  /*massMatrix(weightType){
     const numberOfVertices = this.vertices.length
     let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
 
@@ -573,6 +593,35 @@ export class HalfedgeMesh {
     let massMatrix = SparseMatrix.fromTriplet(massTriplet)
 
     return massMatrix
+  }*/
+
+  massMatrix(massMatrixType){
+    const numberOfVertices = this.vertices.length
+    let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
+
+    for (const vert of this.vertices) {
+      const i = vert.idx
+      let neighbours = 0
+
+      switch (massMatrixType) {
+        case 'identity':
+          massTriplet.addEntry(1,i,i)
+          continue;
+        case 'neighbours':
+          vert.forEachHalfEdge(() => { neighbours++ })
+          massTriplet.addEntry(neighbours,i,i)
+          continue;
+        case 'voronoi area':
+          let area = vert.calculateVoronoiArea()
+          // area alone is very small and destroys the smoothing
+          massTriplet.addEntry(100*area,i,i)
+          continue;
+      }
+    }
+
+    let massMatrix = SparseMatrix.fromTriplet(massTriplet)
+
+    return massMatrix
   }
 
 
@@ -584,7 +633,7 @@ export class HalfedgeMesh {
    * @param {Number} timeStep the time step in Laplacian Smoothing algorithm
    * @param {Number} smoothStep the smooth step in Laplacian Smoothing algorithm
    */
-  smooth(weightType, timeStep, smoothStep) {
+  smooth(weightType, timeStep, smoothStep, massMatrixType) {
     console.log("in Smooth")
     //reset vertices
     for (let i = 0; i < this.vertsOrig.length; i++) {
@@ -598,9 +647,29 @@ export class HalfedgeMesh {
         // Hint:
         //   1. Construct the Laplace matrix `L` for the given `weightType`
         let W = this.laplaceMatrix(weightType)
-        let M = this.massMatrix(weightType)
+        let M = this.massMatrix(massMatrixType)
         //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-        let result = this.solveLinearEquation(M, W, timeStep);
+/*
+        let lambdaT = new Triplet(this.vertsOrig.length, this.vertsOrig.length)
+        for (const vert of this.vertices) {
+          const i = vert.idx
+          let sum = 1e-8 // Tikhonov regularization to get strict positive definite
+          vert.forEachHalfEdge(h => {
+            let w = 0
+            switch (weightType) {
+              case 'mean value':
+                w = h.meanValueWeight()
+                break;
+            }
+
+            sum += w
+
+          })
+          if(weightType = 'mean value')
+            lambdaT.addEntry(vert.position.x, i, 0)
+        }*/
+
+        let result = this.solveLinearEquation(M, W, timeStep, /*SparseMatrix.fromTriplet(lambdaT)*/0);
         //   3. Update the position of mesh vertices based on the solution f'.
         this.updateVertexPositions(result);
       } catch (e) {
@@ -621,8 +690,21 @@ export class HalfedgeMesh {
     }
   }
 
-  solveLinearEquation(M, W, timeStep) {
-    let f = M.plus(W.timesReal(timeStep))
+  solveLinearEquation(M, W, timeStep, lambda) {
+
+    /*let bla = lambda.nRows()
+    let bla2 = lambda.nCols()
+    let bla3 = W.nRows()
+    let bla4 = W.nCols()
+    let bla5 = M.nRows()
+    let bla6 = M.nCols()
+    let bla7 = W.timesReal(timeStep).nRows()
+    let bla8 = W.timesReal(timeStep).nCols()
+
+    let x = lambda.timesSparse(W.timesReal(timeStep))
+    let bla9 = x.nRows()
+    let bla10 = x.nCols()*/
+    let f = M.minus(W.timesReal(timeStep)/*.timesSparse(lambda)*/)
     let cholskyDecompositionMatrix = f.chol()
 
     let b = DenseMatrix.zeros(this.vertsOrig.length, 3)
