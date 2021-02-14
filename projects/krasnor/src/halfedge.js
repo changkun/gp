@@ -172,6 +172,7 @@ class Vertex {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
     this.uv      = new Vector()   // Fix error in prepare buffer
+    this.dbg_isEdgeMidpoint = false;
   }
   normal(method='equal-weighted') {
     let n = new Vector()
@@ -954,28 +955,24 @@ export class HalfedgeMesh {
       let new_movedEdgePoints = new Map(); // [edge.idx, Vertex] moved midpoints of new edges
       let edgeMidpoints = new Map(); // [edge.idx, Vector] midpoints of new edges
 
-      let vertexQ = new Map();
-      let vertexR = new Map();
-      let vertexN = new Map();
-
       let nextVertexStart = this.vertices.length;
       let nextVertexIndex = nextVertexStart;
       console.log("1. create new FacePoints");
 
-      // 1. create new FacePoints
+      // 1. create new Face Vertices
       for(let i_f = 0; i_f < this.faces.length; i_f++){
         let curr_face = this.faces[i_f];
 
         let newVert = new Vertex();
         newVert.position = curr_face.calculateMidpoint();
         newVert.idx = nextVertexIndex++;
-        this.vertices.push(newVert)
+        // this.vertices.push(newVert)
 
         new_FacePoints.set(curr_face.idx, newVert);
       }
       console.log("2. create newEdgePoints");
 
-      // 2. create newEdgePoints
+      // 2. create new Edge Points (not yet linked up)
       for(let i_e = 0; i_e < this.edges.length; i_e++){
         let curr_edge = this.edges[i_e];
         let edgeMidpoint = curr_edge.calculateMidpoint();
@@ -995,13 +992,14 @@ export class HalfedgeMesh {
         let newVert = new Vertex();
         newVert.position = newEdgePos;
         newVert.idx = nextVertexIndex++;
+        newVert.dbg_isEdgeMidpoint = true;
         this.vertices.push(newVert)
 
         new_movedEdgePoints.set(curr_edge.idx, newVert);
         edgeMidpoints.set(curr_edge.idx, edgeMidpoint);
       }
 
-      // calculate original Point data
+      // 3. calculate displacement for original points
       for(let i_v = 0; i_v < nextVertexStart; i_v++){
         // only iterate over original points
         let vertex = this.vertices[i_v];
@@ -1014,7 +1012,6 @@ export class HalfedgeMesh {
             }
         );
         let Q = _sum_faces.scale(1/count_faces);
-        vertexQ.set(vertex.idx, Q);
 
         let count_edges = 0;
         let _sum_edges = new Vector();
@@ -1024,10 +1021,8 @@ export class HalfedgeMesh {
               _sum_edges = _sum_edges.add(edgeMidpoints.get(hf.edge.idx));
             }
         );
-        let R = _sum_edges.scale(1/count_edges);
-        vertexR.set(vertex.idx, R);
-        vertexN.set(vertex.idx, count_edges);
 
+        let R = _sum_edges.scale(1/count_edges);
         let N = count_edges;
         let N_inv = 1/N;
         let S = vertex.position;
@@ -1044,8 +1039,117 @@ export class HalfedgeMesh {
           vertex.position = newOriginalPointLocation;
       }
 
-      // 3. linkup everything up
+      // 4. link everything up
 
+      // split the edges
+      // let nextHfIndexStart = this.halfedges.length;
+      // let nextHfIndex = nextHfIndexStart;
+      let nextHfIndex = this.halfedges.length;
+      let nextEdgeIndexStart = this.edges.length;
+      let nextEdgeIndex = nextEdgeIndexStart;
+      for(let i_e = 0; i_e < nextEdgeIndexStart; i_e++){
+        let curr_edge = this.edges[i_e];
+        let old_hf1 = curr_edge.halfedge;
+        let old_hf2 = old_hf1.twin;
+        let midpoint_vertex = new_movedEdgePoints.get(curr_edge.idx);
+
+
+        // prepare needed objects
+        let new_Edge = new Edge();
+        new_Edge.idx = nextEdgeIndex++;
+
+        let new_hf1 = new Halfedge();
+        let new_hf2 = new Halfedge();
+        new_hf1.idx = nextHfIndex++;
+        new_hf2.idx = nextHfIndex++;
+        new_hf1.twin = new_hf2;
+        new_hf2.twin = new_hf1;
+        new_hf1.edge = new_Edge;
+        new_hf2.edge = new_Edge;
+
+        new_Edge.halfedge = new_hf1;
+        midpoint_vertex.halfedge = new_hf1;
+
+        this.edges.push(new_Edge);
+        this.halfedges.push(new_hf1);
+        this.halfedges.push(new_hf2);
+
+        // integrate everything
+        //
+        //  old_hf1.next xA <-----old_hf1--------- xB old_hf1.prev
+        //  old_hf2.prev xA ------old_hf2--------> xB old_hf2.next
+        //
+        //  old_hf1.next xA <--new_hf1-- mid_point <--old_hf1----- xB old_hf1.prev
+        //  old_hf2.prev xA ---new_hf2-> mid_point ---old_hf2----> xB old_hf2.next
+
+        new_hf1.vertex = midpoint_vertex; // midpoint
+        new_hf1.face = old_hf1.face;
+        new_hf1.prev = old_hf1;
+        new_hf1.onBoundary = old_hf1.onBoundary;
+        new_hf1.next = old_hf1.next;
+        old_hf1.next = new_hf1;
+        new_hf1.next.prev = new_hf1;
+
+        new_hf2.vertex = old_hf2.vertex; // xA
+        old_hf2.vertex.halfedge = new_hf2;
+        old_hf2.vertex = midpoint_vertex;
+        new_hf2.face = old_hf2.face;
+        new_hf2.next = old_hf2;
+        new_hf2.onBoundary = old_hf2.onBoundary;
+        new_hf2.prev = old_hf2.prev;
+        old_hf2.prev = new_hf2;
+        new_hf2.prev.next = new_hf2;
+
+        // edges are now split
+      }
+
+      let nextFaceIndextart = this.faces.length;
+      let nextFaceIndex = nextFaceIndextart;
+      for(let i_f = 0; i_f < nextFaceIndextart; i_f++){
+        //
+        let hasOriginalFaceBeenIntegrated = false;
+        let originalFace = this.faces[i_f];
+        let startHalfedge = originalFace.halfedge;
+
+        // (x) --h?-> (m) --h1-> (x)
+        //  ^                     |
+        //  h4                    h?
+        //  |                     v
+        // (m)       (m_f)       (m)
+        //  ^                     |
+        //  h?                    h2
+        //  |                     v
+        // (x) <-h3-- (m) <-h?-- (x)
+        //
+        // h? = hf we don't care about
+        // create face at [h1,h2,h3,h4]
+
+        // sanity check
+        let dbg_start_hf = originalFace.halfedge
+        let start = true;
+        let dbg_i = 0;
+        console.log("## face: %s", originalFace.idx);
+        for (let h = dbg_start_hf; start || h != dbg_start_hf; h = h.next) {
+          dbg_i++;
+          start = false;
+          console.log(" %s| is midpoint: %s", dbg_i, h.vertex.dbg_isEdgeMidpoint);
+        }
+        console.log("## every second", originalFace.idx);
+        let dbg_start_hf2 = originalFace.halfedge
+        let start2 = true;
+        let dbg_i2 = 0;
+        for (let h = dbg_start_hf2; start || h != dbg_start_hf2; h = h.next.next) {
+          dbg_i2++;
+          start = false;
+          console.log(" %s| is midpoint: %s", dbg_i2, h.vertex.dbg_isEdgeMidpoint);
+        }
+
+        console.log("face: %s dbg_i: %s", originalFace.idx, dbg_i);
+
+        // foreach new edgeMidpoint => create new face
+
+
+      }
 
     }
     console.log("##### Finished Subdivision ####")
