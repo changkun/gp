@@ -77,17 +77,6 @@ class Halfedge {
 
     return weight
   }
-  wachspress(){
-    if (this.onBoundary) {
-      return 0
-    }
-    let cotf = (this.prev.twin.cotan() + this.twin.next.cotan())
-    //||vi - v0||
-    const viMv0 = this.next.vertex.position.sub(this.vertex.position).norm()
-    const weight = cotf/ Math.pow(viMv0, 2)
-
-    return weight
-  }
 
   getAngle() {
     let a = this.getVector()
@@ -215,20 +204,17 @@ class Vertex {
 
     switch (method) {
       case 'equal-weighted':
-        // TODO: compute euqally weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
           sum = sum.add(currentHalfEdge.face.getNormal());
         })
         break;
       case 'area-weighted':
-        // TODO: compute area weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
           sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.face.getAreaTriangle()));
         })
 
         break;
       case 'angle-weighted':
-        // TODO: compute angle weighted normal of this vertex
         this.forEachHalfEdge((currentHalfEdge) => {
           sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.getAngle()));
         })
@@ -241,8 +227,6 @@ class Vertex {
 
     return normal
   }
-
-  // TODO: you can add more methods if you need here
 
 
   calculateVoronoiArea() {
@@ -285,8 +269,6 @@ export class HalfedgeMesh {
     this.halfedges = [] // an array of Halfedge object
     this.vertsOrig = []
     this.isQuadMesh = false
-
-    // TODO: read .obj format and construct its halfedge representation
 
     // load .obj file
     let indices   = []
@@ -525,7 +507,6 @@ export class HalfedgeMesh {
 
 
   laplaceMatrix(weightType) {
-    // TODO: construct the Laplace matrix.
     const numberOfVertices = this.vertices.length
     let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
 
@@ -550,14 +531,8 @@ export class HalfedgeMesh {
         }
 
         sum += w
-        if(weightType == 'mean value'){
-          w = 1
-        }
         weightTriplet.addEntry(w, i, h.twin.vertex.idx)
       })
-      if(weightType == 'mean value'){
-        sum = sum/count
-      }
       weightTriplet.addEntry(-sum, i, i)
     }
 
@@ -565,35 +540,6 @@ export class HalfedgeMesh {
 
     return weightMatrix
   }
-
-  /*massMatrix(weightType){
-    const numberOfVertices = this.vertices.length
-    let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
-
-    for (const vert of this.vertices) {
-      const i = vert.idx
-      let neighbours = 0
-
-      switch (weightType) {
-        case 'uniform':
-          vert.forEachHalfEdge(() => { neighbours++ })
-          massTriplet.addEntry(neighbours,i,i)
-          continue;
-        case 'cotan':
-          let area = vert.calculateVoronoiArea()
-          // area alone is very small and destroys the smoothing
-          massTriplet.addEntry(100*area,i,i)
-          continue;
-        case 'mean value':
-          massTriplet.addEntry(1,i,i)
-          continue;
-      }
-    }
-
-    let massMatrix = SparseMatrix.fromTriplet(massTriplet)
-
-    return massMatrix
-  }*/
 
   massMatrix(massMatrixType){
     const numberOfVertices = this.vertices.length
@@ -649,27 +595,7 @@ export class HalfedgeMesh {
         let W = this.laplaceMatrix(weightType)
         let M = this.massMatrix(massMatrixType)
         //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-/*
-        let lambdaT = new Triplet(this.vertsOrig.length, this.vertsOrig.length)
-        for (const vert of this.vertices) {
-          const i = vert.idx
-          let sum = 1e-8 // Tikhonov regularization to get strict positive definite
-          vert.forEachHalfEdge(h => {
-            let w = 0
-            switch (weightType) {
-              case 'mean value':
-                w = h.meanValueWeight()
-                break;
-            }
-
-            sum += w
-
-          })
-          if(weightType = 'mean value')
-            lambdaT.addEntry(vert.position.x, i, 0)
-        }*/
-
-        let result = this.solveLinearEquation(M, W, timeStep, /*SparseMatrix.fromTriplet(lambdaT)*/0);
+        let result = this.solveLinearEquation(M, W, timeStep);
         //   3. Update the position of mesh vertices based on the solution f'.
         this.updateVertexPositions(result);
       } catch (e) {
@@ -690,21 +616,8 @@ export class HalfedgeMesh {
     }
   }
 
-  solveLinearEquation(M, W, timeStep, lambda) {
-
-    /*let bla = lambda.nRows()
-    let bla2 = lambda.nCols()
-    let bla3 = W.nRows()
-    let bla4 = W.nCols()
-    let bla5 = M.nRows()
-    let bla6 = M.nCols()
-    let bla7 = W.timesReal(timeStep).nRows()
-    let bla8 = W.timesReal(timeStep).nCols()
-
-    let x = lambda.timesSparse(W.timesReal(timeStep))
-    let bla9 = x.nRows()
-    let bla10 = x.nCols()*/
-    let f = M.minus(W.timesReal(timeStep)/*.timesSparse(lambda)*/)
+  solveLinearEquation(M, W, timeStep) {
+    let f = M.minus(W.timesReal(timeStep))
     let cholskyDecompositionMatrix = f.chol()
 
     let b = DenseMatrix.zeros(this.vertsOrig.length, 3)

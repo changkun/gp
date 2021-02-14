@@ -39,12 +39,6 @@ export default class Main extends Renderer {
       const r = new FileReader()
       r.onload = () => {
         this.loadMesh(r.result)
-        this.params["showWireframe"] = true
-        if(this.internal.mesh.isQuadMesh)
-          this.params["meshType"] = "Quadrilateral Mesh"
-
-        else
-          this.params["meshType"]  = "Triangle Mesh"
       }
       r.onerror = () => alert('Cannot import your obj mesh')
       r.readAsText(file)
@@ -67,14 +61,12 @@ export default class Main extends Renderer {
       massMatrixType: 'identity',
       timeStep: 0.001,
       smoothStep: 1,
-      meshType: "None"
     }
 
     this.gui = new GUI()
     const io = this.gui.addFolder('I/O')
     io.add(this.params, 'import').name('import mesh')
     io.add(this.params, 'export').name('export screenshot')
-    io.add(this.params, 'meshType')
 
     const vis = this.gui.addFolder('Visualization')
     vis.add(this.params, 'showNormals').name('show normals').listen()
@@ -115,7 +107,7 @@ export default class Main extends Renderer {
     smoothing.open()
 
     // just for the first load
-    fetch('./assets/deformed sphere triangulated.obj')
+    fetch('./assets/bunny_quad.obj')
         .then(resp => resp.text())
         .then(data => this.loadMesh(data))
   }
@@ -237,30 +229,7 @@ export default class Main extends Renderer {
     this.internal.normalHelper = new VertexNormalsHelper(
         this.internal.mesh3js, 0.03, 0xaa0000,
     )
-/*
-    let positions = []
-    this.internal.mesh.faces.forEach(f => {
-      let tmp = []
-        f.vertices((v, i) => {
-          tmp.push(v.position)
-        })
-      tmp.forEach((pos, i) => {
-        positions.push(pos)
-        if(i != tmp.length-1){
-          positions.push(tmp[i+1])
-        }else{
-          positions.push(tmp[0])
-        }
 
-      })
-      console.log(tmp)
-    })
-    const g2 = new BufferGeometry()
-    g2.setAttribute('position', new BufferAttribute(this.bufpos, 3))
-    g2.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
-    g2.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
-    g2.setFromPoints(positions)
-        */
     this.internal.wireframeHelper = new LineSegments(
         new WireframeGeometry(g),
         new LineBasicMaterial({color: 0x000000, linewidth: 1})
