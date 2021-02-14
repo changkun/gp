@@ -5,4 +5,4 @@ npm install
 npm start
 
 
-bunny_quad.obj will be loaded at the start of the Programm.
+bunny_quad.obj will be loaded at the start of the program.
