@@ -12,6 +12,8 @@ import {
   DoubleSide,
   MeshPhongMaterial,
   Geometry,
+  BoxGeometry,
+  EdgesGeometry,
 } from 'three'
 import {
   VertexNormalsHelper
@@ -121,7 +123,8 @@ export default class Main extends Renderer {
     const mod = this.gui.addFolder('Reduce Ratio')
     mod.add(this.params, 'qSim', 0.0, 1.0, 0.001).name('Left (QEM)')
     .onChange(v => {
-      this.internal.mesh.simplify(v)
+      // this.internal.mesh.simplify(v)
+      this.internal.mesh.subdivide_catmull_clark();
       this.prepareBuf()
       this.renderMeshLeft()
     })
@@ -177,7 +180,8 @@ export default class Main extends Renderer {
     mod.open()
 
     // just for the first load
-    fetch('./assets/cube_closed.obj')
+    // fetch('./assets/cube_closed.obj')
+    fetch('./assets/cube4.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -270,10 +274,39 @@ export default class Main extends Renderer {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
     }
 
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*3)
+    let face_vert_offset = 3
+    if(this.internal.mesh.isQuadMesh){
+      face_vert_offset = 6 // 3x2 as two faces will be rendered
+    }
+    const idxs = new Uint32Array(this.internal.mesh.faces.length*face_vert_offset)
     this.internal.mesh.faces.forEach(f => {
-      f.vertices((v, i) => { idxs[3 * f.idx + i] = v.idx })
+      f.vertices((v, i) => {
+        if(this.internal.mesh.isQuadMesh && i == 3){
+          // this is a Face4 (i == 3 is fourth face vertex) - triangulate
+
+          //0
+          idxs[face_vert_offset * f.idx + i] = idxs[face_vert_offset * f.idx]
+          //prev vertex (3rd) 2
+          idxs[face_vert_offset * f.idx + (i+1)] = idxs[face_vert_offset * f.idx + (i-1)]
+          //last vertex (4th) 3
+          idxs[face_vert_offset * f.idx + (i+2)] = v.idx
+
+        }else{
+          // Face3
+          idxs[face_vert_offset * f.idx + i] = v.idx
+        }
+      })
     })
+
+    const idxs_lines = new Uint32Array(this.internal.mesh.edges.length*2)
+    this.internal.mesh.edges.forEach(edge => {
+      idxs_lines[2*edge.idx] = edge.getP1().idx;
+      idxs_lines[2*edge.idx +1] = edge.getP2().idx;
+    })
+
+    const g_lines = new BufferGeometry()
+    g_lines.setIndex(new BufferAttribute(idxs_lines, 1))
+    g_lines.setAttribute('position', new BufferAttribute(this.bufpos, 3))
 
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
@@ -294,8 +327,10 @@ export default class Main extends Renderer {
       this.internal.mesh3jsLeft, 0.03, 0xaa0000,
     )
     this.internal.meshLeftWireframeHelper = new LineSegments(
-      new WireframeGeometry(g),
-      new LineBasicMaterial({color: 0x000000, linewidth: 1})
+      // new WireframeGeometry(new BoxGeometry( 1.3, 1.3, 2 )),
+      g_lines,
+      // new WireframeGeometry(g),
+      new LineBasicMaterial({color: 0xFF0000, linewidth: 9})
     )
 
     this.sceneLeft.add(this.internal.mesh3jsLeft)

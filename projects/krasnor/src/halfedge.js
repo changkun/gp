@@ -1,6 +1,7 @@
 import Vector from './vec'
 import Matrix from './mat'
 import PriorityQueue from './pq'
+import {BufferGeometry} from "three";
 
 class Halfedge {
   constructor() {
@@ -33,6 +34,10 @@ class Halfedge {
     const v = this.next.vector().scale(-1)
     return u.dot(v) / u.cross(v).norm()
   }
+  getVector() {
+    const vector = this.twin.vertex.position.sub(this.vertex.position)
+    return vector
+  }
 }
 
 class Edge {
@@ -44,14 +49,43 @@ class Edge {
   getVertices(){
     return [this.halfedge.vertex, this.halfedge.twin.vertex]
   }
+  getP1(){
+    return this.halfedge.vertex;
+  }
+  getP2(){
+    return this.halfedge.twin.vertex;
+  }
+
+
+  faces(fn) {
+    // no radial cycle so there can only be between zero two faces at this edge
+    let f1 = this.halfedge.face;
+    let f2 = this.halfedge.twin.face;
+    let i = 0;
+
+    if(this.halfedge.onBoundary || f1 != null){ // onBoundary => no face
+      fn(f1, i++)
+    }
+    if(this.halfedge.twin.onBoundary || f2 != null){
+      fn(f2, i++)
+    }
+  }
+  /**
+   * Calculates Midpoint of Edge
+   * @returns {Vector} Coordinates of Midpoint
+   */
+  calculateMidpoint(){
+    return this.halfedge.vertex.position.add(this.halfedge.twin.vertex.position).scale(0.5);
+  }
 }
 
 class Face {
   constructor() {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
+    this.isQuad = false
   }
-  // vertices visit all vertices of the given face, and 
+  // vertices visit all vertices of the given face, and
   // fn is a callback that receives the visited vertices
   // and order index. For example, the usage could be:
   //
@@ -83,15 +117,29 @@ class Face {
       i++
     }
   }
-  normal() {
-    if (this.halfedge.onBoundary) {
-      return new Vector(0, 0, 0)
+  // normal() {
+  //   if (this.halfedge.onBoundary) {
+  //     return new Vector(0, 0, 0)
+  //   }
+  //   const h = this.halfedge
+  //   let a = h.vertex.position.sub(h.next.vertex.position)
+  //   let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
+  //   return a.cross(b).unit()
+  // }
+  normal(){
+    let x = this.halfedge.getVector();
+    let y = this.halfedge.prev.twin.getVector();
+    let triangleNormal = x.cross(y).unit();
+
+    if(this.isQuad){
+      let x2 = this.halfedge.prev.prev.getVector();
+      let y2 = this.halfedge.next.twin.getVector();
+      let secondTriangleNormal = (x2.cross(y2)).unit();
+      return triangleNormal.add(secondTriangleNormal).scale(0.5).unit();
     }
-    const h = this.halfedge
-    let a = h.vertex.position.sub(h.next.vertex.position)
-    let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
-    return a.cross(b).unit()
+    return triangleNormal;
   }
+
   area() {
     const h = this.halfedge
     if (h.onBoundary) {
@@ -100,6 +148,21 @@ class Face {
     let a = h.vertex.position.sub(h.next.vertex.position)
     let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
     return a.cross(b).norm() * 0.5
+  }
+
+  /**
+   * Calculates midpoint of Face
+   * @returns {Vector} position of midpoint
+   */
+  calculateMidpoint(){
+    let cnt_face_verts = 0;
+    let newPoint = new Vector();
+    this.vertices(v => {
+      cnt_face_verts++;
+      newPoint = newPoint.add(v.position);
+    })
+
+    return newPoint.scale(1/cnt_face_verts)
   }
 }
 
@@ -203,12 +266,32 @@ export class HalfedgeMesh {
     this.halfedges = [] // an array of Halfedge object
     this.boundaries= [] // an array of boundary loops
     let n_bcycles = 0;
+    this.isQuadMesh = false
+
 
     // TODO: read .obj format and construct its halfedge representation
     // load .obj file
     let indices   = []
     let positions = []
     let lines = data.split('\n')
+    let containsQuad = false
+
+    // search for the a quad in the object file
+    for (let line of lines) {
+      line = line.trim()
+      const tokens = line.split(' ')
+      switch(tokens[0].trim()) {
+        case 'f':
+          const isQuad = tokens.length == 5
+          containsQuad = containsQuad || isQuad
+          break;
+
+      }
+
+      if(containsQuad)
+        break;
+    }
+
     for (let line of lines) {
       line = line.trim()
       const tokens = line.split(' ')
@@ -219,20 +302,32 @@ export class HalfedgeMesh {
           ))
           continue
         case 'f':
+          const isQuad = tokens.length == 5 // v 1 2 3 4
+
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
+          if(containsQuad && !isQuad)
+            indices.push(-1)
+
           continue
       }
     }
 
     // build the halfedge connectivity
     const edges = new Map()
-    for (let i = 0; i < indices.length; i += 3) {
-      for (let j = 0; j < 3; j++) { // check a face
+    let nOfEdges = 3
+    if(containsQuad){
+      this.isQuadMesh = true
+      nOfEdges = 4
+    }
+
+    for (let i = 0; i < indices.length; i += nOfEdges) {
+      let nFaceEdges = indices[i + (nOfEdges-1)] != -1 && containsQuad  ? 4 : 3
+      for (let j = 0; j < nFaceEdges; j++) { // check a face
         let a = indices[i + j]
-        let b = indices[i + (j+1)%3]
+        let b = indices[i + (j+1)%nFaceEdges]
 
         if (a > b) {
           let tmp = b
@@ -250,13 +345,13 @@ export class HalfedgeMesh {
 
     this.vertices   = new Array(positions.length) // for update
     this.edges      = new Array(edges.size)
-    this.faces      = new Array(indices.length / 3)
+    this.faces      = new Array(indices.length / nOfEdges)
     this.halfedges  = new Array(edges.size*2)
 
     const idx2vert = new Map()
     for (let i = 0; i < positions.length; i++) {
       const v = new Vertex()
-      v.uv = new Vector(0,0,0) // TODO calc uv
+      v.uv = new Vector(0,0,0)
       v.position = positions[i]
       this.vertices[i] = v
       idx2vert.set(i, v)
@@ -266,29 +361,33 @@ export class HalfedgeMesh {
     let edgeCount = new Map()
     let existedHalfedges = new Map()
     let hasTwinHalfedge = new Map()
+    let trueIndex = 0
 
     // construct halfedges, edges
-    for (let i = 0; i < indices.length; i += 3) {
+    for (let i = 0; i < indices.length; i += nOfEdges) {
       // construct face
       const f = new Face()
-      this.faces[i / 3] = f
+      this.faces[i / nOfEdges] = f
+      // if it contains quads set default value to true else false
+      let isQuad = indices[i + (nOfEdges-1)] != -1 && containsQuad
+      let nFaceEdges = isQuad ? 4 : 3
 
       // construct halfedges of the face
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < nFaceEdges; j++) {
         const he = new Halfedge()
         this.halfedges[i+j] = he
       }
 
       // construct connectivities of the new halfedges
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < nFaceEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
-        let b = indices[i + (j+1)%3]
+        let b = indices[i + (j+1)%nFaceEdges]
 
         // halfedge properties
-        const he = this.halfedges[i + j]
-        he.next = this.halfedges[i + (j+1)%3]
-        he.prev = this.halfedges[i + (j+2)%3]
+        const he = this.halfedges[trueIndex + j]
+        he.next = this.halfedges[trueIndex + (j+1)%nFaceEdges]
+        he.prev = this.halfedges[trueIndex + (j+(nFaceEdges-1))%nFaceEdges]
         he.onBoundary = false
         hasTwinHalfedge.set(he, false) // record if the twin of this half edge is constructed
 
@@ -337,11 +436,14 @@ export class HalfedgeMesh {
           throw 'the mesh contains non-manifold edges'
         }
       }
+
+      trueIndex += nFaceEdges
+      f.isQuad = isQuad
     }
 
     // create boundary halfedges and "fake" faces for the boundary cycles
-    let halfedgeIndex = indices.length
-    for (let i = 0; i < indices.length; i++) {
+    let halfedgeIndex = trueIndex
+    for (let i = 0; i < trueIndex; i++) {
       // if a halfedge has no twin, create a new face and link it
       // the corresponding boundary cycle
 
@@ -818,4 +920,205 @@ export class HalfedgeMesh {
 
     return {pair: edge, error: error, mergePoint: vbar, dbg_Qbar_Invertible: dbg_Qbar_Invertible};
   }
+
+  toThreeGeometry(){
+
+
+    return new BufferGeometry();
+  }
+
+  triangulateMesh(){
+    let originalFaces = this.faces;
+    let newFaceList = [];
+
+    for(let i = 0; i < this.faces.length; i++){
+      // split face if not already triangle
+      let currFace = originalFaces[i];
+
+      // TODO
+
+    }
+
+    // reset indices
+    for(let i = 0; i < this.faces.length; i++){
+      this.faces[i].idx = i;
+    }
+
+  }
+
+  subdivide_catmull_clark(iterations = 0){
+    iterations = 1;
+    console.log("############ Subdivide - Catmull Clark ## iterations: %s ############", iterations);
+    for(let iter = 0; iter < iterations; iter++){
+      let new_FacePoints = new Map(); // [face.idx, Vertex] midpoint of face
+      let new_movedEdgePoints = new Map(); // [edge.idx, Vertex] moved midpoints of new edges
+      let edgeMidpoints = new Map(); // [edge.idx, Vector] midpoints of new edges
+
+      let vertexQ = new Map();
+      let vertexR = new Map();
+      let vertexN = new Map();
+
+      let nextVertexStart = this.vertices.length;
+      let nextVertexIndex = nextVertexStart;
+      console.log("1. create new FacePoints");
+
+      // 1. create new FacePoints
+      for(let i_f = 0; i_f < this.faces.length; i_f++){
+        let curr_face = this.faces[i_f];
+
+        let newVert = new Vertex();
+        newVert.position = curr_face.calculateMidpoint();
+        newVert.idx = nextVertexIndex++;
+        this.vertices.push(newVert)
+
+        new_FacePoints.set(curr_face.idx, newVert);
+      }
+      console.log("2. create newEdgePoints");
+
+      // 2. create newEdgePoints
+      for(let i_e = 0; i_e < this.edges.length; i_e++){
+        let curr_edge = this.edges[i_e];
+        let edgeMidpoint = curr_edge.calculateMidpoint();
+
+        let p1 = curr_edge.getP1();
+        let p1_pos = curr_edge.getP1().position;
+        let cnt_points = 2;
+        let _sumAdjacentPoints = curr_edge.getP1().position.add(curr_edge.getP2().position);
+        curr_edge.faces(
+            f => {
+              cnt_points++;
+              _sumAdjacentPoints = _sumAdjacentPoints.add(new_FacePoints.get(f.idx).position);
+            }
+        );
+        let newEdgePos = _sumAdjacentPoints.scale(1/cnt_points);
+
+        let newVert = new Vertex();
+        newVert.position = newEdgePos;
+        newVert.idx = nextVertexIndex++;
+        this.vertices.push(newVert)
+
+        new_movedEdgePoints.set(curr_edge.idx, newVert);
+        edgeMidpoints.set(curr_edge.idx, edgeMidpoint);
+      }
+
+      // calculate original Point data
+      for(let i_v = 0; i_v < nextVertexStart; i_v++){
+        // only iterate over original points
+        let vertex = this.vertices[i_v];
+        let _sum_faces = new Vector();
+        let count_faces = 0;
+        vertex.faces(
+            f => {
+              count_faces++;
+              _sum_faces = _sum_faces.add(new_FacePoints.get(f.idx).position);
+            }
+        );
+        let Q = _sum_faces.scale(1/count_faces);
+        vertexQ.set(vertex.idx, Q);
+
+        let count_edges = 0;
+        let _sum_edges = new Vector();
+        vertex.halfedges(
+            hf => {
+              count_edges++;
+              _sum_edges = _sum_edges.add(edgeMidpoints.get(hf.edge.idx));
+            }
+        );
+        let R = _sum_edges.scale(1/count_edges);
+        vertexR.set(vertex.idx, R);
+        vertexN.set(vertex.idx, count_edges);
+
+        let N = count_edges;
+        let N_inv = 1/N;
+        let S = vertex.position;
+
+        // Q/n + 2R/n + S(n-3)/n
+        let newOriginalPointLocation =
+            Q.scale(N_inv)                      // Q/n
+                .add(
+                    R.scale(2).scale(N_inv)  // 2R/n
+                )
+                .add(
+                    S.scale(N-3).scale(N_inv)   // S(n-3)/n
+                );
+          vertex.position = newOriginalPointLocation;
+      }
+
+      // 3. linkup everything up
+
+
+    }
+    console.log("##### Finished Subdivision ####")
+    this.exportObj(this.parseToObj(),"cubeExport.obj");
+
+  }
+
+  /**
+   * Parses the HalfeEdgeMesh into an .obj compatible format
+   * Currently only vertices and faces are exported (e.g. normals are not exported)
+   *
+   * @returns {Blob} parsing result
+   */
+  parseToObj(){
+    let lineSeperator =  "\n";
+    let exp_header = "# Javascript Halfedge implemention Export";
+    let exp_objName = "o cubeExport";
+    let exp_vertices = "";
+    let exp_faces = "";
+
+    // parse into .obj format
+    this.vertices.forEach(
+        v => {
+          let pos = v.position;
+          exp_vertices += "v " + pos.x + " " + pos.y + " " + pos.z + lineSeperator
+        }
+    );
+
+    this.faces.forEach(
+        f => {
+          // format: f v1 v2 v3 ....
+          let line = "f ";
+          f.vertices(
+              f_v => {
+                line += f_v.idx+1 + " "; // +1 as in  obj format index starts at one instead of zero
+              }
+          )
+          exp_faces += line + lineSeperator;
+        }
+    );
+
+    let objectData =
+        exp_header + lineSeperator +
+        exp_objName + lineSeperator +
+        exp_vertices + // no line sep as there is already one
+        exp_faces;
+    let type = "text/plain";
+    let file = new Blob([objectData], {type: type});
+    console.log(objectData);
+
+    return file;
+  }
+
+  /**
+   * @param {Blob} file_blob
+   */
+  exportObj(file_blob, filename){
+    // start the download
+    let file = file_blob;
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+      window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+      let a = document.createElement("a"),
+          url = URL.createObjectURL(file);
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 0);
+    }
+  }
+
 }
