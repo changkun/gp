@@ -71,7 +71,7 @@ export default class Main extends Renderer {
       downloadMesh: () => this.downloadMesh(),
       subdivide: () => this.doSubdivide(),
       showNormals: false,
-      showWireframe: false,
+      showWireframe: true,
       flatShading: false,
       showTexture: true,
       normalMethod: 'equal-weighted',
@@ -348,7 +348,7 @@ export default class Main extends Renderer {
       // new WireframeGeometry(new BoxGeometry( 1.3, 1.3, 2 )),
       g_lines,
       // new WireframeGeometry(g),
-      new LineBasicMaterial({color: 0xFF0000, linewidth: 9})
+      new LineBasicMaterial({color: 0x000000, linewidth: 9})
     )
 
     this.sceneLeft.add(this.internal.mesh3jsLeft)
@@ -441,16 +441,23 @@ export default class Main extends Renderer {
     let width = "200px"
     let height = "100px"
     this.statisticsLeft.style.width = width ;
-    this.statisticsLeft.style.height = height ;
+    // this.statisticsLeft.style.height = height ;
     this.statisticsLeft.style.bottom = "0px" ;
     this.statisticsLeft.style.left = "0px" ;
     this.statisticsLeft.style.position = "fixed";
 
     this.statisticsRight.style.width = width ;
-    this.statisticsRight.style.height = height ;
+    // this.statisticsRight.style.height = height ;
     this.statisticsRight.style.bottom = "0px" ;
     this.statisticsRight.style.left = "50%" ;
-    this.statisticsRight.style.position = "fixed" ;
+    this.statisticsRight.style.position = "fixed";
+
+    // // this.statisticsLeft.style.marginLeft = "5px"
+    // // this.statisticsLeft.style.marginBottom = "5px"
+    // this.statisticsLeft.style.border = "2px solid #FF0000"
+    // this.statisticsLeft.style.background = "#1a1a1a"
+    // this.statisticsLeft.style.color = "#eee"
+    // this.statisticsLeft.style.fontFamily  = "Lucida Grande,sans-serif";
   }
   updateStatistics(){
     let statsMesh_left = this.internal.mesh.getStatistics();
@@ -464,6 +471,8 @@ export default class Main extends Renderer {
 
       if(!omit_subdivisions){
         statsText += "<tr><td><b>Subdivisions </b></td> <td>" + stats.subdivisions + "</td></tr>";
+      }else{
+        statsText += "<tr><td><b>&nbsp;</b></td><td>&nbsp;</td></tr>";
       }
 
       return statsText;
@@ -474,7 +483,6 @@ export default class Main extends Renderer {
   }
 
   doSubdivide(){
-    console.log("triggering subdiv with " + this.params.subdivisions_req);
     this.resetLeft();
     this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
     this.prepareBuf()
