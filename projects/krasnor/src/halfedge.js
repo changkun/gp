@@ -543,7 +543,6 @@ export class HalfedgeMesh {
         let newVert = new Vertex();
         newVert.position = curr_face.calculateMidpoint();
         newVert.idx = nextVertexIndex++;
-        newVert.halfedge = curr_face.halfedge; // temp halfedge
         this.vertices.push(newVert)
         console.log("created facePoint: v %s (%s,%s,%s) ", newVert.idx, newVert.position.x,newVert.position.y, newVert.position.z);
 
@@ -586,7 +585,7 @@ export class HalfedgeMesh {
       for(let i_v = 0; i_v < newVertexIndexStart; i_v++){
         // only iterate over original points
         let vertex = this.vertices[i_v];
-        let isBoundaryVertex;
+        let isBoundaryVertex = false;
         if(vertex.idx >= 8 && vertex.idx <= 13){
           console.log("moving a previous facePoint: v%s (%s,%s,%s)", vertex.idx, vertex.position.x,vertex.position.y, vertex.position.z)
         }
@@ -634,13 +633,8 @@ export class HalfedgeMesh {
 
           newOriginalPointLocation = new_point
           console.log("boundary vertex found");
-
         }
           vertex.position = newOriginalPointLocation;
-
-        if(vertex.idx >= 8 && vertex.idx <= 13){
-          console.log("  | new position: v%s (%s,%s,%s)", vertex.idx, vertex.position.x,vertex.position.y, vertex.position.z)
-        }
       }
 
       // 4. link everything up
@@ -762,6 +756,9 @@ export class HalfedgeMesh {
           h1.prev = l_hf;
           l_hft.prev = ha
           ha.next = l_hft;
+
+          // set halfedge of face center (when the vertex is created not halfedge was set)
+          face_center.halfedge = l_hf;
 
           // only face is still unset
           // and prev nex at the face_center side
