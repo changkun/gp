@@ -182,6 +182,7 @@ export default class Main extends Renderer {
     // just for the first load
     // fetch('./assets/cube_closed.obj')
     fetch('./assets/cube4.obj')
+    // fetch('./assets/Face4.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
