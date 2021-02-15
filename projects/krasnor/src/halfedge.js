@@ -545,6 +545,7 @@ export class HalfedgeMesh {
         newVert.idx = nextVertexIndex++;
         newVert.halfedge = curr_face.halfedge; // temp halfedge
         this.vertices.push(newVert)
+        console.log("created facePoint: v %s (%s,%s,%s) ", newVert.idx, newVert.position.x,newVert.position.y, newVert.position.z);
 
         new_FacePoints.set(curr_face.idx, newVert);
       }
@@ -586,6 +587,10 @@ export class HalfedgeMesh {
         // only iterate over original points
         let vertex = this.vertices[i_v];
         let isBoundaryVertex;
+        if(vertex.idx >= 8 && vertex.idx <= 13){
+          console.log("moving a previous facePoint: v%s (%s,%s,%s)", vertex.idx, vertex.position.x,vertex.position.y, vertex.position.z)
+        }
+
         let _sum_faces = new Vector();
         let count_faces = 0;
         vertex.faces(
@@ -629,8 +634,13 @@ export class HalfedgeMesh {
 
           newOriginalPointLocation = new_point
           console.log("boundary vertex found");
+
         }
           vertex.position = newOriginalPointLocation;
+
+        if(vertex.idx >= 8 && vertex.idx <= 13){
+          console.log("  | new position: v%s (%s,%s,%s)", vertex.idx, vertex.position.x,vertex.position.y, vertex.position.z)
+        }
       }
 
       // 4. link everything up
@@ -700,22 +710,19 @@ export class HalfedgeMesh {
 
       let nextFaceIndextart = this.faces.length;
       let nextFaceIndex = nextFaceIndextart;
-      console.log("nextFaceIndextart: %s", nextFaceIndextart);
-      console.log("nextHfIndex: %s", nextHfIndex);
       for(let i_f = 0; i_f < nextFaceIndextart; i_f++){
         let originalFace = this.faces[i_f];
 
-        // (x) --h?-> (m) --h1-> (x)                      (x) --ha-> (m) --h1-> (x)
-        //  ^                     |                        ^          |^         |
-        //  h4                    h?                       h4     lhft||lhf      h?
-        //  |                     v                        |          V|         v
+        // (x) <--h?- (m) <-h1-- (x)                      (x) <--h?- (m) <-h1-- (x)
+        //  |                     ^                        |          ^|         ^
+        //  h4                    h?                       h4      lhf||lhft     h?
+        //  v                     |                        v          |V         |
         // (m)       (m_f)       (m)   connect2Center =>   (m)       (m_f)       (m)
-        //  ^                     |       (h1,m_f)         ^                     |
+        //  |                     ^       (h1,m_f)         |                     ^
         //  h?                    h2                       h?                    h2
-        //  |                     v                        |                     v
-        // (x) <-h3-- (m) <-h?-- (x)                      (x) <-h3-- (m) <-h?-- (x)
+        //  v                     |                        v                     |
+        // (x) --h3-> (m) --h?-> (x)                      (x) --h3-> (m) --h?-> (x)
         //
-        // h? = hf we don't care about
         // create face at [h1,h2,h3,h4]
 
         // sanity check
@@ -797,9 +804,9 @@ export class HalfedgeMesh {
             let c = currenthf.next.next;
             let d = currenthf.next.next.next;
 
-            console.log("Face %d; curr: %s, b: %d, c: %d, d: %d", originalFace.idx, a.idx,b.idx,c.idx, d.idx)
-            console.log("Face midpoint vertex %s", face_center.idx)
-            console.log(" | verts %s %s %s %s", a.vertex.idx,b.vertex.idx,c.vertex.idx, d.vertex.idx)
+            // console.log("Face %d; curr: %s, b: %d, c: %d, d: %d", originalFace.idx, a.idx,b.idx,c.idx, d.idx)
+            // console.log("Face midpoint vertex %s", face_center.idx)
+            // console.log(" | verts %s %s %s %s", a.vertex.idx,b.vertex.idx,c.vertex.idx, d.vertex.idx)
 
 
             this.faces.push(face_segment);
@@ -825,7 +832,7 @@ export class HalfedgeMesh {
       }
     }
     console.log("##### Finished Subdivision ####")
-    this.plotHalfedges();
+    // this.plotHalfedges();
 
   }
 
