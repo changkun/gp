@@ -63,6 +63,7 @@ export default class Main extends Renderer {
       meshRightNormalHelper: null,
       meshLeftWireframeHelper: null,
       meshRightWireframeHelper: null,
+      raw_obj_data: "",
     }
     this.params = {
       import: () => this.input.click(),
@@ -139,16 +140,6 @@ export default class Main extends Renderer {
     mod.open()
 
 
-    // const btn_downloadMesh = { downloadMesh:function(){
-    //     console.log("Download Mesh")
-    //     this.exportObj(this.internal.mesh.parseToObj(),"cubeExport.obj");
-    // }};
-    // const btn_downloadMesh = function(){
-    //     console.log("Download Mesh")
-    //     this.exportObj(this.internal.mesh.parseToObj(),"cubeExport.obj");
-    //   }};
-    // // mod.add(btn_downloadMesh,'downloadMesh');
-    // mod.add(this.params).name('Download Mesh');
 
     // const simplifier = new SimplifyModifier()
     // mod.add(this.params, 'melaxSim', 0.0, 1.0, 0.001).name('Right (three.js)')
@@ -213,6 +204,7 @@ export default class Main extends Renderer {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
       this.sceneRight.remove(this.internal.mesh3jsRightSim)
     }
+    this.internal.raw_obj_data = data;
 
     this.internal.mesh = new HalfedgeMesh(data)
     this.internal.meshOriginal = new HalfedgeMesh(data)
@@ -466,7 +458,7 @@ export default class Main extends Renderer {
 
     let formatStats = function(stats, omit_subdivisions = false){
       let statsText = "<table style=\"width:100%\">";
-      statsText += "<tr><td><b>Vertices </b></td> <td>" + stats.cnt_faces + "</td></tr>";
+      statsText += "<tr><td><b>Vertices </b></td> <td>" + stats.cnt_vertices + "</td></tr>";
       statsText += "<tr><td><b>Edges </b></td> <td>" + stats.cnt_edges + "</td></tr>";
       statsText += "<tr><td><b>Faces </b></td> <td>" + stats.cnt_faces + "</td></tr>";
 
@@ -483,13 +475,20 @@ export default class Main extends Renderer {
 
   doSubdivide(){
     console.log("triggering subdiv with " + this.params.subdivisions_req);
-    // this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
-    // this.prepareBuf()
-    // this.renderMeshLeft()
-    // this.updateStatistics()
+    this.resetLeft();
+    this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
+    this.prepareBuf()
+    this.renderMeshLeft()
+    this.updateStatistics()
   }
   resetLeft(){
-    // TODO
+    // TODO implement full deep copy in HalfedgeMesh, then reparsing would be not needed anymore
+    if (this.internal.mesh3jsLeft !== null) {
+      this.sceneLeft.remove(this.internal.mesh3jsLeft)
+    }
+    this.internal.mesh = new HalfedgeMesh(this.internal.raw_obj_data)
+    this.renderMeshLeft()
+    this.updateStatistics()
   }
 
   downloadMesh(){
