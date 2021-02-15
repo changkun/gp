@@ -254,6 +254,7 @@ class Vertex {
 
 }
 
+
 export class HalfedgeMesh {
   /**
    * constructor constructs the halfedge-based mesh representation.
@@ -269,6 +270,7 @@ export class HalfedgeMesh {
     this.boundaries= [] // an array of boundary loops
     let n_bcycles = 0;
     this.isQuadMesh = false
+    this.subdivisionCounter = 0;
 
 
     // TODO: read .obj format and construct its halfedge representation
@@ -923,35 +925,12 @@ export class HalfedgeMesh {
     return {pair: edge, error: error, mergePoint: vbar, dbg_Qbar_Invertible: dbg_Qbar_Invertible};
   }
 
-  toThreeGeometry(){
-
-
-    return new BufferGeometry();
-  }
-
-  triangulateMesh(){
-    let originalFaces = this.faces;
-    let newFaceList = [];
-
-    for(let i = 0; i < this.faces.length; i++){
-      // split face if not already triangle
-      let currFace = originalFaces[i];
-
-      // TODO
-
-    }
-
-    // reset indices
-    for(let i = 0; i < this.faces.length; i++){
-      this.faces[i].idx = i;
-    }
-
-  }
 
   subdivide_catmull_clark(iterations = 0){
-    iterations = 1;
+    iterations = 2;
     console.log("############ Subdivide - Catmull Clark ## iterations: %s ############", iterations);
     for(let iter = 0; iter < iterations; iter++){
+      this.subdivisionCounter++;
       let new_FacePoints = new Map(); // [face.idx, Vertex] midpoint of face
       let new_movedEdgePoints = new Map(); // [edge.idx, Vertex] moved midpoints of new edges
       let edgeMidpoints = new Map(); // [edge.idx, Vector] midpoints of new edges
@@ -978,19 +957,6 @@ export class HalfedgeMesh {
         let curr_edge = this.edges[i_e];
         let edgeMidpoint = curr_edge.calculateMidpoint();
 
-        // variant 1
-        // let p1 = curr_edge.getP1();
-        // let p1_pos = curr_edge.getP1().position;
-        // let cnt_points = 2;
-        // let _sumAdjacentPoints = curr_edge.getP1().position.add(curr_edge.getP2().position);
-        // curr_edge.faces(
-        //     f => {
-        //       cnt_points++;
-        //       _sumAdjacentPoints = _sumAdjacentPoints.add(new_FacePoints.get(f.idx).position);
-        //     }
-        // );
-        // let newEdgePos = _sumAdjacentPoints.scale(1/cnt_points);
-        // variant 2
         let cnt_faces = 0;
         let _sumAdjacentPoints = new Vector();
         curr_edge.faces(
@@ -999,11 +965,13 @@ export class HalfedgeMesh {
               _sumAdjacentPoints = _sumAdjacentPoints.add(new_FacePoints.get(f.idx).position);
             }
         );
+        let newEdgePos = edgeMidpoint;
         let avg_facePoint = new Vector();
-        if(cnt_faces > 0){
+        if(cnt_faces > 1){
+          // not a boundary edge;
           avg_facePoint = _sumAdjacentPoints.scale(1/cnt_faces);
+          newEdgePos = edgeMidpoint.add(avg_facePoint).scale(0.5)
         }
-        let newEdgePos = edgeMidpoint.add(avg_facePoint).scale(0.5)
 
         let newVert = new Vertex();
         newVert.position = newEdgePos;
@@ -1020,6 +988,7 @@ export class HalfedgeMesh {
       for(let i_v = 0; i_v < newVertexIndexStart; i_v++){
         // only iterate over original points
         let vertex = this.vertices[i_v];
+        let isBoundaryVertex;
         let _sum_faces = new Vector();
         let count_faces = 0;
         vertex.faces(
@@ -1036,6 +1005,9 @@ export class HalfedgeMesh {
             hf => {
               count_edges++;
               _sum_edges = _sum_edges.add(edgeMidpoints.get(hf.edge.idx));
+              if(hf.onBoundary || hf.twin.onBoundary){
+                isBoundaryVertex = true;
+              }
             }
         );
 
@@ -1049,28 +1021,26 @@ export class HalfedgeMesh {
         let p2 = R.scale(2).scale(N_inv);
         let p3 = S.scale(N-3).scale(N_inv);
         let newOriginalPointLocation = p1.add(p2).add(p3);
-        // let newOriginalPointLocation =
-        //     Q.scale(N_inv)                      // Q/n
-        //         .add(
-        //             R.scale(2).scale(N_inv)  // 2R/n
-        //         )
-        //         .add(
-        //             S.scale(N-3).scale(N_inv)   // S(n-3)/n
-        //         );
+
+        if(isBoundaryVertex){
+          // boundary vertex. use different weighting
+          // take average of the edges midpoints and the vertex point
+
+          // let new_point = _sum_edges.add(S).scale(1/(count_edges+1));
+          let weightedVPos = S.scale(2); // make it a bit rounder -> higher weight on original vertexPoint
+          let new_point = _sum_edges.add(weightedVPos).scale(1/(count_edges+2));
+
+          newOriginalPointLocation = new_point
+          console.log("boundary vertex found");
+        }
           vertex.position = newOriginalPointLocation;
       }
 
       // 4. link everything up
-      console.log("Tested all ok so far");
-      console.log(this.vertices);
-      this.plotVertices();
-      this.plotHalfedges();
       console.log("4. link everything up - splitting edges");
 
 
       // split the edges
-      // let nextHfIndexStart = this.halfedges.length;
-      // let nextHfIndex = nextHfIndexStart;
       let nextHfIndex = this.halfedges.length;
       let nextEdgeIndexStart = this.edges.length;
       let nextEdgeIndex = nextEdgeIndexStart;
@@ -1129,17 +1099,13 @@ export class HalfedgeMesh {
 
         // edges are now split
       }
-      console.log(this.halfedges);
-      this.plotVertices();
-      this.plotHalfedges();
-      console.log("checked should be ok");
       console.log("4. link everything up - creating face segments");
 
       let nextFaceIndextart = this.faces.length;
       let nextFaceIndex = nextFaceIndextart;
+      console.log("nextFaceIndextart: %s", nextFaceIndextart);
+      console.log("nextHfIndex: %s", nextHfIndex);
       for(let i_f = 0; i_f < nextFaceIndextart; i_f++){
-      // for(let i_f = 0; i_f < 1; i_f++){
-        //
         let originalFace = this.faces[i_f];
 
         // (x) --h?-> (m) --h1-> (x)                      (x) --ha-> (m) --h1-> (x)
@@ -1190,7 +1156,7 @@ export class HalfedgeMesh {
 
           l_hf.next = h1;
           h1.prev = l_hf;
-          l_hft.pre = ha
+          l_hft.prev = ha
           ha.next = l_hft;
 
           // only face is still unset
@@ -1258,16 +1224,11 @@ export class HalfedgeMesh {
             creatingFaceSegments = false;
           }
           dbg_i2++;
-          // console.log(" %s| is ismid: %s, hf_idx: %s", dbg_i2, h2.vertex.dbg_isEdgeMidpoint, h2.idx);
         }
-        if(dbg_i2 > 4){
-          console.log(" !!!!!! |there was an overshoot !!!!!!!!!!!")
-        }
-        console.log("face: %s dbg_i: %s", originalFace.idx, dbg_i2);
       }
     }
     console.log("##### Finished Subdivision ####")
-    this.exportObj(this.parseToObj(),"cubeExport.obj");
+    this.plotHalfedges();
 
   }
 
@@ -1339,31 +1300,29 @@ export class HalfedgeMesh {
         exp_faces;
     let type = "text/plain";
     let file = new Blob([objectData], {type: type});
-    console.log(objectData);
 
     return file;
   }
 
-  /**
-   * @param {Blob} file_blob
-   */
-  exportObj(file_blob, filename){
-    // start the download
-    let file = file_blob;
-    if (window.navigator.msSaveOrOpenBlob) // IE10+
-      window.navigator.msSaveOrOpenBlob(file, filename);
-    else { // Others
-      let a = document.createElement("a"),
-          url = URL.createObjectURL(file);
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function() {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 0);
-    }
+
+
+  getStatistics(){
+    let cnt_vertices = this.vertices.length;
+    let cnt_edges = this.edges.length;
+    let cnt_faces = this.faces.length;
+    let subdivs = this.subdivisionCounter;
+
+    return new HalfedgeMeshStatistics(cnt_vertices, cnt_edges, cnt_faces, subdivs);
   }
 
 }
+
+export class HalfedgeMeshStatistics {
+  constructor(cnt_vertices = 0, cnt_edges = 0, cnt_faces = 0, subdivisions = 0) {
+    this.cnt_vertices = cnt_faces;
+    this.cnt_edges = cnt_edges;
+    this.cnt_faces = cnt_faces;
+    this.subdivisions = subdivisions;
+  }
+}
+

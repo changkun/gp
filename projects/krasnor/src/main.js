@@ -1,5 +1,5 @@
 import Renderer from './renderer'
-import { HalfedgeMesh } from './halfedge'
+import { HalfedgeMesh, HalfedgeMeshStatistics } from './halfedge'
 import { GUI } from 'dat.gui'
 import {
   Mesh,
@@ -30,6 +30,13 @@ export default class Main extends Renderer {
    */
   constructor() {
     super()
+    this.statisticsLeft = document.createElement('div')
+    this.statisticsLeft.id = "statsLeft"
+    this.statisticsRight = document.createElement('div')
+    this.statisticsRight.id = "statsRight"
+    this.setStatisticsElemetAlignment();
+    document.body.appendChild(this.statisticsLeft)
+    document.body.appendChild(this.statisticsRight)
 
     // a hidden input field that responsible for loading meshes
     this.input = document.createElement('input')
@@ -60,20 +67,23 @@ export default class Main extends Renderer {
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
+      downloadMesh: () => this.downloadMesh(),
+      subdivide: () => this.doSubdivide(),
       showNormals: false,
       showWireframe: false,
       flatShading: false,
       showTexture: true,
       normalMethod: 'equal-weighted',
 
-      qSim: 0.0,
-      melaxSim: 0.0,
+      subdivisions_req: 0.0,
+      // melaxSim: 0.0,
     }
 
     this.gui = new GUI()
     const io = this.gui.addFolder('I/O')
     io.add(this.params, 'import').name('import mesh')
     io.add(this.params, 'export').name('export screenshot')
+    io.add(this.params, 'downloadMesh').name('download Mesh')
 
     const vis = this.gui.addFolder('Visualization')
     vis.add(this.params, 'showNormals').name('show normals').listen()
@@ -121,80 +131,95 @@ export default class Main extends Renderer {
     vis.open()
 
     const mod = this.gui.addFolder('Reduce Ratio')
-    mod.add(this.params, 'qSim', 0.0, 1.0, 0.001).name('Left (QEM)')
+    mod.add(this.params, 'subdivisions_req', 0.0, 4.0, 1).name('Subdivisions')
     .onChange(v => {
-      // this.internal.mesh.simplify(v)
-      this.internal.mesh.subdivide_catmull_clark();
-      this.prepareBuf()
-      this.renderMeshLeft()
+      // do nothing
     })
-
-    const simplifier = new SimplifyModifier()
-    mod.add(this.params, 'melaxSim', 0.0, 1.0, 0.001).name('Right (three.js)')
-    .onChange(v => {
-      let g = new Geometry().fromBufferGeometry(
-        this.internal.mesh3jsRightOrig.geometry
-      )
-      const prevc = g.vertices.length
-      const count = Math.floor(g.vertices.length*v)
-      g = simplifier.modify(g, count)
-      g.computeVertexNormals()
-      const nv = g.getAttribute('position').array.length
-      console.log(`melaxSim: reduced from ${prevc} to ${nv/3}.`)
-
-      // The following is ugly, and this is unfortunate. Because
-      // the three.js's simplify modifier does not preserve color, tex info.
-      const bufcolors = new Float32Array(nv)
-      for (let i = 0; i < bufcolors.length; i += 3) {
-        bufcolors[i+0] = 0
-        bufcolors[i+1] = 0.5
-        bufcolors[i+2] = 1
-      }
-      g.setAttribute('color', new BufferAttribute(bufcolors, 3))
-      this.sceneRight.remove(this.internal.mesh3jsRightSim)
-      this.internal.mesh3jsRightSim = new Mesh(g, new MeshPhongMaterial({
-        vertexColors: VertexColors,
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
-        side: DoubleSide,
-        flatShading: this.params.flatShading,
-      }))
-      this.sceneRight.remove(this.internal.meshRightWireframeHelper)
-      this.sceneRight.remove(this.internal.meshRightNormalHelper)
-      this.internal.meshRightWireframeHelper = new LineSegments(
-        new WireframeGeometry(g),
-        new LineBasicMaterial({color: 0x000000, linewidth: 1})
-      )
-      this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-        this.internal.mesh3jsRightSim, 0.03, 0xaa0000,
-      )
-      if (this.params.showWireframe) {
-        this.sceneRight.add(this.internal.meshRightWireframeHelper)
-      }
-      if (this.params.showNormals) {
-        this.sceneRight.add(this.internal.meshRightNormalHelper)
-      }
-      this.sceneRight.add(this.internal.mesh3jsRightSim)
-    })
+    mod.add(this.params, 'subdivide').name('Execute Subdivide')
     mod.open()
+
+
+    // const btn_downloadMesh = { downloadMesh:function(){
+    //     console.log("Download Mesh")
+    //     this.exportObj(this.internal.mesh.parseToObj(),"cubeExport.obj");
+    // }};
+    // const btn_downloadMesh = function(){
+    //     console.log("Download Mesh")
+    //     this.exportObj(this.internal.mesh.parseToObj(),"cubeExport.obj");
+    //   }};
+    // // mod.add(btn_downloadMesh,'downloadMesh');
+    // mod.add(this.params).name('Download Mesh');
+
+    // const simplifier = new SimplifyModifier()
+    // mod.add(this.params, 'melaxSim', 0.0, 1.0, 0.001).name('Right (three.js)')
+    // .onChange(v => {
+    //   let g = new Geometry().fromBufferGeometry(
+    //     this.internal.mesh3jsRightOrig.geometry
+    //   )
+    //   const prevc = g.vertices.length
+    //   const count = Math.floor(g.vertices.length*v)
+    //   g = simplifier.modify(g, count)
+    //   g.computeVertexNormals()
+    //   const nv = g.getAttribute('position').array.length
+    //   console.log(`melaxSim: reduced from ${prevc} to ${nv/3}.`)
+    //
+    //   // The following is ugly, and this is unfortunate. Because
+    //   // the three.js's simplify modifier does not preserve color, tex info.
+    //   const bufcolors = new Float32Array(nv)
+    //   for (let i = 0; i < bufcolors.length; i += 3) {
+    //     bufcolors[i+0] = 0
+    //     bufcolors[i+1] = 0.5
+    //     bufcolors[i+2] = 1
+    //   }
+    //   g.setAttribute('color', new BufferAttribute(bufcolors, 3))
+    //   this.sceneRight.remove(this.internal.mesh3jsRightSim)
+    //   this.internal.mesh3jsRightSim = new Mesh(g, new MeshPhongMaterial({
+    //     vertexColors: VertexColors,
+    //     polygonOffset: true,
+    //     polygonOffsetFactor: 1,
+    //     polygonOffsetUnits: 1,
+    //     side: DoubleSide,
+    //     flatShading: this.params.flatShading,
+    //   }))
+    //   this.sceneRight.remove(this.internal.meshRightWireframeHelper)
+    //   this.sceneRight.remove(this.internal.meshRightNormalHelper)
+    //   this.internal.meshRightWireframeHelper = new LineSegments(
+    //     new WireframeGeometry(g),
+    //     new LineBasicMaterial({color: 0x000000, linewidth: 1})
+    //   )
+    //   this.internal.meshRightNormalHelper = new VertexNormalsHelper(
+    //     this.internal.mesh3jsRightSim, 0.03, 0xaa0000,
+    //   )
+    //   if (this.params.showWireframe) {
+    //     this.sceneRight.add(this.internal.meshRightWireframeHelper)
+    //   }
+    //   if (this.params.showNormals) {
+    //     this.sceneRight.add(this.internal.meshRightNormalHelper)
+    //   }
+    //   this.sceneRight.add(this.internal.mesh3jsRightSim)
+    // })
+    // mod.open()
 
     // just for the first load
     // fetch('./assets/cube_closed.obj')
     fetch('./assets/cube4.obj')
     // fetch('./assets/Face4.obj')
+    // fetch('./assets/bunny_tri.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
   loadMesh(data) {
     if (this.internal.mesh3jsLeft !== null) {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
+      this.sceneRight.remove(this.internal.mesh3jsRightSim)
     }
 
     this.internal.mesh = new HalfedgeMesh(data)
+    this.internal.meshOriginal = new HalfedgeMesh(data)
     this.prepareBuf()
     this.renderMeshLeft()
-    this.renderMeshRight()
+    this.renderMeshRight2()
+    this.updateStatistics()
   }
   exportScreenshot() {
     const url = this.renderer.domElement.toDataURL('image/png', 'export')
@@ -342,7 +367,7 @@ export default class Main extends Renderer {
       this.sceneLeft.add(this.internal.meshLeftWireframeHelper)
     }
   }
-  renderMeshRight() {
+  renderMeshRight2(){
     // clear old instances
     if (this.internal.meshRightNormalHelper !== null) {
       this.sceneRight.remove(this.internal.meshRightNormalHelper)
@@ -354,33 +379,63 @@ export default class Main extends Renderer {
       this.sceneRight.remove(this.internal.mesh3jsRightOrig)
     }
 
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*3)
-    this.internal.mesh.faces.forEach(f => {
-      f.vertices((v, i) => { idxs[3 * f.idx + i] = v.idx })
+    let face_vert_offset = 3
+    if(this.internal.meshOriginal.isQuadMesh){
+      face_vert_offset = 6 // 3x2 as two faces will be rendered
+    }
+    const idxs = new Uint32Array(this.internal.meshOriginal.faces.length*face_vert_offset)
+    this.internal.meshOriginal.faces.forEach(f => {
+      f.vertices((v, i) => {
+        if(this.internal.meshOriginal.isQuadMesh && i == 3){
+          // this is a Face4 (i == 3 is fourth face vertex) - triangulate
+
+          //0
+          idxs[face_vert_offset * f.idx + i] = idxs[face_vert_offset * f.idx]
+          //prev vertex (3rd) 2
+          idxs[face_vert_offset * f.idx + (i+1)] = idxs[face_vert_offset * f.idx + (i-1)]
+          //last vertex (4th) 3
+          idxs[face_vert_offset * f.idx + (i+2)] = v.idx
+
+        }else{
+          // Face3
+          idxs[face_vert_offset * f.idx + i] = v.idx
+        }
+      })
     })
+
+    const idxs_lines = new Uint32Array(this.internal.meshOriginal.edges.length*2)
+    this.internal.meshOriginal.edges.forEach(edge => {
+      idxs_lines[2*edge.idx] = edge.getP1().idx;
+      idxs_lines[2*edge.idx +1] = edge.getP2().idx;
+    })
+
+    const g_lines_r = new BufferGeometry()
+    g_lines_r.setIndex(new BufferAttribute(idxs_lines, 1))
+    g_lines_r.setAttribute('position', new BufferAttribute(this.bufpos, 3))
 
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
-    g.setAttribute('position', new BufferAttribute(this.bufpos, 3)) // use uv as position
+    g.setAttribute('position', new BufferAttribute(this.bufpos, 3))
     g.setAttribute('uv', new BufferAttribute(this.bufuvs, 3))
     g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
     g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
 
-    this.internal.mesh3jsRightOrig = new Mesh(g, new MeshPhongMaterial({
+    this.internal.mesh3jsRightSim = new Mesh(g, new MeshPhongMaterial({
       vertexColors: VertexColors,
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
     }))
+
     this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-      this.internal.mesh3jsRightOrig, 0.03, 0xaa0000,
+        this.internal.mesh3jsRightSim, 0.03, 0xaa0000,
     )
     this.internal.meshRightWireframeHelper = new LineSegments(
-      new WireframeGeometry(g),
-      new LineBasicMaterial({color: 0x000000, linewidth: 1})
+        g_lines_r,
+        new LineBasicMaterial({color: 0x000000, linewidth: 1})
     )
-    this.internal.mesh3jsRightSim = this.internal.mesh3jsRightOrig.clone()
+
     this.sceneRight.add(this.internal.mesh3jsRightSim)
     if (this.params.showNormals) {
       this.sceneRight.add(this.internal.meshRightNormalHelper)
@@ -389,5 +444,124 @@ export default class Main extends Renderer {
       this.sceneRight.add(this.internal.meshRightWireframeHelper)
     }
   }
+
+  setStatisticsElemetAlignment(){
+    let width = "200px"
+    let height = "100px"
+    this.statisticsLeft.style.width = width ;
+    this.statisticsLeft.style.height = height ;
+    this.statisticsLeft.style.bottom = "0px" ;
+    this.statisticsLeft.style.left = "0px" ;
+    this.statisticsLeft.style.position = "fixed";
+
+    this.statisticsRight.style.width = width ;
+    this.statisticsRight.style.height = height ;
+    this.statisticsRight.style.bottom = "0px" ;
+    this.statisticsRight.style.left = "50%" ;
+    this.statisticsRight.style.position = "fixed" ;
+  }
+  updateStatistics(){
+    let statsMesh_left = this.internal.mesh.getStatistics();
+    let statsMesh_right = this.internal.meshOriginal.getStatistics();
+
+    let formatStats = function(stats, omit_subdivisions = false){
+      let statsText = "<table style=\"width:100%\">";
+      statsText += "<tr><td><b>Vertices </b></td> <td>" + stats.cnt_faces + "</td></tr>";
+      statsText += "<tr><td><b>Edges </b></td> <td>" + stats.cnt_edges + "</td></tr>";
+      statsText += "<tr><td><b>Faces </b></td> <td>" + stats.cnt_faces + "</td></tr>";
+
+      if(!omit_subdivisions){
+        statsText += "<tr><td><b>Subdivisions </b></td> <td>" + stats.subdivisions + "</td></tr>";
+      }
+
+      return statsText;
+    }
+    this.statisticsLeft.innerHTML = formatStats(statsMesh_left);
+    this.statisticsRight.innerHTML = formatStats(statsMesh_right, true);
+
+  }
+
+  doSubdivide(){
+    console.log("triggering subdiv with " + this.params.subdivisions_req);
+    // this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
+    // this.prepareBuf()
+    // this.renderMeshLeft()
+    // this.updateStatistics()
+  }
+  resetLeft(){
+    // TODO
+  }
+
+  downloadMesh(){
+    this.exportObj(this.internal.mesh.parseToObj(),"mesh_subdivision_js.obj");
+  }
+  /**
+   * @param {Blob} file_blob
+   */
+  exportObj(file_blob, filename){
+    // start the download
+    let file = file_blob;
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+      window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+      let a = document.createElement("a"),
+          url = URL.createObjectURL(file);
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 0);
+    }
+  }
+  // renderMeshRight() {
+  //   // clear old instances
+  //   if (this.internal.meshRightNormalHelper !== null) {
+  //     this.sceneRight.remove(this.internal.meshRightNormalHelper)
+  //   }
+  //   if (this.internal.meshRightWireframeHelper !== null) {
+  //     this.sceneRight.remove(this.internal.meshRightWireframeHelper)
+  //   }
+  //   if (this.internal.mesh3jsRightOrig !== null) {
+  //     this.sceneRight.remove(this.internal.mesh3jsRightOrig)
+  //   }
+  //
+  //   const idxs = new Uint32Array(this.internal.mesh.faces.length*3)
+  //   this.internal.mesh.faces.forEach(f => {
+  //     f.vertices((v, i) => { idxs[3 * f.idx + i] = v.idx })
+  //   })
+  //
+  //   const g = new BufferGeometry()
+  //   g.setIndex(new BufferAttribute(idxs, 1))
+  //   g.setAttribute('position', new BufferAttribute(this.bufpos, 3)) // use uv as position
+  //   g.setAttribute('uv', new BufferAttribute(this.bufuvs, 3))
+  //   g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
+  //   g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
+  //
+  //   this.internal.mesh3jsRightOrig = new Mesh(g, new MeshPhongMaterial({
+  //     vertexColors: VertexColors,
+  //     polygonOffset: true,
+  //     polygonOffsetFactor: 1,
+  //     polygonOffsetUnits: 1,
+  //     side: DoubleSide,
+  //   }))
+  //   this.internal.meshRightNormalHelper = new VertexNormalsHelper(
+  //     this.internal.mesh3jsRightOrig, 0.03, 0xaa0000,
+  //   )
+  //   this.internal.meshRightWireframeHelper = new LineSegments(
+  //     new WireframeGeometry(g),
+  //     new LineBasicMaterial({color: 0x000000, linewidth: 1})
+  //   )
+  //   this.internal.mesh3jsRightSim = this.internal.mesh3jsRightOrig.clone()
+  //   this.sceneRight.add(this.internal.mesh3jsRightSim)
+  //   if (this.params.showNormals) {
+  //     this.sceneRight.add(this.internal.meshRightNormalHelper)
+  //   }
+  //   if (this.params.showWireframe) {
+  //     this.sceneRight.add(this.internal.meshRightWireframeHelper)
+  //   }
+  // }
 }
 new Main().render()
