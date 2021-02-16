@@ -311,6 +311,7 @@ export class HalfedgeMesh {
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
+            // indices.push(parseInt((tokens[i].split('\/\/|\/')[0]).trim()) - 1) // alternative, which would split the alternative format correctly, but we do only care about vertices (index 0) so its not needed
           }
           if(containsQuad && !isQuad)
             indices.push(-1)
@@ -379,7 +380,7 @@ export class HalfedgeMesh {
       // construct halfedges of the face
       for (let j = 0; j < nFaceEdges; j++) {
         const he = new Halfedge()
-        this.halfedges[i+j] = he
+        this.halfedges[trueIndex+j] = he
       }
 
       // construct connectivities of the new halfedges
