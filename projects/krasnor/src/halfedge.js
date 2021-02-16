@@ -271,6 +271,7 @@ export class HalfedgeMesh {
     let n_bcycles = 0;
     this.isQuadMesh = false
     this.subdivisionCounter = 0;
+    this.lastSubdivisionTime = 0;
 
 
     // TODO: read .obj format and construct its halfedge representation
@@ -527,6 +528,8 @@ export class HalfedgeMesh {
 
   subdivide_catmull_clark(iterations = 0){
     console.log("############ Subdivide - Catmull Clark ## iterations: %s ############", iterations);
+    console.time('foo')
+    let t0_subdiv = performance.now();
     for(let iter = 0; iter < iterations; iter++){
       this.subdivisionCounter++;
       let new_FacePoints = new Map(); // [face.idx, Vertex] midpoint of face
@@ -545,7 +548,6 @@ export class HalfedgeMesh {
         newVert.position = curr_face.calculateMidpoint();
         newVert.idx = nextVertexIndex++;
         this.vertices.push(newVert)
-        console.log("created facePoint: v %s (%s,%s,%s) ", newVert.idx, newVert.position.x,newVert.position.y, newVert.position.z);
 
         new_FacePoints.set(curr_face.idx, newVert);
       }
@@ -554,6 +556,7 @@ export class HalfedgeMesh {
       for(let i_e = 0; i_e < this.edges.length; i_e++){
         let curr_edge = this.edges[i_e];
         let edgeMidpoint = curr_edge.calculateMidpoint();
+        // let boundaryEdgePoint = false;
 
         let cnt_faces = 0;
         let _sumAdjacentPoints = new Vector();
@@ -568,8 +571,11 @@ export class HalfedgeMesh {
         if(cnt_faces > 1){
           // not a boundary edge;
           avg_facePoint = _sumAdjacentPoints.scale(1/cnt_faces);
-          newEdgePos = edgeMidpoint.add(avg_facePoint).scale(0.5)
+          newEdgePos = edgeMidpoint.add(avg_facePoint).scale(0.5);
         }
+        // else{
+        //   boundaryEdgePoint = true;
+        // }
 
         let newVert = new Vertex();
         newVert.position = newEdgePos;
@@ -579,6 +585,10 @@ export class HalfedgeMesh {
 
         new_movedEdgePoints.set(curr_edge.idx, newVert);
         edgeMidpoints.set(curr_edge.idx, edgeMidpoint);
+
+        // if(boundaryEdgePoint){
+        //   console.log("v: %s is boundarayEdgePoint, cnt_faces %s", newVert.idx, cnt_faces)
+        // }
       }
       console.log("3. calculate displacement for original points");
 
@@ -587,9 +597,6 @@ export class HalfedgeMesh {
         // only iterate over original points
         let vertex = this.vertices[i_v];
         let isBoundaryVertex = false;
-        if(vertex.idx >= 8 && vertex.idx <= 13){
-          console.log("moving a previous facePoint: v%s (%s,%s,%s)", vertex.idx, vertex.position.x,vertex.position.y, vertex.position.z)
-        }
 
         let _sum_faces = new Vector();
         let count_faces = 0;
@@ -603,12 +610,14 @@ export class HalfedgeMesh {
 
         let count_edges = 0;
         let _sum_edges = new Vector();
+        let _sum_edgesOnBoundary = new Vector();
         vertex.halfedges(
             hf => {
               count_edges++;
               _sum_edges = _sum_edges.add(edgeMidpoints.get(hf.edge.idx));
               if(hf.onBoundary || hf.twin.onBoundary){
                 isBoundaryVertex = true;
+                _sum_edgesOnBoundary = _sum_edgesOnBoundary.add(edgeMidpoints.get(hf.edge.idx));
               }
             }
         );
@@ -626,14 +635,13 @@ export class HalfedgeMesh {
 
         if(isBoundaryVertex){
           // boundary vertex. use different weighting
-          // take average of the edges midpoints and the vertex point
+          // take average of the boundary edges midpoints and the vertex point
 
-          // let new_point = _sum_edges.add(S).scale(1/(count_edges+1));
-          let weightedVPos = S.scale(2); // make it a bit rounder -> higher weight on original vertexPoint
-          let new_point = _sum_edges.add(weightedVPos).scale(1/(count_edges+2));
+          let weightedVPos = S.scale(2); // higher weight on old position
+          let new_point = _sum_edgesOnBoundary.add(weightedVPos).scale(1/4);
 
           newOriginalPointLocation = new_point
-          console.log("boundary vertex found");
+          // console.log("v: %s boundary vertex found", vertex.idx);
         }
           vertex.position = newOriginalPointLocation;
       }
@@ -829,7 +837,11 @@ export class HalfedgeMesh {
         }
       }
     }
-    console.log("##### Finished Subdivision ####")
+    let t1_subdiv = performance.now();
+    console.timeEnd('foo')
+
+    let t_subdiv_elapsed = t1_subdiv - t0_subdiv;
+    console.log("##### Finished Subdivision ## time: %sms##", t_subdiv_elapsed)
     // this.plotHalfedges();
 
   }
@@ -858,6 +870,7 @@ export class HalfedgeMesh {
           this.halfedges[dbg_i].next?.idx);
     }
   }
+
   /**
    * Parses the HalfeEdgeMesh into an .obj compatible format
    * Currently only vertices and faces are exported (e.g. normals are not exported)
