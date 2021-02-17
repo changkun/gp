@@ -273,6 +273,7 @@ export class HalfedgeMesh {
     this.subdivisionCounter = 0;
     this.lastSubdivisionTime = 0;
 
+    let t0_parseFromObj = performance.now();
 
     // TODO: read .obj format and construct its halfedge representation
     // load .obj file
@@ -520,15 +521,17 @@ export class HalfedgeMesh {
       he.idx = index++
     })
 
-    console.log("finished mesh parsing")
-    console.log("boundary cycles: " + this.boundaries.length)
-    console.log("boundary[0] length: " + this.boundaries[0]?.length)
-    console.log("")
+    let t1_parseFromObj = performance.now();
+    let t_parseFromObj_elapsed = t1_parseFromObj - t0_parseFromObj;
+    console.log("finished mesh parsing ## %sms", t_parseFromObj_elapsed)
+    // console.log("boundary cycles: " + this.boundaries.length)
+    // console.log("boundary[0] length: " + this.boundaries[0]?.length)
+    // console.log("")
   }
 
   subdivide_catmull_clark(iterations = 0){
     console.log("############ Subdivide - Catmull Clark ## iterations: %s ############", iterations);
-    console.time('foo')
+
     let t0_subdiv = performance.now();
     for(let iter = 0; iter < iterations; iter++){
       this.subdivisionCounter++;
@@ -536,11 +539,11 @@ export class HalfedgeMesh {
       let new_movedEdgePoints = new Map(); // [edge.idx, Vertex] moved midpoints of new edges
       let edgeMidpoints = new Map(); // [edge.idx, Vector] midpoints of new edges
 
-      let newVertexIndexStart = this.vertices.length;
-      let nextVertexIndex = newVertexIndexStart;
-      console.log("1. create new FacePoints");
+      const newVerticesIndexStart = this.vertices.length;
+      let nextVertexIndex = newVerticesIndexStart;
 
-      // 1. create new Face Vertices
+      // ## 1. create new Face Points ###############################################
+      // console.log("1. create new FacePoints");
       for(let i_f = 0; i_f < this.faces.length; i_f++){
         let curr_face = this.faces[i_f];
 
@@ -551,8 +554,8 @@ export class HalfedgeMesh {
 
         new_FacePoints.set(curr_face.idx, newVert);
       }
-      console.log("2. create newEdgePoints");
-      // 2. create new Edge Points (not yet linked up)
+      // ## 2. create new Edge Points (not yet linked up)
+      // console.log("2. create new Edge Points");
       for(let i_e = 0; i_e < this.edges.length; i_e++){
         let curr_edge = this.edges[i_e];
         let edgeMidpoint = curr_edge.calculateMidpoint();
@@ -590,10 +593,10 @@ export class HalfedgeMesh {
         //   console.log("v: %s is boundarayEdgePoint, cnt_faces %s", newVert.idx, cnt_faces)
         // }
       }
-      console.log("3. calculate displacement for original points");
 
-      // 3. calculate displacement for original points
-      for(let i_v = 0; i_v < newVertexIndexStart; i_v++){
+      // ## 3. calculate displacement for Original Points ###########################
+      // console.log("3. calculate displacement for original points");
+      for(let i_v = 0; i_v < newVerticesIndexStart; i_v++){
         // only iterate over original points
         let vertex = this.vertices[i_v];
         let isBoundaryVertex = false;
@@ -646,15 +649,15 @@ export class HalfedgeMesh {
           vertex.position = newOriginalPointLocation;
       }
 
-      // 4. link everything up
-      console.log("4. link everything up - splitting edges");
 
+      // ## 4. link everything up ###################################################
+      // console.log("4. splitting edges");
 
       // split the edges
+      const newEdgesIndexStart = this.edges.length;
+      let nextEdgeIndex = newEdgesIndexStart;
       let nextHfIndex = this.halfedges.length;
-      let nextEdgeIndexStart = this.edges.length;
-      let nextEdgeIndex = nextEdgeIndexStart;
-      for(let i_e = 0; i_e < nextEdgeIndexStart; i_e++){
+      for(let i_e = 0; i_e < newEdgesIndexStart; i_e++){
         let curr_edge = this.edges[i_e];
         let old_hf1 = curr_edge.halfedge;
         let old_hf2 = old_hf1.twin;
@@ -709,11 +712,11 @@ export class HalfedgeMesh {
 
         // edges are now split
       }
-      console.log("4. link everything up - creating face segments");
 
-      let nextFaceIndextart = this.faces.length;
-      let nextFaceIndex = nextFaceIndextart;
-      for(let i_f = 0; i_f < nextFaceIndextart; i_f++){
+      // console.log("4. creating face segments");
+      const newFacesIndexStart = this.faces.length;
+      let nextFaceIndex = newFacesIndexStart;
+      for(let i_f = 0; i_f < newFacesIndexStart; i_f++){
         let originalFace = this.faces[i_f];
 
         // (x) <--h?- (m) <-h1-- (x)                      (x) <--h?- (m) <-h1-- (x)
@@ -742,7 +745,7 @@ export class HalfedgeMesh {
 
 
         let startHalfedge =
-            originalFace.halfedge.vertex.idx < newVertexIndexStart ? originalFace.halfedge.next : originalFace.halfedge;
+            originalFace.halfedge.vertex.idx < newVerticesIndexStart ? originalFace.halfedge.next : originalFace.halfedge;
         let face_center = new_FacePoints.get(originalFace.idx);
         const connect_to_centerPoint = function(h1, scope){
           let ha = h1.prev;
@@ -805,16 +808,15 @@ export class HalfedgeMesh {
             currenthf.next.next.face = face_segment;
             currenthf.next.next.next.face = face_segment;
 
-            let a = currenthf;
-            let b = currenthf.next;
-            let c = currenthf.next.next;
-            let d = currenthf.next.next.next;
-
+            // let a = currenthf;
+            // let b = currenthf.next;
+            // let c = currenthf.next.next;
+            // let d = currenthf.next.next.next;
             // console.log("Face %d; curr: %s, b: %d, c: %d, d: %d", originalFace.idx, a.idx,b.idx,c.idx, d.idx)
             // console.log("Face midpoint vertex %s", face_center.idx)
             // console.log(" | verts %s %s %s %s", a.vertex.idx,b.vertex.idx,c.vertex.idx, d.vertex.idx)
 
-
+            face_segment.isQuad = true;
             this.faces.push(face_segment);
           }else{
             // "shrink/retarget" original face to the last remaining segment
@@ -830,6 +832,7 @@ export class HalfedgeMesh {
             currenthf.next.face = originalFace;
             currenthf.next.next.face = originalFace;
             currenthf.next.next.next.face = originalFace;
+            originalFace.isQuad = true;
 
             creatingFaceSegments = false;
           }
@@ -837,12 +840,16 @@ export class HalfedgeMesh {
         }
       }
     }
-    let t1_subdiv = performance.now();
-    console.timeEnd('foo')
 
+    let t1_subdiv = performance.now();
     let t_subdiv_elapsed = t1_subdiv - t0_subdiv;
-    console.log("##### Finished Subdivision ## time: %sms##", t_subdiv_elapsed)
-    // this.plotHalfedges();
+
+    let t_subdiv_elapsed_ms = t_subdiv_elapsed%1000;
+    let t_subdiv_elapsed_s = Math.floor(t_subdiv_elapsed/1000);
+    let t_subdiv_elapsed_min = Math.floor(t_subdiv_elapsed/1000/60);
+    console.log("##### Finished Subdivision ## %smin %ss %sms #########", t_subdiv_elapsed_min, t_subdiv_elapsed_s, t_subdiv_elapsed_ms);
+    this.plotVertices();
+    this.plotFaces(true);
 
   }
 
@@ -851,9 +858,9 @@ export class HalfedgeMesh {
       console.log("v: %i hf: %s - %s %s %s",
           this.vertices[dbg_i].idx,
           this.vertices[dbg_i].halfedge?.idx,
-          this.vertices[dbg_i].position.x,
-          this.vertices[dbg_i].position.y,
-          this.vertices[dbg_i].position.z
+          this.vertices[dbg_i].position?.x,
+          this.vertices[dbg_i].position?.y,
+          this.vertices[dbg_i].position?.z
       );
     }
 
@@ -862,12 +869,36 @@ export class HalfedgeMesh {
     for (let dbg_i = 0; dbg_i < this.halfedges.length; dbg_i++){
       console.log("i: %i v: %i e: %i t: %i - f: %i p: %i n: %i",
           this.halfedges[dbg_i].idx,
-          this.halfedges[dbg_i].vertex.idx,
-          this.halfedges[dbg_i].edge.idx,
-          this.halfedges[dbg_i].twin.idx,
+          this.halfedges[dbg_i].vertex?.idx,
+          this.halfedges[dbg_i].edge?.idx,
+          this.halfedges[dbg_i].twin?.idx,
           this.halfedges[dbg_i].face?.idx,
           this.halfedges[dbg_i].prev?.idx,
           this.halfedges[dbg_i].next?.idx);
+    }
+  }
+  plotFaces(extendedInfo = false){
+    for (let dbg_i = 0; dbg_i < this.faces.length; dbg_i++){
+      let extendedInfo = "| vertices ";
+      this.faces[dbg_i].vertices(
+          v => {
+            extendedInfo += " " + v.idx;
+          }
+      );
+      console.log("f: %i hf: %s quad: %s   %s",
+          this.faces[dbg_i].idx,
+          this.faces[dbg_i].halfedge?.idx,
+          this.faces[dbg_i].isQuad,
+          extendedInfo
+      );
+    }
+  }
+  plotEdges(){
+    for (let dbg_i = 0; dbg_i < this.edges.length; dbg_i++){
+      console.log("e: %i hf: %s",
+          this.edges[dbg_i].idx,
+          this.edges[dbg_i].halfedge?.idx
+      );
     }
   }
 
@@ -881,8 +912,9 @@ export class HalfedgeMesh {
    */
   parseToObj(){
     let lineSeperator =  "\n";
-    let exp_header = "# Javascript Halfedge implemention Export";
-    let exp_objName = "o cubeExport";
+    let exp_header  = "# Javascript Halfedge implementation .obj exporter";
+    let exp_header2 = "# subdivision count: " + this.subdivisionCounter;
+    let exp_objName = "o subdivided_object";
     let exp_vertices = "";
     let exp_faces = "";
 
@@ -912,6 +944,7 @@ export class HalfedgeMesh {
 
     let objectData =
         exp_header + lineSeperator +
+        exp_header2 + lineSeperator +
         exp_objName + lineSeperator +
         exp_vertices + // no line sep as there is already one
         exp_faces;
@@ -928,6 +961,19 @@ export class HalfedgeMesh {
     let subdivs = this.subdivisionCounter;
 
     return new HalfedgeMeshStatistics(cnt_vertices, cnt_edges, cnt_faces, subdivs);
+  }
+
+  getFaceVertexCountAfterTriangulation(){
+    let cnt_vertices = 0;
+    this.faces.forEach(f => {
+      if(f.isQuad){
+        cnt_vertices += 6;
+      }else{
+        cnt_vertices += 3;
+      }
+    }
+    );
+    return cnt_vertices;
   }
 }
 

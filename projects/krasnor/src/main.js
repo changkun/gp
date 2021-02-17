@@ -193,8 +193,9 @@ export default class Main extends Renderer {
 
     // just for the first load
     // fetch('./assets/cube_closed.obj')
+    fetch('./assets/triangle.obj')
     // fetch('./assets/cube4.obj')
-    fetch('./assets/Face4.obj')
+    // fetch('./assets/Face4.obj')
     // fetch('./assets/bunny_tri.obj')
     // fetch('./assets/bunny_quad.obj')
       .then(resp => resp.text())
@@ -293,29 +294,32 @@ export default class Main extends Renderer {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
     }
 
-    let face_vert_offset = 3
-    if(this.internal.mesh.isQuadMesh){
-      face_vert_offset = 6 // 3x2 as two faces will be rendered
-    }
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*face_vert_offset)
+    let faceVertsCountAfterTriangulation = this.internal.mesh.getFaceVertexCountAfterTriangulation();
+    let idxs_current_face_index = 0;
+    const idxs = new Uint32Array(faceVertsCountAfterTriangulation);
     this.internal.mesh.faces.forEach(f => {
       f.vertices((v, i) => {
-        if(this.internal.mesh.isQuadMesh && i == 3){
-          // this is a Face4 (i == 3 is fourth face vertex) - triangulate
+        //     1           1
+        //   /  \        /  \
+        //  2    0  =>  2----0
+        //   \  /        \  /
+        //     3           3
+        //   quad      triangulated
+        // render 0,1,2 & 0,2,3
 
-          //0
-          idxs[face_vert_offset * f.idx + i] = idxs[face_vert_offset * f.idx]
-          //prev vertex (3rd) 2
-          idxs[face_vert_offset * f.idx + (i+1)] = idxs[face_vert_offset * f.idx + (i-1)]
-          //last vertex (4th) 3
-          idxs[face_vert_offset * f.idx + (i+2)] = v.idx
-
+        if(f.isQuad && i == 3){
+          // this is a Face4 (i == 3 is fourth face vertex) -> triangulate
+          idxs_current_face_index++;
+          idxs[3*idxs_current_face_index] = idxs[3*(idxs_current_face_index-1)]         // 0
+          idxs[3*idxs_current_face_index +1] = idxs[3*(idxs_current_face_index-1) + 2]  // 2
+          idxs[3*idxs_current_face_index +2] = v.idx                                    // 3
         }else{
           // Face3
-          idxs[face_vert_offset * f.idx + i] = v.idx
+          idxs[3*idxs_current_face_index + i] = v.idx;
         }
       })
-    })
+      idxs_current_face_index++;
+    });
 
     const idxs_lines = new Uint32Array(this.internal.mesh.edges.length*2)
     this.internal.mesh.edges.forEach(edge => {
@@ -346,9 +350,7 @@ export default class Main extends Renderer {
       this.internal.mesh3jsLeft, 0.03, 0xaa0000,
     )
     this.internal.meshLeftWireframeHelper = new LineSegments(
-      // new WireframeGeometry(new BoxGeometry( 1.3, 1.3, 2 )),
       g_lines,
-      // new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 9})
     )
 
@@ -372,29 +374,33 @@ export default class Main extends Renderer {
       this.sceneRight.remove(this.internal.mesh3jsRightOrig)
     }
 
-    let face_vert_offset = 3
-    if(this.internal.meshOriginal.isQuadMesh){
-      face_vert_offset = 6 // 3x2 as two faces will be rendered
-    }
-    const idxs = new Uint32Array(this.internal.meshOriginal.faces.length*face_vert_offset)
-    this.internal.meshOriginal.faces.forEach(f => {
+    let faceVertsCountAfterTriangulation = this.internal.meshOriginal.getFaceVertexCountAfterTriangulation();
+    let idxs_current_face_index = 0;
+    // const idxs = new Uint32Array(this.internal.mesh.faces.length*face_vert_offset)
+    const idxs = new Uint32Array(faceVertsCountAfterTriangulation);
+    this.internal.mesh.faces.forEach(f => {
       f.vertices((v, i) => {
-        if(this.internal.meshOriginal.isQuadMesh && i == 3){
-          // this is a Face4 (i == 3 is fourth face vertex) - triangulate
+        //     1           1
+        //   /  \        /  \
+        //  2    0  =>  2----0
+        //   \  /        \  /
+        //     3           3
+        //   quad      triangulated
+        // render 0,1,2 & 0,2,3
 
-          //0
-          idxs[face_vert_offset * f.idx + i] = idxs[face_vert_offset * f.idx]
-          //prev vertex (3rd) 2
-          idxs[face_vert_offset * f.idx + (i+1)] = idxs[face_vert_offset * f.idx + (i-1)]
-          //last vertex (4th) 3
-          idxs[face_vert_offset * f.idx + (i+2)] = v.idx
-
+        if(f.isQuad && i == 3){
+          // this is a Face4 (i == 3 is fourth face vertex) -> triangulate
+          idxs_current_face_index++;
+          idxs[3*idxs_current_face_index] = idxs[3*(idxs_current_face_index-1)]         // 0
+          idxs[3*idxs_current_face_index +1] = idxs[3*(idxs_current_face_index-1) + 2]  // 2
+          idxs[3*idxs_current_face_index +2] = v.idx                                    // 3
         }else{
           // Face3
-          idxs[face_vert_offset * f.idx + i] = v.idx
+          idxs[3*idxs_current_face_index + i] = v.idx;
         }
       })
-    })
+      idxs_current_face_index++;
+    });
 
     const idxs_lines = new Uint32Array(this.internal.meshOriginal.edges.length*2)
     this.internal.meshOriginal.edges.forEach(edge => {
@@ -524,52 +530,6 @@ export default class Main extends Renderer {
       }, 0);
     }
   }
-  // renderMeshRight() {
-  //   // clear old instances
-  //   if (this.internal.meshRightNormalHelper !== null) {
-  //     this.sceneRight.remove(this.internal.meshRightNormalHelper)
-  //   }
-  //   if (this.internal.meshRightWireframeHelper !== null) {
-  //     this.sceneRight.remove(this.internal.meshRightWireframeHelper)
-  //   }
-  //   if (this.internal.mesh3jsRightOrig !== null) {
-  //     this.sceneRight.remove(this.internal.mesh3jsRightOrig)
-  //   }
-  //
-  //   const idxs = new Uint32Array(this.internal.mesh.faces.length*3)
-  //   this.internal.mesh.faces.forEach(f => {
-  //     f.vertices((v, i) => { idxs[3 * f.idx + i] = v.idx })
-  //   })
-  //
-  //   const g = new BufferGeometry()
-  //   g.setIndex(new BufferAttribute(idxs, 1))
-  //   g.setAttribute('position', new BufferAttribute(this.bufpos, 3)) // use uv as position
-  //   g.setAttribute('uv', new BufferAttribute(this.bufuvs, 3))
-  //   g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
-  //   g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
-  //
-  //   this.internal.mesh3jsRightOrig = new Mesh(g, new MeshPhongMaterial({
-  //     vertexColors: VertexColors,
-  //     polygonOffset: true,
-  //     polygonOffsetFactor: 1,
-  //     polygonOffsetUnits: 1,
-  //     side: DoubleSide,
-  //   }))
-  //   this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-  //     this.internal.mesh3jsRightOrig, 0.03, 0xaa0000,
-  //   )
-  //   this.internal.meshRightWireframeHelper = new LineSegments(
-  //     new WireframeGeometry(g),
-  //     new LineBasicMaterial({color: 0x000000, linewidth: 1})
-  //   )
-  //   this.internal.mesh3jsRightSim = this.internal.mesh3jsRightOrig.clone()
-  //   this.sceneRight.add(this.internal.mesh3jsRightSim)
-  //   if (this.params.showNormals) {
-  //     this.sceneRight.add(this.internal.meshRightNormalHelper)
-  //   }
-  //   if (this.params.showWireframe) {
-  //     this.sceneRight.add(this.internal.meshRightWireframeHelper)
-  //   }
-  // }
+
 }
 new Main().render()
