@@ -18,7 +18,6 @@ import {
 import {
   VertexNormalsHelper
 } from 'three/examples/jsm/helpers/VertexNormalsHelper'
-import { SimplifyModifier } from 'three/examples/jsm/modifiers/SimplifyModifier'
 import Vector from './vec'
 
 /**
@@ -132,72 +131,20 @@ export default class Main extends Renderer {
     vis.open()
 
     const mod = this.gui.addFolder('Reduce Ratio')
-    mod.add(this.params, 'subdivisions_req', 0.0, 4.0, 1).name('Subdivisions')
+    mod.add(this.params, 'subdivisions_req', 0.0, 6.0, 1).name('Subdivisions')
     .onChange(v => {
       // do nothing
     })
     mod.add(this.params, 'subdivide').name('Execute Subdivide')
     mod.open()
 
-
-
-    // const simplifier = new SimplifyModifier()
-    // mod.add(this.params, 'melaxSim', 0.0, 1.0, 0.001).name('Right (three.js)')
-    // .onChange(v => {
-    //   let g = new Geometry().fromBufferGeometry(
-    //     this.internal.mesh3jsRightOrig.geometry
-    //   )
-    //   const prevc = g.vertices.length
-    //   const count = Math.floor(g.vertices.length*v)
-    //   g = simplifier.modify(g, count)
-    //   g.computeVertexNormals()
-    //   const nv = g.getAttribute('position').array.length
-    //   console.log(`melaxSim: reduced from ${prevc} to ${nv/3}.`)
-    //
-    //   // The following is ugly, and this is unfortunate. Because
-    //   // the three.js's simplify modifier does not preserve color, tex info.
-    //   const bufcolors = new Float32Array(nv)
-    //   for (let i = 0; i < bufcolors.length; i += 3) {
-    //     bufcolors[i+0] = 0
-    //     bufcolors[i+1] = 0.5
-    //     bufcolors[i+2] = 1
-    //   }
-    //   g.setAttribute('color', new BufferAttribute(bufcolors, 3))
-    //   this.sceneRight.remove(this.internal.mesh3jsRightSim)
-    //   this.internal.mesh3jsRightSim = new Mesh(g, new MeshPhongMaterial({
-    //     vertexColors: VertexColors,
-    //     polygonOffset: true,
-    //     polygonOffsetFactor: 1,
-    //     polygonOffsetUnits: 1,
-    //     side: DoubleSide,
-    //     flatShading: this.params.flatShading,
-    //   }))
-    //   this.sceneRight.remove(this.internal.meshRightWireframeHelper)
-    //   this.sceneRight.remove(this.internal.meshRightNormalHelper)
-    //   this.internal.meshRightWireframeHelper = new LineSegments(
-    //     new WireframeGeometry(g),
-    //     new LineBasicMaterial({color: 0x000000, linewidth: 1})
-    //   )
-    //   this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-    //     this.internal.mesh3jsRightSim, 0.03, 0xaa0000,
-    //   )
-    //   if (this.params.showWireframe) {
-    //     this.sceneRight.add(this.internal.meshRightWireframeHelper)
-    //   }
-    //   if (this.params.showNormals) {
-    //     this.sceneRight.add(this.internal.meshRightNormalHelper)
-    //   }
-    //   this.sceneRight.add(this.internal.mesh3jsRightSim)
-    // })
-    // mod.open()
-
     // just for the first load
-    // fetch('./assets/cube_closed.obj')
-    fetch('./assets/triangle.obj')
+    // fetch('./assets/cube3.obj')
+    // fetch('./assets/triangle.obj')
     // fetch('./assets/cube4.obj')
     // fetch('./assets/Face4.obj')
     // fetch('./assets/bunny_tri.obj')
-    // fetch('./assets/bunny_quad.obj')
+    fetch('./assets/bunny_quad.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -491,7 +438,11 @@ export default class Main extends Renderer {
 
   doSubdivide(){
     this.resetLeft();
+    // for(let i_subdiv = 0; i_subdiv < this.params.subdivisions_req; i_subdiv++){
+    //   this.internal.mesh.subdivide_catmull_clark(1);
+    // }
     this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
+    console.log("finished subdiv");
     this.prepareBuf()
     this.renderMeshLeft()
     this.updateStatistics()
