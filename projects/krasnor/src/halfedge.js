@@ -514,19 +514,38 @@ export class HalfedgeMesh {
         // console.log("")
     }
 
-    // boundaryHandling: keep, smooth
+    // boundaryHandling: keep corners, smooth
+    /**
+     * Subdivides the current Mesh.
+     * subdivisionCounter is increased each iteration.
+     * @param iterations ammount times/iterations the mesh should be subdivided
+     * @param boundaryHandling 'smooth', 'keep corners'
+     */
     subdivide_catmull_clark(iterations = 0, boundaryHandling = 'smooth') {
-        console.log("############ Subdivide - Catmull Clark ## iterations: %s ############", iterations);
+        // parse boundaryHandling to _subdivide_once format
+        // _subdivide_once() uses number instead of string to identify boundary handling (for performance reasons)
+        let _boundaryHandling = 1;
+        switch (boundaryHandling) {
+            case 'keep':
+            case 'keep corners':
+                _boundaryHandling = 0;
+                break;
+            case 'smooth':
+            default:
+                _boundaryHandling = 1;
+                break;
+        }
 
+        console.log("#### Subdivide - Catmull Clark ## iterations: %s ## boundary handling: %s ##", iterations, boundaryHandling);
         let t0_last_subdiv_begun = 0;
         let t1_last_subdiv_time = 0;
         let t0_subdiv = performance.now();
         for (let iter = 0; iter < iterations; iter++) {
             t0_last_subdiv_begun = performance.now();
-            this._subdivide_once();
+            this._subdivide_once(_boundaryHandling);
             t1_last_subdiv_time = performance.now() - t0_last_subdiv_begun;
             this.logStats();
-            console.log("subdivideOnce_" + (iter+1) + " " + t1_last_subdiv_time + "ms");
+            console.log("subdivided to level " + this.subdivisionCounter + " # " + t1_last_subdiv_time + "ms");
         }
         let t1_subdiv = performance.now();
         let t_subdiv_elapsed = t1_subdiv - t0_subdiv;
@@ -534,12 +553,19 @@ export class HalfedgeMesh {
         let t_subdiv_elapsed_ms = t_subdiv_elapsed % 1000;
         let t_subdiv_elapsed_s = Math.floor(t_subdiv_elapsed / 1000);
         let t_subdiv_elapsed_min = Math.floor(t_subdiv_elapsed / 1000 / 60);
-        console.log("##### Finished Subdivision ## %smin %ss %sms #########", t_subdiv_elapsed_min, t_subdiv_elapsed_s, t_subdiv_elapsed_ms);
+        console.log("##### Finished Subdivision ## %smin %ss %sms ###########", t_subdiv_elapsed_min, t_subdiv_elapsed_s, t_subdiv_elapsed_ms);
         // this.plotVertices();
         // this.plotFaces(true);
     }
 
-    _subdivide_once(boundaryHandling = 'smooth') {
+    /**
+     * Subdivides the current Mesh once.
+     * subdivisionCounter is increased by one
+     * @param boundaryHandling: 0 = keep corners, 1 = smooth (using number to avoid a more costly string comparision)
+     *
+     * @private
+     */
+    _subdivide_once(boundaryHandling = 1) {
         this.subdivisionCounter++;
         let new_FacePoints = new Map(); // [face.idx, Vertex] midpoint of face
         let new_movedEdgePoints = new Map(); // [edge.idx, Vertex] moved midpoints of new edges
@@ -578,11 +604,12 @@ export class HalfedgeMesh {
             let newEdgePos = edgeMidpoint;
             let avg_facePoint = new Vector();
             if (cnt_faces > 1) {
-                // not a boundary edge;
+                // inner edge;
                 avg_facePoint = _sumAdjacentPoints.scale(1 / cnt_faces);
                 newEdgePos = edgeMidpoint.add(avg_facePoint).scale(0.5);
             }
             // else{
+            // all types of boundary edges are currently handled the same -> just take midpoint
             //   boundaryEdgePoint = true;
             // }
 
@@ -644,13 +671,22 @@ export class HalfedgeMesh {
 
             if (isBoundaryVertex) {
                 // boundary vertex. use different weighting
-                // take average of the boundary edges midpoints and the vertex point
+                switch (boundaryHandling) {
+                    case 0: // keep
+                        continue; // do not change position
+                    case 1: // smooth
+                    default:
+                        // take average of the boundary edges midpoints and the vertex point
 
-                let weightedVPos = S.scale(2); // higher weight on old position
-                let new_point = _sum_edgesOnBoundary.add(weightedVPos).scale(1 / 4);
+                        let weightedVPos = S.scale(2); // higher weight on old position
+                        let new_point = _sum_edgesOnBoundary.add(weightedVPos).scale(1 / 4);
 
-                newOriginalPointLocation = new_point
-                // console.log("v: %s boundary vertex found", vertex.idx);
+                        newOriginalPointLocation = new_point
+                        // console.log("v: %s boundary vertex found", vertex.idx);
+                        break;
+
+                }
+
             }
             vertex.position = newOriginalPointLocation;
         }

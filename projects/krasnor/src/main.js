@@ -76,6 +76,7 @@ export default class Main extends Renderer {
       normalMethod: 'equal-weighted',
 
       subdivisions_req: 0.0,
+      boundaryHandling: 'smooth',
       // melaxSim: 0.0,
     }
 
@@ -123,28 +124,31 @@ export default class Main extends Renderer {
         this.internal.mesh3jsRightSim.material.map = this.checkboardTexture()
       } else {
         this.internal.mesh3jsLeft.material.map = null
-        this.internal.mesh3jsRight.material.map = null
+        this.internal.mesh3jsRightSim.material.map = null
       }
       this.internal.mesh3jsLeft.material.needsUpdate = true
       this.internal.mesh3jsRightSim.material.needsUpdate = true
     })
     vis.open()
 
-    const mod = this.gui.addFolder('Reduce Ratio')
-    mod.add(this.params, 'subdivisions_req', 0.0, 6.0, 1).name('Subdivisions')
+    const mod = this.gui.addFolder('Catmull–Clark Subdivision')
+    mod.add(this.params, 'boundaryHandling', [
+      'smooth', 'keep corners',
+    ]).name('boundary edge');
+    mod.add(this.params, 'subdivisions_req', 0.0, 6.0, 1).name('subdivisions')
     .onChange(v => {
       // do nothing
     })
-    mod.add(this.params, 'subdivide').name('Execute Subdivide')
+    mod.add(this.params, 'subdivide').name('execute Subdivide')
     mod.open()
 
     // just for the first load
     // fetch('./assets/cube3.obj')
     // fetch('./assets/triangle.obj')
-    // fetch('./assets/cube4.obj')
+    fetch('./assets/cube4.obj')
     // fetch('./assets/Face4.obj')
     // fetch('./assets/bunny_tri.obj')
-    fetch('./assets/bunny_quad.obj')
+    // fetch('./assets/bunny_quad.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -438,10 +442,7 @@ export default class Main extends Renderer {
 
   doSubdivide(){
     this.resetLeft();
-    // for(let i_subdiv = 0; i_subdiv < this.params.subdivisions_req; i_subdiv++){
-    //   this.internal.mesh.subdivide_catmull_clark(1);
-    // }
-    this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req);
+    this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req, this.params.boundaryHandling);
     console.log("finished subdiv");
     this.prepareBuf()
     this.renderMeshLeft()
