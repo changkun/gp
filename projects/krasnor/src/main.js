@@ -13,7 +13,7 @@ import {
   MeshPhongMaterial,
   Geometry,
   BoxGeometry,
-  EdgesGeometry,
+  EdgesGeometry, MeshBasicMaterial,
 } from 'three'
 import {
   VertexNormalsHelper
@@ -62,6 +62,11 @@ export default class Main extends Renderer {
       meshRightNormalHelper: null,
       meshLeftWireframeHelper: null,
       meshRightWireframeHelper: null,
+
+      meshOriginalAABB: null,
+
+      mesh_overlay_wireframe: null,
+      mesh_overlay_model: null,
       raw_obj_data: "",
     }
     this.params = {
@@ -74,6 +79,8 @@ export default class Main extends Renderer {
       flatShading: false,
       showTexture: true,
       normalMethod: 'equal-weighted',
+
+      overlayOriginalOverSubdivided: false,
 
       subdivisions_req: 0.0,
       boundaryHandling: 'smooth',
@@ -117,18 +124,18 @@ export default class Main extends Renderer {
       this.internal.mesh3jsLeft.material.needsUpdate = true
       this.internal.mesh3jsRightSim.material.needsUpdate = true
     })
-    vis.add(this.params, 'showTexture').name('texture').listen()
-    .onChange(showTex => {
-      if (showTex) {
-        this.internal.mesh3jsLeft.material.map = this.checkboardTexture()
-        this.internal.mesh3jsRightSim.material.map = this.checkboardTexture()
-      } else {
-        this.internal.mesh3jsLeft.material.map = null
-        this.internal.mesh3jsRightSim.material.map = null
-      }
-      this.internal.mesh3jsLeft.material.needsUpdate = true
-      this.internal.mesh3jsRightSim.material.needsUpdate = true
-    })
+    vis.add(this.params, 'overlayOriginalOverSubdivided').name('overlay original').listen()
+        .onChange(show => {
+          if (show) {
+            this.sceneLeft.add(this.internal.mesh_overlay_model)
+            this.sceneLeft.add(this.internal.mesh_overlay_wireframe)
+          } else {
+            this.sceneLeft.remove(this.internal.mesh_overlay_model)
+            this.sceneLeft.remove(this.internal.mesh_overlay_wireframe)
+          }
+          // this.internal.mesh_overlay_model.visible = show;
+          // this.internal.mesh_overlay_wireframe.visible = show;
+        })
     vis.open()
 
     const mod = this.gui.addFolder('Catmull–Clark Subdivision')
@@ -145,10 +152,10 @@ export default class Main extends Renderer {
     // just for the first load
     // fetch('./assets/cube3.obj')
     // fetch('./assets/triangle.obj')
-    fetch('./assets/cube4.obj')
+    // fetch('./assets/cube4.obj')
     // fetch('./assets/Face4.obj')
     // fetch('./assets/bunny_tri.obj')
-    // fetch('./assets/bunny_quad.obj')
+    fetch('./assets/bunny_quad.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
@@ -163,7 +170,7 @@ export default class Main extends Renderer {
     this.internal.meshOriginal = new HalfedgeMesh(data)
     this.prepareBuf()
     this.renderMeshLeft()
-    this.renderMeshRight2()
+    this.renderMeshOriginal()
     this.updateStatistics()
   }
   exportScreenshot() {
@@ -186,9 +193,9 @@ export default class Main extends Renderer {
     this.internal.mesh3jsLeft.geometry.attributes.normal.needsUpdate = true
     this.internal.meshLeftNormalHelper.update()
   }
-  computeAABB() {
+  computeAABB(mesh) {
     let min = new Vector(), max = new Vector()
-    this.internal.mesh.vertices.forEach(v => {
+    mesh.vertices.forEach(v => {
       min.x = Math.min(min.x, v.position.x)
       min.y = Math.min(min.y, v.position.y)
       min.z = Math.min(min.z, v.position.z)
@@ -200,6 +207,9 @@ export default class Main extends Renderer {
     const radius = max.sub(min).norm()/2
     return [center, radius]
   }
+  _recomputeGlobalAABB(){
+    this.internal.meshOriginalAABB = this.computeAABB(this.internal.meshOriginal);
+  }
   prepareBuf() {
     // prepare threejs buffer data
     const v = this.internal.mesh.vertices.length
@@ -208,7 +218,8 @@ export default class Main extends Renderer {
     this.bufcolors  = new Float32Array(v*3)
     this.bufnormals = new Float32Array(v*3)
 
-    const [center, radius] = this.computeAABB()
+    this._recomputeGlobalAABB();
+    const [center, radius] = this.internal.meshOriginalAABB
     this.internal.mesh.vertices.forEach(v => {
       const i = v.idx
       // use AABB and rescale to viewport center
@@ -313,7 +324,7 @@ export default class Main extends Renderer {
       this.sceneLeft.add(this.internal.meshLeftWireframeHelper)
     }
   }
-  renderMeshRight2(){
+  renderMeshOriginal(){
     // clear old instances
     if (this.internal.meshRightNormalHelper !== null) {
       this.sceneRight.remove(this.internal.meshRightNormalHelper)
@@ -323,6 +334,13 @@ export default class Main extends Renderer {
     }
     if (this.internal.mesh3jsRightOrig !== null) {
       this.sceneRight.remove(this.internal.mesh3jsRightOrig)
+    }
+
+    if (this.internal.mesh_overlay_wireframe !== null) {
+      this.sceneRight.remove(this.internal.mesh_overlay_wireframe)
+    }
+    if (this.internal.mesh_overlay_model !== null) {
+      this.sceneRight.remove(this.internal.mesh_overlay_model)
     }
 
     let faceVertsCountAfterTriangulation = this.internal.meshOriginal.getFaceVertexCountAfterTriangulation();
@@ -385,7 +403,19 @@ export default class Main extends Renderer {
         g_lines_r,
         new LineBasicMaterial({color: 0x000000, linewidth: 1})
     )
+    // overlays
+    this.internal.mesh_overlay_wireframe = new LineSegments(
+        g_lines_r,
+        new LineBasicMaterial({color: 0xFF0000, linewidth: 1})
+    )
+    this.internal.mesh_overlay_model = new Mesh(g, new MeshBasicMaterial({
+      color: 0xFF0000,
+      opacity: 0.25,
+      transparent: true,
+      side: DoubleSide,
+    }))
 
+    // scene handling
     this.sceneRight.add(this.internal.mesh3jsRightSim)
     if (this.params.showNormals) {
       this.sceneRight.add(this.internal.meshRightNormalHelper)
@@ -393,6 +423,13 @@ export default class Main extends Renderer {
     if (this.params.showWireframe) {
       this.sceneRight.add(this.internal.meshRightWireframeHelper)
     }
+    if (this.params.overlayOriginalOverSubdivided) {
+      this.sceneLeft.add(this.internal.mesh_overlay_wireframe)
+    }
+    if (this.params.overlayOriginalOverSubdivided) {
+      this.sceneLeft.add(this.internal.mesh_overlay_model)
+    }
+
   }
 
   setStatisticsElemetAlignment(){
