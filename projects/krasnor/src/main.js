@@ -306,6 +306,7 @@ export default class Main extends Renderer {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
+      flatShading: this.params.flatShading,
     }))
 
     this.internal.meshLeftNormalHelper = new VertexNormalsHelper(
@@ -337,10 +338,10 @@ export default class Main extends Renderer {
     }
 
     if (this.internal.mesh_overlay_wireframe !== null) {
-      this.sceneRight.remove(this.internal.mesh_overlay_wireframe)
+      this.sceneLeft.remove(this.internal.mesh_overlay_wireframe)
     }
     if (this.internal.mesh_overlay_model !== null) {
-      this.sceneRight.remove(this.internal.mesh_overlay_model)
+      this.sceneLeft.remove(this.internal.mesh_overlay_model)
     }
 
     let faceVertsCountAfterTriangulation = this.internal.meshOriginal.getFaceVertexCountAfterTriangulation();
@@ -394,6 +395,7 @@ export default class Main extends Renderer {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
+      flatShading: this.params.flatShading,
     }))
 
     this.internal.meshRightNormalHelper = new VertexNormalsHelper(
