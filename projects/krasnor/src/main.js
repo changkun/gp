@@ -19,6 +19,7 @@ import {
   VertexNormalsHelper
 } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import Vector from './vec'
+import {StatisticsPanel} from "./StatisticsPanel";
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -29,13 +30,12 @@ export default class Main extends Renderer {
    */
   constructor() {
     super()
-    this.statisticsLeft = document.createElement('div')
-    this.statisticsLeft.id = "statsLeft"
-    this.statisticsRight = document.createElement('div')
-    this.statisticsRight.id = "statsRight"
-    this.setStatisticsElemetAlignment();
-    document.body.appendChild(this.statisticsLeft)
-    document.body.appendChild(this.statisticsRight)
+
+    this.statisticsPanelLeft = new StatisticsPanel('Subdivided','0px','0px');
+    this.statisticsPanelRight = new StatisticsPanel('Unaltered','0px','50%');
+    this.statisticsPanelRight.OmitSubdivisionCount = true;
+    document.body.appendChild(this.statisticsPanelLeft.getDomElement());
+    document.body.appendChild(this.statisticsPanelRight.getDomElement());
 
     // a hidden input field that responsible for loading meshes
     this.input = document.createElement('input')
@@ -434,50 +434,14 @@ export default class Main extends Renderer {
 
   }
 
-  setStatisticsElemetAlignment(){
-    let width = "200px"
-    let height = "100px"
-    this.statisticsLeft.style.width = width ;
-    // this.statisticsLeft.style.height = height ;
-    this.statisticsLeft.style.bottom = "0px" ;
-    this.statisticsLeft.style.left = "0px" ;
-    this.statisticsLeft.style.position = "fixed";
-
-    this.statisticsRight.style.width = width ;
-    // this.statisticsRight.style.height = height ;
-    this.statisticsRight.style.bottom = "0px" ;
-    this.statisticsRight.style.left = "50%" ;
-    this.statisticsRight.style.position = "fixed";
-
-    // // this.statisticsLeft.style.marginLeft = "5px"
-    // // this.statisticsLeft.style.marginBottom = "5px"
-    // this.statisticsLeft.style.border = "2px solid #FF0000"
-    // this.statisticsLeft.style.background = "#1a1a1a"
-    // this.statisticsLeft.style.color = "#eee"
-    // this.statisticsLeft.style.fontFamily  = "Lucida Grande,sans-serif";
-  }
   updateStatistics(){
     let statsMesh_left = this.internal.mesh.getStatistics();
     let statsMesh_right = this.internal.meshOriginal.getStatistics();
 
-    let formatStats = function(stats, omit_subdivisions = false){
-      let statsText = "<table style=\"width:100%\">";
-      statsText += "<tr><td><b>Vertices </b></td> <td>" + stats.cnt_vertices + "</td></tr>";
-      statsText += "<tr><td><b>Edges </b></td> <td>" + stats.cnt_edges + "</td></tr>";
-      statsText += "<tr><td><b>Faces </b></td> <td>" + stats.cnt_faces + "</td></tr>";
-
-      if(!omit_subdivisions){
-        statsText += "<tr><td><b>Subdivisions </b></td> <td>" + stats.subdivisions + "</td></tr>";
-      }else{
-        statsText += "<tr><td><b>&nbsp;</b></td><td>&nbsp;</td></tr>";
-      }
-
-      return statsText;
-    }
-    this.statisticsLeft.innerHTML = formatStats(statsMesh_left);
-    this.statisticsRight.innerHTML = formatStats(statsMesh_right, true);
-
+    this.statisticsPanelLeft.updateStatistics(statsMesh_left);
+    this.statisticsPanelRight.updateStatistics(statsMesh_right);
   }
+
 
   doSubdivide(){
     this.resetLeft();
@@ -500,8 +464,10 @@ export default class Main extends Renderer {
   downloadMesh(){
     this.exportObj(this.internal.mesh.parseToObj(),"mesh_subdivision_js.obj");
   }
+
   /**
-   * @param {Blob} file_blob
+   * @param {Blob} file_blob file to save
+   * @param {string} filename filename
    */
   exportObj(file_blob, filename){
     // start the download
