@@ -26,15 +26,6 @@ class Halfedge {
         return Math.acos(Math.max(-1, Math.min(1, u.dot(v))))
     }
 
-    cotan() {
-        if (this.onBoundary) {
-            return 0
-        }
-        const u = this.prev.vector()
-        const v = this.next.vector().scale(-1)
-        return u.dot(v) / u.cross(v).norm()
-    }
-
     getVector() {
         const vector = this.twin.vertex.position.sub(this.vertex.position)
         return vector
@@ -154,9 +145,20 @@ class Face {
         if (h.onBoundary) {
             return 0
         }
-        let a = h.vertex.position.sub(h.next.vertex.position)
-        let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
-        return a.cross(b).norm() * 0.5
+        let a = this.halfedge.getVector();
+        let b = this.halfedge.prev.twin.getVector();
+        let t1_a = a.cross(b).norm() * 0.5;
+
+        // console.assert(t1_a === t1_a_old, {t1: t1_a, t1old: t1_a_old, errorMsg: 'areas do not match!'});
+
+        if (this.isQuad) {
+            let a2 = this.halfedge.prev.prev.getVector();
+            let b2 = this.halfedge.next.twin.getVector();
+            let t2_a = a2.cross(b2).norm() * 0.5;
+            return t1_a + t2_a;
+        }
+
+        return t1_a;
     }
 
     /**
@@ -203,8 +205,17 @@ class Vertex {
             case 'angle-weighted':
                 // TODO: compute angle weighted normal of this vertex
                 this.halfedges(h => {
-                    n = n.add(h.face.normal().scale(h.next.angle()))
+                    if(h.onBoundary || h.face == null)
+                        return;
+                    let angle_2 = ((h.angle()+1)/2) // scale from -1-1 to 0-1
+                    n = n.add(h.face.normal().scale(angle_2))
+                    // let angle = h.angle()
+                    // let angle_n = h.next.angle()
+                    // let faceNormal = h.face.normal()
+                    // console.log("h: %s h.face: %s normal: %s %s %s angle: %s angle_next: %s angle2: %s",h.idx, h.face.idx, faceNormal.x,faceNormal.y,faceNormal.z, angle, angle_n, angle_2);
                 })
+                // let dbg_nunit = n.unit();
+                // console.log("n: %s %s %s  n.unit(): %s %s %s", n.x, n.y, n.z ,dbg_nunit.x, dbg_nunit.y, dbg_nunit.z);
                 return n.unit()
             default: // undefined
                 return new Vector()
@@ -512,6 +523,8 @@ export class HalfedgeMesh {
         // console.log("boundary cycles: " + this.boundaries.length)
         // console.log("boundary[0] length: " + this.boundaries[0]?.length)
         // console.log("")
+        // this.plotHalfedges();
+
     }
 
     // boundaryHandling: keep corners, smooth
@@ -897,14 +910,15 @@ export class HalfedgeMesh {
 
     plotHalfedges() {
         for (let dbg_i = 0; dbg_i < this.halfedges.length; dbg_i++) {
-            console.log("i: %i v: %i e: %i t: %i - f: %i p: %i n: %i",
+            console.log("i: %i v: %i e: %i t: %i - f: %i p: %i n: %i bound: %s",
                 this.halfedges[dbg_i].idx,
                 this.halfedges[dbg_i].vertex?.idx,
                 this.halfedges[dbg_i].edge?.idx,
                 this.halfedges[dbg_i].twin?.idx,
                 this.halfedges[dbg_i].face?.idx,
                 this.halfedges[dbg_i].prev?.idx,
-                this.halfedges[dbg_i].next?.idx);
+                this.halfedges[dbg_i].next?.idx,
+                this.halfedges[dbg_i].onBoundary);
         }
     }
 

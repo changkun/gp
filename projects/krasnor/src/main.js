@@ -86,9 +86,9 @@ export default class Main extends Renderer {
             boundaryHandling: 'smooth',
         }
 
-        this.gui = new GUI()
-        // console.log("gui width %s",this.gui.width)
+        this.gui = new GUI({hideable: false})
         this.gui.width = 260; // DEFAULT_WIDTH is 245
+
         const io = this.gui.addFolder('I/O')
         io.add(this.params, 'import').name('import mesh')
         io.add(this.params, 'export').name('export screenshot')
@@ -202,6 +202,15 @@ export default class Main extends Renderer {
         })
         this.internal.mesh3jsLeft.geometry.attributes.normal.needsUpdate = true
         this.internal.meshLeftNormalHelper.update()
+
+        this.internal.meshOriginal.vertices.forEach(v => {
+            const n = v.normal(this.params.normalMethod)
+            this.bufnormals[3 * v.idx + 0] = n.x
+            this.bufnormals[3 * v.idx + 1] = n.y
+            this.bufnormals[3 * v.idx + 2] = n.z
+        })
+        this.internal.mesh3jsRightSim.geometry.attributes.normal.needsUpdate = true
+        this.internal.meshRightNormalHelper.update()
     }
 
     computeAABB(mesh) {
