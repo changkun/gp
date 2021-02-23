@@ -26,12 +26,22 @@ export default class Main extends Renderer {
    */
   constructor() {
     super()
-    this.modelTypeText = document.createElement('div');
-    this.modelTypeText.style.position = 'absolute';
-    this.modelTypeText.innerHTML = "Mesh type is";
-    this.modelTypeText.style.top = 0 + 'px';
-    this.modelTypeText.style.left = window.innerWidth/2 + 'px';
-    document.body.appendChild(this.modelTypeText);
+    this.modelTypeTextLeft = document.createElement('div');
+    this.modelTypeTextLeft.style.position = 'absolute';
+    this.modelTypeTextLeft.innerHTML = "Mesh type is unknown.";
+    this.modelTypeTextLeft.style.top = 0 + 'px';
+    this.modelTypeTextLeft.style.left = window.innerWidth*0.2 + 'px';
+    this.modelTypeTextRight = document.createElement('div');
+    this.modelTypeTextRight.style.position = 'absolute';
+    this.modelTypeTextRight.innerHTML = "Mesh type is unknown.";
+    this.modelTypeTextRight.style.top = 0 + 'px';
+    this.modelTypeTextRight.style.left = window.innerWidth*0.7 + 'px';
+    document.body.appendChild(this.modelTypeTextLeft);
+    document.body.appendChild(this.modelTypeTextRight);
+    window.onresize = (() => {
+      this.modelTypeTextRight.style.left = window.innerWidth*0.7 + 'px';
+      this.modelTypeTextLeft.style.left = window.innerWidth*0.2 + 'px';
+    })
     // a hidden input field that responsible for loading meshes
     this.input = document.createElement('input')
     this.input.setAttribute('type', 'file')
@@ -41,29 +51,23 @@ export default class Main extends Renderer {
         alert('Only .OBJ files are supported')
       }
       const r = new FileReader()
-      r.onload = () => this.loadMesh(r.result)
+      r.onload = () => this.loadMesh(r.result, false)
       r.onerror = () => alert('Cannot import your obj mesh')
       r.readAsText(file)
     })
     document.body.appendChild(this.input)
 
     this.internal = {
-      mesh: null,     // internal mesh object
-      mesh3jsLeft: null,  // three.js buffer geometry object for mesh
-      mesh3jsRightOrig: null,    // three.js buffer geometry object for UV map
-      mesh3jsRightSim: null,
+      meshLeft: null,     // internal left mesh object
+      meshRight: null,     // internal right mesh object
+      mesh3jsLeft: null,
+      mesh3jsRight: null,
       meshLeftNormalHelper: null,
       meshRightNormalHelper: null,
       meshLeftWireframeHelper: null,
       meshRightWireframeHelper: null,
     }
-    this.params = {
-      import: () => this.input.click(),
-      loadLeft: false,
-      export: () => this.exportScreenshot(),
-      showNormals: false,
-      showWireframe: false,
-      normalMethod: 'equal-weighted',
+    let smoothParams = {
       laplacian: 'uniform',
       massMatrixType: 'neighbours',
       lambda: 1,
@@ -71,12 +75,45 @@ export default class Main extends Renderer {
       smoothStep: 1,
     }
 
+    this.params = {
+      import: () => this.input.click(),
+      loadLeft: false,
+      export: () => this.exportScreenshot(),
+      showNormals: false,
+      showWireframe: false,
+      normalMethod: 'equal-weighted',
+      smoothLeft: smoothParams,
+      smoothRight: Object.assign({}, smoothParams),
+    }
+
+    this.createGUIFolders();
+
+    // just for the first load
+    fetch('./assets/deformed sphere triangulated.obj')
+      .then(resp => resp.text())
+      .then(data => this.loadMesh(data,true))
+  }
+
+  createGUIFolders() {
+    this.createIOFolder();
+
+    this.createVisualizationFolder();
+
+    this.createNormalMethodsFolder();
+
+    this.createSmoothingFolder('Laplacian Smoothing Left',this.params.smoothLeft, true);
+    this.createSmoothingFolder('Laplacian Smoothing Right',this.params.smoothRight, false);
+  }
+
+  createIOFolder() {
     this.gui = new GUI()
     const io = this.gui.addFolder('I/O')
     io.add(this.params, 'import').name('import mesh')
     io.add(this.params, 'loadLeft').name('load left mesh')
     io.add(this.params, 'export').name('export screenshot')
+  }
 
+  createVisualizationFolder() {
     const vis = this.gui.addFolder('Visualization')
     vis.add(this.params, 'showNormals').name('show normals').listen()
         .onChange(show => {
@@ -100,56 +137,83 @@ export default class Main extends Renderer {
         })
 
     vis.open()
+  }
 
-    const methods = this.gui.addFolder('Methods')
+  createNormalMethodsFolder() {
+    const methods = this.gui.addFolder('Normal Methods')
     methods.add(this.params, 'normalMethod', [
       'equal-weighted', 'area-weighted', 'angle-weighted',
     ]).listen().onChange(() => this.updateNormals())
-    methods.add(this.params, 'laplacian', [
-      'uniform', 'cotan', 'mean value'
-    ]).listen().onChange(() => {
-      switch(this.params.laplacian){
-        case 'uniform':
-          this.params.massMatrixType = 'neighbours'
-          break;
-        case 'cotan':
-          this.params.massMatrixType = 'voronoi area'
-          break;
-        case 'mean value':
-          this.params.massMatrixType = 'identity'
-          break;
-      }
-      this.updateSmoothing()
-    })
-    methods.add(this.params, 'massMatrixType', [
-      'identity', 'neighbours', 'voronoi area'
-    ]).listen().onChange(() => this.updateSmoothing())
 
     methods.open()
-    
-    const smoothing = this.gui.addFolder('Laplacian Smoothing')
-    smoothing.add(this.params, 'timeStep', 0.001, 10, 0.001).name('time step').listen()
-        .onChange(() => this.updateSmoothing())
-    smoothing.add(this.params, 'smoothStep', 1, 3, 1).name('smooth step').listen()
-        .onChange(() => this.updateSmoothing())
-    smoothing.add(this.params, 'lambda', 0.001, 1, 0.001).name('lambda').listen()
-        .onChange(() => this.updateSmoothing())
+  }
+
+  createSmoothingFolder(name ,smoothingParameter, isLeft) {
+    const smoothing = this.gui.addFolder(name)
+    smoothing.add(smoothingParameter, 'laplacian', ['uniform', 'cotan', 'mean value']).listen()
+        .onChange(() => {
+      this.setMassMatrixType(smoothingParameter);
+      this.updateSmoothing(smoothingParameter, isLeft)
+    })
+    smoothing.add(smoothingParameter, 'massMatrixType', ['identity', 'neighbours', 'voronoi area']).listen()
+        .onChange(() => this.updateSmoothing(smoothingParameter, isLeft))
+    smoothing.add(smoothingParameter, 'timeStep', 0.001, 10, 0.001).name('time step').listen()
+        .onChange(() => this.updateSmoothing(smoothingParameter, isLeft))
+    smoothing.add(smoothingParameter, 'smoothStep', 1, 3, 1).name('smooth step').listen()
+        .onChange(() => this.updateSmoothing(smoothingParameter, isLeft))
+    smoothing.add(smoothingParameter, 'lambda', 0.001, 1, 0.001).name('lambda').listen()
+        .onChange(() => this.updateSmoothing(smoothingParameter, isLeft))
+
     smoothing.open()
-
-    // just for the first load
-    fetch('./assets/deformed sphere triangulated.obj')
-      .then(resp => resp.text())
-      .then(data => this.loadMesh(data))
   }
-  loadMesh(data) {
 
-    if (this.internal.mesh3jsLeft !== null) {
-      this.sceneLeft.remove(this.internal.mesh3jsLeft)
+  setMassMatrixType(smoothingParameter) {
+    switch (smoothingParameter.laplacian) {
+      case 'uniform':
+        smoothingParameter.massMatrixType = 'neighbours'
+        break;
+      case 'cotan':
+        smoothingParameter.massMatrixType = 'voronoi area'
+        break;
+      case 'mean value':
+        smoothingParameter.massMatrixType = 'identity'
+        break;
     }
-    //this.internal.loadLeft
-    this.internal.mesh = new HalfedgeMesh(data)
-    this.renderMeshes()
   }
+
+  loadMesh(data, loadBothSides) {
+
+    if(loadBothSides){
+      if (this.internal.mesh3jsLeft !== null) {
+        this.sceneLeft.remove(this.internal.mesh3jsLeft)
+      }
+      if (this.internal.mesh3jsRight !== null) {
+        this.sceneLeft.remove(this.internal.mesh3jsRight)
+      }
+      this.internal.meshLeft = new HalfedgeMesh(data)
+      this.internal.meshRight = new HalfedgeMesh(data)
+      this.renderMeshes()
+    }
+    else{
+      if(this.params.loadLeft){
+        if (this.internal.mesh3jsLeft !== null) {
+          this.sceneLeft.remove(this.internal.mesh3jsLeft)
+        }
+        this.internal.meshLeft = new HalfedgeMesh(data)
+        this.renderMeshLeft()
+      }else{
+        if (this.internal.mesh3jsRight !== null) {
+          this.sceneLeft.remove(this.internal.mesh3jsRight)
+        }
+        this.internal.meshRight = new HalfedgeMesh(data)
+        this.renderMeshRight()
+      }
+    }
+
+    this.modelTypeTextLeft.innerHTML = this.internal.meshLeft.meshType;
+    this.modelTypeTextRight.innerHTML = this.internal.meshRight.meshType;
+  }
+
   exportScreenshot() {
     const url = this.renderer.domElement.toDataURL('image/png', 'export')
     const e = document.createElement('a')
@@ -161,30 +225,47 @@ export default class Main extends Renderer {
     document.body.removeChild(e)
   }
   updateNormals() {
-    this.internal.mesh.vertices.forEach(v => {
+    this.internal.meshLeft.vertices.forEach(v => {
       const n = v.normal(this.params.normalMethod)
 
-      this.bufnormals[3*v.idx+0] = n.x
-      this.bufnormals[3*v.idx+1] = n.y
-      this.bufnormals[3*v.idx+2] = n.z
+      this.bufnormalsLeft[3*v.idx+0] = n.x
+      this.bufnormalsLeft[3*v.idx+1] = n.y
+      this.bufnormalsLeft[3*v.idx+2] = n.z
     })
+
+    this.internal.meshRight.vertices.forEach(v => {
+      const n = v.normal(this.params.normalMethod)
+
+      this.bufnormalsRight[3*v.idx+0] = n.x
+      this.bufnormalsRight[3*v.idx+1] = n.y
+      this.bufnormalsRight[3*v.idx+2] = n.z
+    })
+
     this.internal.mesh3jsLeft.geometry.attributes.normal.needsUpdate = true
     this.internal.meshLeftNormalHelper.update()
-    this.internal.mesh3jsRightOrig.geometry.attributes.normal.needsUpdate = true
+    this.internal.mesh3jsRight.geometry.attributes.normal.needsUpdate = true
     this.internal.meshRightNormalHelper.update()
   }
-  updateSmoothing() {
-
-    this.internal.mesh.smooth(this.params.laplacian,
-        this.params.timeStep,
-        this.params.smoothStep,
-        this.params.massMatrixType,
-        this.params.lambda)
-    this.renderMeshes()
+  updateSmoothing(smoothingParameter, isLeft) {
+    if(isLeft){
+      this.internal.meshLeft.smooth(smoothingParameter.laplacian,
+          smoothingParameter.timeStep,
+          smoothingParameter.smoothStep,
+          smoothingParameter.massMatrixType,
+          smoothingParameter.lambda)
+      this.renderMeshLeft()
+    }else{
+      this.internal.meshRight.smooth(smoothingParameter.laplacian,
+          smoothingParameter.timeStep,
+          smoothingParameter.smoothStep,
+          smoothingParameter.massMatrixType,
+          smoothingParameter.lambda)
+      this.renderMeshRight()
+    }
   }
-  computeAABB() {
+  computeAABB(vertices) {
     let min = new Vector(), max = new Vector()
-    this.internal.mesh.vertices.forEach(v => {
+    vertices.forEach(v => {
       min.x = Math.min(min.x, v.position.x)
       min.y = Math.min(min.y, v.position.y)
       min.z = Math.min(min.z, v.position.z)
@@ -197,40 +278,51 @@ export default class Main extends Renderer {
     return [center, radius]
   }
   renderMeshes() {
-    this.prepareBuf()
     this.renderMeshLeft()
     this.renderMeshRight()
   }
 
-  prepareBuf() {
+  prepareBuf(vertices, isLeft) {
     // prepare threejs buffer data
-    const v = this.internal.mesh.vertices.length
-    this.bufpos     = new Float32Array(v*3)
-    this.bufcolors  = new Float32Array(v*3)
-    this.bufnormals = new Float32Array(v*3)
+    const v = vertices.length
+    const bufpos     = new Float32Array(v*3)
+    const bufcolors  = new Float32Array(v*3)
+    const bufnormals = new Float32Array(v*3)
 
-    const [center, radius] = this.computeAABB()
-    this.internal.mesh.vertices.forEach(v => {
+    const [center, radius] = this.computeAABB(vertices)
+    vertices.forEach(v => {
       const i = v.idx
       // use AABB and rescale to viewport center
       const p = v.position.sub(center).scale(1/radius)
-      this.bufpos[3*i+0] = p.x
-      this.bufpos[3*i+1] = p.y
-      this.bufpos[3*i+2] = p.z
+      bufpos[3*i+0] = p.x
+      bufpos[3*i+1] = p.y
+      bufpos[3*i+2] = p.z
 
       // default GP blue color
-      this.bufcolors[3*i+0] = 0
-      this.bufcolors[3*i+1] = 0.5
-      this.bufcolors[3*i+2] = 1
+      bufcolors[3*i+0] = 0
+      bufcolors[3*i+1] = 0.5
+      bufcolors[3*i+2] = 1
 
       const n = v.normal(this.params.normalMethod)
-      this.bufnormals[3*i+0] = n.x
-      this.bufnormals[3*i+1] = n.y
-      this.bufnormals[3*i+2] = n.z
+      bufnormals[3*i+0] = n.x
+      bufnormals[3*i+1] = n.y
+      bufnormals[3*i+2] = n.z
     })
+
+    if(isLeft){
+      this.bufposLeft     = bufpos
+      this.bufcolorsLeft  = bufcolors
+      this.bufnormalsLeft = bufnormals
+    }else{
+      this.bufposRight     = bufpos
+      this.bufcolorsRight  = bufcolors
+      this.bufnormalsRight = bufnormals
+    }
   }
 
   renderMeshLeft() {
+    this.prepareBuf(this.internal.meshLeft.vertices, true)
+
     // clear old instances
     if (this.internal.meshLeftNormalHelper !== null) {
       this.sceneLeft.remove(this.internal.meshLeftNormalHelper)
@@ -242,29 +334,25 @@ export default class Main extends Renderer {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
     }
 
-    let n = this.internal.mesh.isQuadMesh ? 6 : 3
+    let n = this.internal.meshLeft.isQuadMesh ? 6 : 3
 
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*n)
-    this.internal.mesh.faces.forEach(f => { this.prepareIndexes(n, idxs, f)})
-    const wireframe_idxs = new Uint32Array(this.internal.mesh.edges.length*2)
-    this.internal.mesh.edges.forEach(e => {
-
+    const idxs = new Uint32Array(this.internal.meshLeft.faces.length*n)
+    this.internal.meshLeft.faces.forEach(f => { this.prepareIndexes(n, idxs, f)})
+    const wireframe_idxs = new Uint32Array(this.internal.meshLeft.edges.length*2)
+    this.internal.meshLeft.edges.forEach(e => {
       wireframe_idxs[2 * e.idx] = e.halfedge.vertex.idx
       wireframe_idxs[2 * e.idx + 1] = e.halfedge.twin.vertex.idx
-
-      //wireframe_idxs[2 * e.idx] =   e.halfedge.next.vertex.idx
-      //       wireframe_idxs[2 * e.idx + 1] = e.halfedge.vertex.idx
     })
 
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
-    g.setAttribute('position', new BufferAttribute(this.bufpos, 3))
-    g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
-    g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
+    g.setAttribute('position', new BufferAttribute(this.bufposLeft, 3))
+    g.setAttribute('color', new BufferAttribute(this.bufcolorsLeft, 3))
+    g.setAttribute('normal', new BufferAttribute(this.bufnormalsLeft, 3))
 
     const g_wireframe = new BufferGeometry()
     g_wireframe.setIndex(new BufferAttribute(wireframe_idxs, 1))
-    g_wireframe.setAttribute('position', new BufferAttribute(this.bufpos, 3))
+    g_wireframe.setAttribute('position', new BufferAttribute(this.bufposLeft, 3))
 
     this.internal.mesh3jsLeft = new Mesh(g, new MeshPhongMaterial({
       vertexColors: VertexColors,
@@ -278,7 +366,7 @@ export default class Main extends Renderer {
         this.internal.mesh3jsLeft, 0.03, 0xaa0000,
     )
     this.internal.meshLeftWireframeHelper = new LineSegments(
-        new WireframeGeometry(g_wireframe),
+        g_wireframe,
         new LineBasicMaterial({color: 0x000000, linewidth: 1})
     )
 
@@ -306,6 +394,8 @@ export default class Main extends Renderer {
   }
 
   renderMeshRight() {
+    this.prepareBuf(this.internal.meshRight.vertices, false)
+
     // clear old instances
     if (this.internal.meshRightNormalHelper !== null) {
       this.sceneRight.remove(this.internal.meshRightNormalHelper)
@@ -313,22 +403,31 @@ export default class Main extends Renderer {
     if (this.internal.meshRightWireframeHelper !== null) {
       this.sceneRight.remove(this.internal.meshRightWireframeHelper)
     }
-    if (this.internal.mesh3jsRightOrig !== null) {
-      this.sceneRight.remove(this.internal.mesh3jsRightOrig)
+    if (this.internal.mesh3jsRight !== null) {
+      this.sceneRight.remove(this.internal.mesh3jsRight)
     }
 
-    let n = this.internal.mesh.isQuadMesh ? 6 : 3
+    let n = this.internal.meshRight.isQuadMesh ? 6 : 3
 
-    const idxs = new Uint32Array(this.internal.mesh.faces.length*n)
-    this.internal.mesh.faces.forEach(f => {this.prepareIndexes(n, idxs, f) })
+    const idxs = new Uint32Array(this.internal.meshRight.faces.length*n)
+    this.internal.meshRight.faces.forEach(f => {this.prepareIndexes(n, idxs, f) })
+    const wireframe_idxs = new Uint32Array(this.internal.meshRight.edges.length*2)
+    this.internal.meshRight.edges.forEach(e => {
+      wireframe_idxs[2 * e.idx] = e.halfedge.vertex.idx
+      wireframe_idxs[2 * e.idx + 1] = e.halfedge.twin.vertex.idx
+    })
+
+    const g_wireframe = new BufferGeometry()
+    g_wireframe.setIndex(new BufferAttribute(wireframe_idxs, 1))
+    g_wireframe.setAttribute('position', new BufferAttribute(this.bufposRight, 3))
 
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
-    g.setAttribute('position', new BufferAttribute(this.bufpos, 3)) // use uv as position
-    g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
-    g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
+    g.setAttribute('position', new BufferAttribute(this.bufposRight, 3)) // use uv as position
+    g.setAttribute('color', new BufferAttribute(this.bufcolorsRight, 3))
+    g.setAttribute('normal', new BufferAttribute(this.bufnormalsRight, 3))
 
-    this.internal.mesh3jsRightOrig = new Mesh(g, new MeshPhongMaterial({
+    this.internal.mesh3jsRight = new Mesh(g, new MeshPhongMaterial({
       vertexColors: VertexColors,
       polygonOffset: true,
       polygonOffsetFactor: 1,
@@ -336,14 +435,14 @@ export default class Main extends Renderer {
       side: DoubleSide,
     }))
     this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-        this.internal.mesh3jsRightOrig, 0.03, 0xaa0000,
+        this.internal.mesh3jsRight, 0.03, 0xaa0000,
     )
     this.internal.meshRightWireframeHelper = new LineSegments(
-        new WireframeGeometry(g),
+        g_wireframe,
         new LineBasicMaterial({color: 0x000000, linewidth: 1})
     )
-    //this.internal.mesh3jsRightSim = this.internal.mesh3jsRightOrig.clone()
-    this.sceneRight.add(this.internal.mesh3jsRightOrig)
+
+    this.sceneRight.add(this.internal.mesh3jsRight)
     if (this.params.showNormals) {
       this.sceneRight.add(this.internal.meshRightNormalHelper)
     }
