@@ -20,6 +20,7 @@ import {
 } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import Vector from './vec'
 import {StatisticsPanel} from "./StatisticsPanel";
+import {LoadingOverlay} from "./LoadingOverlay";
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -31,9 +32,13 @@ export default class Main extends Renderer {
     constructor() {
         super()
 
+        this.LoadingOverlay = new LoadingOverlay(true);
+        this.LoadingOverlay.insertStyleDom();
+        document.body.appendChild(this.LoadingOverlay.dom);
+
         this.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
         this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%');
-        this.statisticsPanelRight.OmitSubdivisionCount = true;
+        this.statisticsPanelRight.omitSubdivisionCount = true;
         document.body.appendChild(this.statisticsPanelLeft.getDomElement());
         document.body.appendChild(this.statisticsPanelRight.getDomElement());
 
@@ -161,7 +166,9 @@ export default class Main extends Renderer {
         // fetch('./assets/triangle.obj')
         // fetch('./assets/cube4.obj')
         // fetch('./assets/Face4.obj')
+        // fetch('./assets/Face3.obj')
         // fetch('./assets/bunny_tri.obj')
+        // fetch('./assets/tetrahedron.obj')
         fetch('./assets/bunny_quad.obj')
             .then(resp => resp.text())
             .then(data => this.loadMesh(data))
@@ -466,24 +473,46 @@ export default class Main extends Renderer {
         this.statisticsPanelRight.updateStatistics(statsMesh_right);
     }
 
-
     doSubdivide() {
+        // this.resetLeft();
+        // this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req, this.params.boundaryHandling);
+        // console.log("finished subdiv");
+        // this.prepareBuf()
+        // this.renderMeshLeft()
+        // this.updateStatistics()
+
+        this.LoadingOverlay.setVisible(true, "Subdividing...");
         this.resetLeft();
-        this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req, this.params.boundaryHandling);
-        console.log("finished subdiv");
-        this.prepareBuf()
-        this.renderMeshLeft()
-        this.updateStatistics()
+
+        let context = this;
+
+        // running js, blocks the updating of DOM -> overlay will not be rendered visible
+        // workaround execute subdivision delayed (at least one frame) so that overlay can be set visible
+        window.setTimeout(
+            function () {
+                context.resetLeft(true);
+
+                context.internal.mesh.subdivide_catmull_clark(context.params.subdivisions_req, context.params.boundaryHandling);
+
+                context.prepareBuf()
+                context.renderMeshLeft()
+                context.updateStatistics()
+
+                context.LoadingOverlay.setVisible(false);
+            }, 0);
     }
 
-    resetLeft() {
+    resetLeft(skipRender = false) {
         // TODO implement full deep copy in HalfedgeMesh, then reparsing would be not needed anymore
         if (this.internal.mesh3jsLeft !== null) {
             this.sceneLeft.remove(this.internal.mesh3jsLeft)
+            this.internal.mesh3jsLeft = null;
         }
         this.internal.mesh = new HalfedgeMesh(this.internal.raw_obj_data)
-        this.renderMeshLeft()
-        this.updateStatistics()
+        if(!skipRender){
+            this.renderMeshLeft()
+            this.updateStatistics()
+        }
     }
 
     downloadMesh() {
