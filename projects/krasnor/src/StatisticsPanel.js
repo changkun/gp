@@ -39,8 +39,9 @@ export class StatisticsPanel {
 
     _setStyle() {
         let minWidth = "200px";
-        let height = "100px";
+        let minHeight = "100px";
         this.panel.style.minWidth = minWidth;
+        this.panel.style.minHeight = minHeight;
         this.panel.style.position = "fixed";
 
         this.panel.style.opacity = '0.94';
