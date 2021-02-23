@@ -183,7 +183,6 @@ class Vertex {
         this.halfedge = null // Halfedge
         this.idx = -1   // Number
         this.uv = new Vector()   // Fix error in prepare buffer
-        this.dbg_isEdgeMidpoint = false;
     }
 
     normal(method = 'equal-weighted') {
@@ -629,7 +628,6 @@ export class HalfedgeMesh {
             let newVert = new Vertex();
             newVert.position = newEdgePos;
             newVert.idx = nextVertexIndex++;
-            newVert.dbg_isEdgeMidpoint = true;
             this.vertices.push(newVert);
 
             new_movedEdgePoints.set(curr_edge.idx, newVert);
@@ -889,6 +887,11 @@ export class HalfedgeMesh {
                 dbg_i2++;
             }
         }
+
+        new_FacePoints.clear();
+        new_FacePoints = null;
+        new_movedEdgePoints.clear();
+        new_movedEdgePoints = null;
     }
 
     logStats() {
