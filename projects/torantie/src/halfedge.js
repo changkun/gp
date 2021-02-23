@@ -47,6 +47,9 @@ class Halfedge {
   }
 
   getVector() {
+    /*const a = this.vertsOrig[this.next.vertex.idx]
+    const b = this.vertsOrig[this.vertex.idx]
+    return a.position.sub(b.position)*/
     const vector = this.twin.vertex.position.sub(this.vertex.position)
     return vector
   }
@@ -74,16 +77,34 @@ class Halfedge {
     //||vi - v0||
     const viMv0 = this.next.vertex.position.sub(this.vertex.position).norm()
     const weight = angles/viMv0
-
+    console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " viMv0: " + viMv0 + " weight: " + weight)
     return weight
   }
 
   getAngle() {
     let a = this.getVector()
     let b = this.prev.twin.getVector()
-    let dot = a.unit().dot(b.unit())
-    let angle = Math.acos(dot)
 
+    /*const a = this.prev.getVector().unit()
+    const b = this.next.getVector().scale(-1).unit()
+    let angle = Math.acos(Math.max(-1, Math.min(1, a.dot(b))))*/
+    /*console.log("angle" +
+        " first vector vertex ids: " + this.vertex.idx + " to " + this.twin.vertex.idx
+        + " x: " + a.x + " y: " + a.y + " z: " + a.z +
+        " second vector vertex ids:" + this.prev.twin.vertex.idx + " to " + this.prev.twin.twin.vertex.idx
+        + " x: " + b.x + " y: " + b.y + " z: " + b.z +
+        " angle: " + angle)*/
+    //console.log("angle: " + angle)
+    let dot = a.unit().dot(b.unit())
+    let angle = Math.acos(Math.max(-1, Math.min(1, dot)))
+    return angle
+  }
+
+  getTriangleOppositeSideAngle() {
+    const a = this.prev.getVector().unit()
+    const b = this.next.getVector().scale(-1).unit()
+    let dot = a.unit().dot(b.unit())
+    let angle = Math.acos(Math.max(-1, Math.min(1, dot)))
     return angle
   }
 
@@ -268,6 +289,14 @@ export class HalfedgeMesh {
     this.faces     = [] // an array of Face object
     this.halfedges = [] // an array of Halfedge object
     this.vertsOrig = []
+
+    /*this.meshTypes = {
+      isTriangleMesh: 'Triangle Mesh',
+      isQuadMesh: 'Quad Mesh',
+      isTriangleDominantMesh: 'Triangle-Dominant Mesh',
+      isQuadDominantMesh: 'Quad-Dominant Mesh'
+    }
+    this.meshType = this.meshTypes.isTriangleMesh*/
     this.isQuadMesh = false
 
     // load .obj file
@@ -290,6 +319,7 @@ export class HalfedgeMesh {
       if(containsQuad)
         break;
     }
+
 
     for (let line of lines) {
       line = line.trim()
@@ -503,17 +533,27 @@ export class HalfedgeMesh {
       vertexCopy.position = new Vector(vertex.position.x,vertex.position.y,vertex.position.z)
       this.vertsOrig.push(vertexCopy)
     }
+    /*index = 0
+    this.halfedges.forEach(he => {
+      // HACK: all halfedge now accessible to the original vertices
+      he.vertsOrig = this.vertsOrig
+      he.idx = index++
+    })*/
+
   }
 
 
   laplaceMatrix(weightType) {
     const numberOfVertices = this.vertices.length
     let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
+    let lambda = new Triplet(numberOfVertices, numberOfVertices)
 
     for (const vert of this.vertices) {
       const i = vert.idx
       let sum = 1e-8 // Tikhonov regularization to get strict positive definite
       let count = 0
+      let neigh = ""
+
       vert.forEachHalfEdge(h => {
         let w = 0
 
@@ -530,10 +570,34 @@ export class HalfedgeMesh {
             break;
         }
 
+
         sum += w
-        weightTriplet.addEntry(w, i, h.twin.vertex.idx)
+        weightTriplet.addEntry(-w, i, h.twin.vertex.idx)
+        neigh += " " + h.twin.vertex.idx
+
       })
-      weightTriplet.addEntry(-sum, i, i)
+      weightTriplet.addEntry(sum, i, i)
+      console.log("vertex " + vert.idx + " neighbours:" + neigh)
+      // test
+      let sum2 = 1e-8
+      vert.forEachHalfEdge(h => {
+        let w = 0
+        switch (weightType) {
+          case 'uniform':
+            w = 1
+            break;
+          case 'cotan':
+            w = (h.cotan() + h.twin.cotan())/2
+            break;
+          case 'mean value':
+            w = h.meanValueWeight()
+            break;
+        }
+        //weightTriplet.addEntry(-(w / sum), i, h.twin.vertex.idx)
+        sum2 += (w / sum)
+      })
+      console.log("sum2 " + sum2)
+
     }
 
     let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
@@ -548,6 +612,7 @@ export class HalfedgeMesh {
     for (const vert of this.vertices) {
       const i = vert.idx
       let neighbours = 0
+      //let l = vert.halfedge.next.vertex.position.sub(vert.position).norm()
 
       switch (massMatrixType) {
         case 'identity':
@@ -579,13 +644,20 @@ export class HalfedgeMesh {
    * @param {Number} timeStep the time step in Laplacian Smoothing algorithm
    * @param {Number} smoothStep the smooth step in Laplacian Smoothing algorithm
    */
-  smooth(weightType, timeStep, smoothStep, massMatrixType) {
+  smooth(weightType, timeStep, smoothStep, massMatrixType, lambda) {
     console.log("in Smooth")
     //reset vertices
+
+
     for (let i = 0; i < this.vertsOrig.length; i++) {
       this.vertices[i].position.x = this.vertsOrig[i].position.x
       this.vertices[i].position.y = this.vertsOrig[i].position.y
       this.vertices[i].position.z = this.vertsOrig[i].position.z
+    }
+
+    if (timeStep == 0.001){
+      console.log("timeStep is 0.001. Skip smooth")
+      return;
     }
 
     for (let j = 0; j< smoothStep; j++) {
@@ -595,7 +667,7 @@ export class HalfedgeMesh {
         let W = this.laplaceMatrix(weightType)
         let M = this.massMatrix(massMatrixType)
         //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-        let result = this.solveLinearEquation(M, W, timeStep);
+        let result = this.solveLinearEquation(M, W, timeStep, lambda);
         //   3. Update the position of mesh vertices based on the solution f'.
         this.updateVertexPositions(result);
       } catch (e) {
@@ -616,8 +688,8 @@ export class HalfedgeMesh {
     }
   }
 
-  solveLinearEquation(M, W, timeStep) {
-    let f = M.minus(W.timesReal(timeStep))
+  solveLinearEquation(M, W, timeStep, lambda) {
+    let f = M.plus(W.timesReal(timeStep).timesReal(lambda))
     let cholskyDecompositionMatrix = f.chol()
 
     let b = DenseMatrix.zeros(this.vertsOrig.length, 3)
