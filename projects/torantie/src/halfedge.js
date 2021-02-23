@@ -75,7 +75,7 @@ class Halfedge {
     const delta = this.twin.next.getAngle()
     const angles =Math.tan(gamma/2) + Math.tan(delta/2)
     //||vi - v0||
-    const viMv0 = this.next.vertex.position.sub(this.vertex.position).norm()
+    const viMv0 = this.getVector().norm()
     const weight = angles/viMv0
     console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " viMv0: " + viMv0 + " weight: " + weight)
     return weight
@@ -173,11 +173,37 @@ class Face {
 
   }
 
+  getArea(){
+    if(this.isQuad){
+      return this.getAreaQuad()
+    }else{
+      return this.getAreaTriangle()
+    }
+  }
+
+  getAreaQuad() {
+    if(this.halfedge.onBoundary)
+      return 0
+
+    let x = this.halfedge.getVector()
+    let y = this.halfedge.prev.twin.getVector()
+
+    let firstTriangle = (x.cross(y)).norm()
+    let x2 = this.halfedge.prev.prev.getVector()
+    let y2 = this.halfedge.next.twin.getVector()
+    let secondTriangle = (x2.cross(y2)).norm()
+
+    return firstTriangle + secondTriangle
+  }
+
   getAreaTriangle() {
-    const a = this.halfedge.vertex.position
-    const b = this.halfedge.next.vertex.position
-    let c = a.cross(b)
-    return Math.abs(Math.pow(c.x, 2) + Math.pow(c.y, 2) + Math.pow(c.z, 2)) / 2
+    if(this.halfedge.onBoundary)
+      return 0
+
+    const a = this.halfedge.getVector()
+    const b = this.halfedge.next.getVector()
+    let c = a.cross(b).norm()
+    return c / 2
   }
 
   getNormal(){
@@ -225,18 +251,23 @@ class Vertex {
 
     switch (method) {
       case 'equal-weighted':
-        this.forEachHalfEdge((currentHalfEdge) => {
-          sum = sum.add(currentHalfEdge.face.getNormal());
+        this.faces((face) => {
+          sum = sum.add(face.getNormal());
         })
         break;
       case 'area-weighted':
-        this.forEachHalfEdge((currentHalfEdge) => {
-          sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.face.getAreaTriangle()));
+        this.faces((face) => {
+          //TODO
+          sum = sum.add(face.getNormal().scale(face.getArea()));
         })
 
         break;
       case 'angle-weighted':
         this.forEachHalfEdge((currentHalfEdge) => {
+          //TODO
+          if(currentHalfEdge.onBoundary)
+            return;
+
           sum = sum.add(currentHalfEdge.face.getNormal().scale(currentHalfEdge.getAngle()));
         })
         break;
@@ -249,6 +280,18 @@ class Vertex {
     return normal
   }
 
+  faces(fn) {
+    let start = true
+    let i = 0
+    for (let h = this.halfedge; start || h != this.halfedge; h = h.twin.next) {
+      if(h.onBoundary) {
+        continue
+      }
+      fn(h.face, i)
+      start = false
+      i++
+    }
+  }
 
   calculateVoronoiArea() {
     let area = 0
@@ -290,13 +333,13 @@ export class HalfedgeMesh {
     this.halfedges = [] // an array of Halfedge object
     this.vertsOrig = []
 
-    /*this.meshTypes = {
+    this.meshTypes = {
       isTriangleMesh: 'Triangle Mesh',
       isQuadMesh: 'Quad Mesh',
       isTriangleDominantMesh: 'Triangle-Dominant Mesh',
       isQuadDominantMesh: 'Quad-Dominant Mesh'
     }
-    this.meshType = this.meshTypes.isTriangleMesh*/
+    this.meshType = this.meshTypes.isTriangleMesh
     this.isQuadMesh = false
 
     // load .obj file
@@ -320,7 +363,8 @@ export class HalfedgeMesh {
         break;
     }
 
-
+    let quadCount = 0
+    let faceCount = 0
     for (let line of lines) {
       line = line.trim()
       const tokens = line.split(' ')
@@ -332,6 +376,9 @@ export class HalfedgeMesh {
           continue
         case 'f':
           const isQuad = tokens.length == 5
+          faceCount++
+          if(isQuad)
+            quadCount++
 
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
@@ -342,6 +389,16 @@ export class HalfedgeMesh {
 
           continue
       }
+    }
+
+    if(faceCount == quadCount){
+      this.meshType = this.meshTypes.isQuadMesh
+    }else if(quadCount == 0){
+      this.meshType = this.meshTypes.isTriangleMesh
+    }else if(faceCount/2<quadCount){
+      this.meshType = this.meshTypes.isQuadDominantMesh
+    }else if(faceCount/2>quadCount){
+      this.meshType = this.meshTypes.isTriangleDominantMesh
     }
 
     // build the halfedge connectivity
