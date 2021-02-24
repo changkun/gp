@@ -124,7 +124,10 @@ class Face {
     this.isQuad = false
   }
 
-  //Triangulation in case of QuadMesh
+  /**
+   * Triangulation in case of QuadMesh.
+   * @returns {[][]} Two Arrays each representing a triangle.
+   */
   getTriangulation(){
     let firstTriangle = []
     let secondTriangle = []
@@ -257,14 +260,12 @@ class Vertex {
         break;
       case 'area-weighted':
         this.faces((face) => {
-          //TODO
           sum = sum.add(face.getNormal().scale(face.getArea()));
         })
 
         break;
       case 'angle-weighted':
         this.forEachHalfEdge((currentHalfEdge) => {
-          //TODO
           if(currentHalfEdge.onBoundary)
             return;
 
@@ -384,6 +385,7 @@ export class HalfedgeMesh {
           for (let i = 1; i < tokens.length; i++) {
             indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
+
           if(containsQuad && !isQuad)
             indices.push(-1)
 
@@ -603,13 +605,14 @@ export class HalfedgeMesh {
   laplaceMatrix(weightType) {
     const numberOfVertices = this.vertices.length
     let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
-    let lambda = new Triplet(numberOfVertices, numberOfVertices)
+    //let lambda = new Triplet(numberOfVertices, numberOfVertices)
 
     for (const vert of this.vertices) {
       const i = vert.idx
       let sum = 1e-8 // Tikhonov regularization to get strict positive definite
+
+      // count to test sum/count for mean value weights
       let count = 0
-      let neigh = ""
 
       vert.forEachHalfEdge(h => {
         let w = 0
@@ -630,12 +633,11 @@ export class HalfedgeMesh {
 
         sum += w
         weightTriplet.addEntry(-w, i, h.twin.vertex.idx)
-        neigh += " " + h.twin.vertex.idx
-
       })
-      weightTriplet.addEntry(sum, i, i)
-      console.log("vertex " + vert.idx + " neighbours:" + neigh)
-      // test
+      weightTriplet.addEntry(sum/*/count*/, i, i)
+
+      // test to see if sum of w'ij = 1 and if w'ij = wij/sum of wij works for mean value weights
+      /*
       let sum2 = 1e-8
       vert.forEachHalfEdge(h => {
         let w = 0
@@ -654,6 +656,8 @@ export class HalfedgeMesh {
         sum2 += (w / sum)
       })
       console.log("sum2 " + sum2)
+
+       */
 
     }
 
@@ -702,10 +706,8 @@ export class HalfedgeMesh {
    * @param {Number} smoothStep the smooth step in Laplacian Smoothing algorithm
    */
   smooth(weightType, timeStep, smoothStep, massMatrixType, lambda) {
-    console.log("in Smooth")
+    console.log("Start smoothing mesh.")
     //reset vertices
-
-
     for (let i = 0; i < this.vertsOrig.length; i++) {
       this.vertices[i].position.x = this.vertsOrig[i].position.x
       this.vertices[i].position.y = this.vertsOrig[i].position.y

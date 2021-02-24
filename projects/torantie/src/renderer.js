@@ -31,7 +31,35 @@ export default class Renderer {
     this.sceneLeft.background = new Color(0xffffff)
     this.sceneRight = new Scene()
     this.sceneRight.background = this.sceneLeft.background
+    this.internal = {
+      leftSide: {
+        scene: new Scene(),
+        mesh: null, // internal left mesh object
+        mesh3js: null,
+        meshNormalHelper: null,
+        meshWireframeHelper: null,
+        buffer:{
+          positions: null,
+          colors: null,
+          normals: null
+        }
+      },
+      rightSide: {
+        scene: new Scene(),
+        mesh: null,  // internal right mesh object
+        mesh3js: null,
+        meshNormalHelper: null,
+        meshWireframeHelper: null,
+        buffer:{
+          positions: null,
+          colors: null,
+          normals: null
+        }
+      }
+    }
 
+    this.internal.leftSide.scene.background = new Color(0xffffff)
+    this.internal.rightSide.scene.background = this.sceneLeft.background
     // camera
     this.cameraMeshLeft = new PerspectiveCamera(
       45, 0.5 * window.innerWidth/window.innerHeight, 0.1, 1000)
@@ -60,14 +88,14 @@ export default class Renderer {
     p1.position.set(2, 20, 15)
     this.cameraMeshLeft.add(a1)
     this.cameraMeshLeft.add(p1)
-    this.sceneLeft.add(this.cameraMeshLeft)
+    this.internal.leftSide.scene.add(this.cameraMeshLeft)
 
     const a2 = new AmbientLight(0xffffff, 0.35)
     const p2 = new PointLight(0xffffff)
     p2.position.set(2, 20, 15)
     this.cameraMeshRight.add(a2)
     this.cameraMeshRight.add(p2)
-    this.sceneRight.add(this.cameraMeshRight)
+    this.internal.rightSide.scene.add(this.cameraMeshRight)
 
     // controls
     this.controlsLeft = new OrbitControls(
@@ -95,12 +123,12 @@ export default class Renderer {
     this.renderer.setViewport(0, 0, w, window.innerHeight)
     this.renderer.setScissor(0, 0, w, window.innerHeight)
     this.renderer.setScissorTest(true)
-    this.renderer.render(this.sceneLeft, this.cameraMeshLeft)
+    this.renderer.render(this.internal.leftSide.scene, this.cameraMeshLeft)
 
     this.renderer.setViewport(w, 0, w, window.innerHeight)
     this.renderer.setScissor(w, 0, w, window.innerHeight)
     this.renderer.setScissorTest(true)
-    this.renderer.render(this.sceneRight, this.cameraMeshRight)
+    this.renderer.render(this.internal.rightSide.scene, this.cameraMeshRight)
 
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.controlsLeft.update()
