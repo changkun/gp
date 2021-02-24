@@ -38,6 +38,7 @@ export default class Main extends Renderer {
 
         this.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
         // this.statisticsPanelLeft.showSubdivisionTime = true;
+        this.statisticsPanelLeft.subdivisionTimeFormat = "hh:mm:ss.ffffff";
         this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%', 'none', true, true);
         document.body.appendChild(this.statisticsPanelLeft.domElement);
         document.body.appendChild(this.statisticsPanelRight.domElement);
@@ -88,6 +89,7 @@ export default class Main extends Renderer {
             overlayOriginalOverSubdivided: false,
             statisticsPanelComparisonMethod: this.statisticsPanelLeft.comparisonStyle,
             statisticsPanelShowTime: this.statisticsPanelLeft.showSubdivisionTime,
+            statisticsPanelSubdivisionTimeFormat: this.statisticsPanelLeft.subdivisionTimeFormat,
             subdivisions_req: 0.0,
             boundaryHandling: 'smooth',
         }
@@ -171,11 +173,11 @@ export default class Main extends Renderer {
         // fetch('./assets/cube3.obj')
         // fetch('./assets/triangle.obj')
         // fetch('./assets/cube4.obj')
-        // fetch('./assets/Face4.obj')
+        fetch('./assets/Face4.obj')
         // fetch('./assets/Face3.obj')
         // fetch('./assets/bunny_tri.obj')
         // fetch('./assets/tetrahedron.obj')
-        fetch('./assets/bunny_quad.obj')
+        // fetch('./assets/bunny_quad.obj')
             .then(resp => resp.text())
             .then(data => this.loadMesh(data))
     }

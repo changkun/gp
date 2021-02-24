@@ -26,6 +26,7 @@ export class StatisticsPanel {
         this.comparisonStyle = comparisonStyle;
         this.panelName = panelName;
         this.showPanelName = showPanelName;
+        this.subdivisionTimeFormat = "hh:mm:ss.fff";
 
         if (this.showPanelName) {
             this.panelHeader.innerText = this.panelName;
@@ -133,6 +134,7 @@ export class StatisticsPanel {
         let comparisonStyle = this.comparisonStyle;
         let omit_subdivisions = this.omitSubdivisionCount;
         let showSubdivisionTime = this.showSubdivisionTime;
+        let subdivisionTimeFormat = this.subdivisionTimeFormat;
 
         let statsText = `<table style=\"width:100%\">`;
         statsText += `<tr><td><b>Vertices </b></td> <td><b>${formatNumber(stats.cnt_vertices)}</b></td> ${makeCompareStatColumn(stats, comparisonStats, 'cnt_vertices', comparisonStyle)}</tr>`;
@@ -140,12 +142,12 @@ export class StatisticsPanel {
         statsText += `<tr><td><b>Faces </b></td>    <td><b>${formatNumber(stats.cnt_faces)}</b></td>    ${makeCompareStatColumn(stats, comparisonStats, 'cnt_faces', comparisonStyle)}</tr>`;
 
         if (!omit_subdivisions) {
-            statsText += `<tr><td><b>Subdivisions </b></td> <td colspan="1"><b> ${formatNumber(stats.subdivisions)}</b></td></tr>`;
+            statsText += `<tr><td><b>Subdivisions </b></td> <td colspan="2"><b> ${formatNumber(stats.subdivisions)}</b></td></tr>`;
         } else {
             statsText += "<tr><td><b>&nbsp;</b></td><td>&nbsp;</td></tr>";
         }
         if (showSubdivisionTime) {
-            statsText += `<tr><td><b>Time </b></td><td><b>${stats.formatElapsedTime(stats.subdivisionTimeMs)}</b></td></tr>`;
+            statsText += `<tr><td><b>Time </b></td><td colspan="2" title="${subdivisionTimeFormat}" ><b>${stats.formatElapsedTime(stats.subdivisionTimeMs, subdivisionTimeFormat)}</b></td></tr>`;
         }
 
         this.panelConent.innerHTML = statsText;
