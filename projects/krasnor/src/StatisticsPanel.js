@@ -13,10 +13,13 @@ export class StatisticsPanel {
      * @param {boolean} OmitSubdivisionCount
      */
     constructor(panelName = '', css_bottom = '0px', css_left = '0px', comparisonStyle = 'percentage_increase', showPanelName = true,OmitSubdivisionCount = false) {
-        this.panel = document.createElement('div');
+        this.domElement = document.createElement('div');
         this.panelConent = document.createElement('div');
         this.panelHeader = document.createElement('div');
 
+        // this.domElement.className = "statistics-panel";
+        // this.panelConent.className = "statistics-panel-content";
+        // this.panelHeader.className = "statistics-panel-header";
 
         this.omitSubdivisionCount = OmitSubdivisionCount;
         this.comparisonStyle = comparisonStyle;
@@ -25,36 +28,36 @@ export class StatisticsPanel {
 
         if (this.showPanelName) {
             this.panelHeader.innerText = this.panelName;
-            this.panel.appendChild(this.panelHeader);
+            this.domElement.appendChild(this.panelHeader);
         }
-        this.panel.appendChild(this.panelConent);
+        this.domElement.appendChild(this.panelConent);
 
         this._setStyle();
         this._setPositionOnScreen(css_bottom, css_left);
     }
 
     getDomElement() {
-        return this.panel;
+        return this.domElement;
     }
 
     _setStyle() {
         let minWidth = "200px";
         let minHeight = "100px";
-        this.panel.style.minWidth = minWidth;
-        this.panel.style.minHeight = minHeight;
-        this.panel.style.position = "fixed";
+        this.domElement.style.minWidth = minWidth;
+        this.domElement.style.minHeight = minHeight;
+        this.domElement.style.position = "fixed";
 
-        this.panel.style.opacity = '0.94';
-        this.panel.style.background = "#1a1a1a";
-        this.panel.style.color = "#eee";
-        this.panel.style.fontFamily = "Lucida Grande,sans-serif";
+        this.domElement.style.opacity = '0.94';
+        this.domElement.style.background = "#1a1a1a";
+        this.domElement.style.color = "#eee";
+        this.domElement.style.fontFamily = "Lucida Grande,sans-serif";
 
-        this.panel.style.font = 'bold 16px Helvetica,Arial,sans-serif';
+        this.domElement.style.font = 'bold 16px Helvetica,Arial,sans-serif';
         this.panelConent.style.font = 'bold 12px Helvetica,Arial,sans-serif';
 
-        this.panel.style.paddingLeft = "16px";
-        this.panel.style.paddingLeft = "6px";
-        this.panel.style.paddingTop = "6px";
+        this.domElement.style.paddingLeft = "16px";
+        this.domElement.style.paddingLeft = "6px";
+        this.domElement.style.paddingTop = "6px";
 
         // this.panel.style.border = "2px solid #2c2c2c";
 
@@ -62,8 +65,8 @@ export class StatisticsPanel {
     }
 
     _setPositionOnScreen(css_bottom, css_left) {
-        this.panel.style.bottom = css_bottom;
-        this.panel.style.left = css_left;
+        this.domElement.style.bottom = css_bottom;
+        this.domElement.style.left = css_left;
     }
 
     /**
@@ -71,6 +74,14 @@ export class StatisticsPanel {
      * @param {HalfedgeMeshStatistics} statistic
      */
     updateStatistics(statistic, compareToStatistic = null) {
+        /**
+         * formats number or string
+         * e.g. formatNumber(123456) => "123,456"
+         * e.g. formatNumber(123456.789) => "123,456.789"
+         *
+         * @param {number|string} num
+         * @returns {string}
+         */
         const formatNumber = function (num) {
             return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
         }
@@ -79,7 +90,7 @@ export class StatisticsPanel {
          * E.g "40 is 400% of 10"
          * @param {number} a
          * @param {number} b
-         * @returns {string} percentage e.g. '400'
+         * @returns {string} percentage e.g. '400.00'
          */
         const percentage = function (a, b, fractionDigits = 2) {
             return (a / b * 100).toFixed(fractionDigits);
@@ -89,7 +100,7 @@ export class StatisticsPanel {
          * Example "The increase from 40 to 10 is 300%"
          * @param {number} a
          * @param  {number} b
-         * @returns {string} percentage e.g. '300'
+         * @returns {string} percentage e.g. '300.00'
          */
         const percentageIncrease = function (a, b, fractionDigits = 2) {
             return ((a - b) / b * 100).toFixed(fractionDigits)
@@ -100,13 +111,15 @@ export class StatisticsPanel {
             } else {
                 switch (comparisonStyle) {
                     case 'percentage_increase':
-                        let d_perc_incr = percentageIncrease(stats[field], comparisonStats[field]);
+                        let d_perc_incr = formatNumber(percentageIncrease(stats[field], comparisonStats[field]));
                         return '<td> (+' + d_perc_incr + '&#37;)</td>';
                     case 'percentage':
-                        let d_percentage = percentage(stats[field], comparisonStats[field]);
+                        let d_percentage = formatNumber(percentage(stats[field], comparisonStats[field]));
                         return '<td> (' + d_percentage + '&#37;)</td>';
                     case 'numbers':
-                        return '<td>/ ' + comparisonStats[field] + '</td>';
+                        return '<td>/ ' + formatNumber(comparisonStats[field]) + '</td>';
+                    case 'numbers_increase':
+                        return '<td>/ +' + formatNumber(stats[field] - comparisonStats[field]) + '</td>';
                     case 'none':
                     default:
                         return '';

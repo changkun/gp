@@ -117,15 +117,6 @@ class Face {
         }
     }
 
-    // normal() {
-    //   if (this.halfedge.onBoundary) {
-    //     return new Vector(0, 0, 0)
-    //   }
-    //   const h = this.halfedge
-    //   let a = h.vertex.position.sub(h.next.vertex.position)
-    //   let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
-    //   return a.cross(b).unit()
-    // }
     normal() {
         let x = this.halfedge.getVector();
         let y = this.halfedge.prev.twin.getVector();

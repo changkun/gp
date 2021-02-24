@@ -33,14 +33,13 @@ export default class Main extends Renderer {
         super()
 
         this.LoadingOverlay = new LoadingOverlay(true);
-        this.LoadingOverlay.insertStyleDom();
-        document.body.appendChild(this.LoadingOverlay.dom);
+        this.LoadingOverlay.insertDefaultStyleToDom();
+        document.body.appendChild(this.LoadingOverlay.domElement);
 
         this.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
-        this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%');
-        this.statisticsPanelRight.omitSubdivisionCount = true;
-        document.body.appendChild(this.statisticsPanelLeft.getDomElement());
-        document.body.appendChild(this.statisticsPanelRight.getDomElement());
+        this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%', 'none', true, true);
+        document.body.appendChild(this.statisticsPanelLeft.domElement);
+        document.body.appendChild(this.statisticsPanelRight.domElement);
 
         // a hidden input field that responsible for loading meshes
         this.input = document.createElement('input')
@@ -97,11 +96,11 @@ export default class Main extends Renderer {
         const io = this.gui.addFolder('I/O')
         io.add(this.params, 'import').name('import mesh')
         io.add(this.params, 'export').name('export screenshot')
-        io.add(this.params, 'downloadMesh').name('download Mesh')
+        io.add(this.params, 'downloadMesh').name('export mesh as .obj')
 
         const vis = this.gui.addFolder('Visualization')
         vis.add(this.params, 'statisticsPanelComparisonMethod', [
-            'none', 'numbers', 'percentage', 'percentage_increase'
+            'none', 'numbers', 'numbers_increase', 'percentage', 'percentage_increase'
         ]).name('comparison style').onChange((p) => {
                 this.statisticsPanelLeft.comparisonStyle = p;
                 this.statisticsPanelRight.comparisonStyle = p;
@@ -474,32 +473,28 @@ export default class Main extends Renderer {
     }
 
     doSubdivide() {
-        // this.resetLeft();
-        // this.internal.mesh.subdivide_catmull_clark(this.params.subdivisions_req, this.params.boundaryHandling);
-        // console.log("finished subdiv");
-        // this.prepareBuf()
-        // this.renderMeshLeft()
-        // this.updateStatistics()
+        // before next repaint set loading overlay visible
+        requestAnimationFrame(() => {
+            this.LoadingOverlay.setVisible(true, "Subdividing...");
 
-        this.LoadingOverlay.setVisible(true, "Subdividing...");
-        this.resetLeft();
+            let context = this;
 
-        let context = this;
+            // doing subdivide would block repaint, but overlay cannot be rendered visible until repaint is done
+            // -> execute the subdivision some time after the repaint
+            // => do subdivide in (macro)-task
+            window.setTimeout(
+                function () {
+                    context.resetLeft(true);
 
-        // running js, blocks the updating of DOM -> overlay will not be rendered visible
-        // workaround execute subdivision delayed (at least one frame) so that overlay can be set visible
-        window.setTimeout(
-            function () {
-                context.resetLeft(true);
+                    context.internal.mesh.subdivide_catmull_clark(context.params.subdivisions_req, context.params.boundaryHandling);
 
-                context.internal.mesh.subdivide_catmull_clark(context.params.subdivisions_req, context.params.boundaryHandling);
+                    context.prepareBuf()
+                    context.renderMeshLeft()
+                    context.updateStatistics()
 
-                context.prepareBuf()
-                context.renderMeshLeft()
-                context.updateStatistics()
-
-                context.LoadingOverlay.setVisible(false);
-            }, 0);
+                    context.LoadingOverlay.setVisible(false);
+                }, 0);
+        })
     }
 
     resetLeft(skipRender = false) {
@@ -508,6 +503,15 @@ export default class Main extends Renderer {
             this.sceneLeft.remove(this.internal.mesh3jsLeft)
             this.internal.mesh3jsLeft = null;
         }
+        if (this.internal.meshLeftNormalHelper !== null) {
+            this.sceneLeft.remove(this.internal.meshLeftNormalHelper)
+            this.internal.meshLeftNormalHelper = null;
+        }
+        if (this.internal.meshLeftWireframeHelper !== null) {
+            this.sceneLeft.remove(this.internal.meshLeftWireframeHelper)
+            this.internal.meshLeftWireframeHelper = null;
+        }
+
         this.internal.mesh = new HalfedgeMesh(this.internal.raw_obj_data)
         if(!skipRender){
             this.renderMeshLeft()

@@ -1,14 +1,14 @@
 export class LoadingOverlay {
 
     constructor(initializeHidden = false, defaultLoadingText = "Loading...") {
-        this.dom = document.createElement('div');
+        this.domElement = document.createElement('div');
         this.center = document.createElement('div');
         this.loadingCircle = document.createElement('div');
         this.loadingText = document.createElement('p');
         if(initializeHidden){
-            this.dom.className = "overlay-hidden";
+            this.domElement.className = "overlay-base overlay-hidden";
         }else{
-            this.dom.className = "overlay-visible";
+            this.domElement.className = "overlay-base overlay-visible";
         }
         this.center.className = "overlay-center";
         this.loadingCircle.className = "overlay-loader";
@@ -19,69 +19,46 @@ export class LoadingOverlay {
 
         this.center.appendChild(this.loadingCircle);
         this.center.appendChild(this.loadingText);
-        this.dom.appendChild(this.center);
-
-        this._setPositions();
-        this._setStyle();
-    }
-    _setPositions(){
-        this.dom.style.top = "0px";
-        this.dom.style.left = "0px";
-        this.center.style.top = "50%";
-        this.center.style.left = "50%";
-        this.center.style.position = "absolute";
-        this.center.style.transform = "translate(-50%, -50%)";
-        this.loadingText.style.textAlign = "center"
-    }
-
-    _setStyle(){
-        this.dom.style.minWidth = "100%";
-        this.dom.style.minHeight = "100%";
-        this.dom.style.position = "fixed";
-        // this.dom.style.opacity = '0.90';
-        // this.dom.style.background = "#1a1a1a";
-        // this.dom.style.background = "#323232";
-        this.dom.style.color = "#eee";
-        //this.dom.style.zIndex = "9"
-        this.loadingText.style.font = 'bold 16px Helvetica,Arial,sans-serif';
-
-        this.center.style.background = "#323232";
-        this.center.style.opacity = '0.94';
-        this.center.style.borderRadius = "25px";
-        this.center.style.padding = "25px";
+        this.domElement.appendChild(this.center);
     }
 
     show(){
-        // this.dom.style.display = 'block';
-        this.dom.className = "overlay-visible";
+        this.domElement.className = "overlay-base overlay-visible";
     }
     hide(){
-        // this.dom.style.display = 'none';
-        this.dom.className = "overlay-hidden";
+        this.domElement.className = "overlay-base overlay-hidden";
     }
     setVisible(isVisible, loadingText = this.defaultLoadingText){
-        this.loadingText.innerHTML = loadingText;
 
         if(isVisible){
+            this.loadingText.innerHTML = loadingText;
             this.show();
         }else{
             this.hide();
         }
     }
 
-    insertStyleDom(){
+    /**
+     * Creates and inserts a default css style, that is compatible with the LoadingOverlay, into the documents header.
+     *
+     * @returns {HTMLStyleElement}
+     */
+    insertDefaultStyleToDom(){
         let styleEl = document.createElement('style');
-        styleEl.id = "Loading-Overlay"
+        // styleEl.type = "text/css" // deprecated?
+        styleEl.id = "loading-overlay-default-style"
         document.head.appendChild(styleEl);
         let styleSheet = styleEl.sheet;
         styleSheet.insertRule(
-            '.overlay-loader {\n' +
-            '  border: 16px solid #f3f3f3; /* Light grey */\n' +
-            '  border-top: 16px solid #3498db; /* Blue */\n' +
-            '  border-radius: 50%;\n' +
-            '  width: 120px;\n' +
-            '  height: 120px;\n' +
-            '  animation: spin 2s linear infinite;\n' +
+            '.overlay-base {\n' +
+            '  top: 0px;\n' +
+            '  left: 0px;\n' +
+            '  position: fixed;\n' +
+            '  min-width: 100%;\n' +
+            '  min-height: 100%;\n' +
+
+            '  color: #eee;\n' +
+            '  z-index: 9;\n' +
             '}'
         );
         styleSheet.insertRule(
@@ -98,6 +75,38 @@ export class LoadingOverlay {
             // '  transition: opacity 33ms, visibility 33ms;\n' +
             '}'
         )
+        styleSheet.insertRule(
+            '.overlay-center {\n' +
+            '  top: 50%;\n' +
+            '  left: 50%;\n' +
+            '  position: absolute;\n' +
+            '  transform: translate(-50%, -50%);\n' +
+
+            '  background: #323232;\n' +
+            '  opacity: 0.94;\n' +
+            '  border-radius: 25px;\n' +
+            '  padding: 25px;\n' +
+            '}'
+        );
+        styleSheet.insertRule(
+            '.overlay-loader {\n' +
+            '  border: 16px solid #f3f3f3; /* Light grey */\n' +
+            '  border-top: 16px solid #3498db; /* Blue */\n' +
+            '  border-radius: 50%;\n' +
+            '  width: 120px;\n' +
+            '  height: 120px;\n' +
+            '  animation: spin 2s linear infinite;\n' +
+            '}'
+        );
+        styleSheet.insertRule(
+            '.overlay-description {\n' +
+            '  font: bold 16px Helvetica,Arial,sans-serif;\n' +
+            '  text-align: center;\n' +
+            '  margin-top: 25px;\n' +
+            '  margin-bottom: 0px;\n' +
+            '  user-select: none;\n' +
+            '}'
+        );
         styleSheet.insertRule(
             '@keyframes spin {\n' +
             '  0% { transform: rotate(0deg); }\n' +
