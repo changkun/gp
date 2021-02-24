@@ -37,6 +37,7 @@ export default class Main extends Renderer {
         document.body.appendChild(this.LoadingOverlay.domElement);
 
         this.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
+        // this.statisticsPanelLeft.showSubdivisionTime = true;
         this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%', 'none', true, true);
         document.body.appendChild(this.statisticsPanelLeft.domElement);
         document.body.appendChild(this.statisticsPanelRight.domElement);
@@ -86,6 +87,7 @@ export default class Main extends Renderer {
 
             overlayOriginalOverSubdivided: false,
             statisticsPanelComparisonMethod: this.statisticsPanelLeft.comparisonStyle,
+            statisticsPanelShowTime: this.statisticsPanelLeft.showSubdivisionTime,
             subdivisions_req: 0.0,
             boundaryHandling: 'smooth',
         }
@@ -107,6 +109,11 @@ export default class Main extends Renderer {
                 this.updateStatistics();
             }
         )
+        vis.add(this.params, 'statisticsPanelShowTime').name('show subdiv. time').listen()
+            .onChange(show => {
+                this.statisticsPanelLeft.showSubdivisionTime = show;
+                this.updateStatistics();
+            })
         vis.add(this.params, 'showNormals').name('show normals').listen()
             .onChange(show => {
                 if (show) {

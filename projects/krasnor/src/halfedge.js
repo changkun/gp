@@ -259,6 +259,7 @@ export class HalfedgeMesh {
         this.boundaries = [] // an array of boundary loops
         let n_bcycles = 0;
         this.subdivisionCounter = 0;
+        this.lastSubdivisionTime = 0; // ms
 
         let t0_parseFromObj = performance.now();
 
@@ -547,16 +548,13 @@ export class HalfedgeMesh {
             t0_last_subdiv_begun = performance.now();
             this._subdivide_once(_boundaryHandling);
             t1_last_subdiv_time = performance.now() - t0_last_subdiv_begun;
-            this.logStats();
             console.log("subdivided to level " + this.subdivisionCounter + " # " + t1_last_subdiv_time + "ms");
         }
         let t1_subdiv = performance.now();
         let t_subdiv_elapsed = t1_subdiv - t0_subdiv;
 
-        let t_subdiv_elapsed_ms = t_subdiv_elapsed % 1000;
-        let t_subdiv_elapsed_s = Math.floor(t_subdiv_elapsed / 1000);
-        let t_subdiv_elapsed_min = Math.floor(t_subdiv_elapsed / 1000 / 60);
-        console.log("##### Finished Subdivision ## %smin %ss %sms ###########", t_subdiv_elapsed_min, t_subdiv_elapsed_s, t_subdiv_elapsed_ms);
+        this.lastSubdivisionTime = t_subdiv_elapsed;
+        console.log("##### Finished Subdivision ## %smin %ss %sms ###########", Math.floor(t_subdiv_elapsed / 1000 / 60), Math.floor(t_subdiv_elapsed / 1000), t_subdiv_elapsed % 1000);
         // this.plotVertices();
         // this.plotFaces(true);
     }
@@ -997,12 +995,12 @@ export class HalfedgeMesh {
     }
 
     getStatistics() {
-        let cnt_vertices = this.vertices.length;
-        let cnt_edges = this.edges.length;
-        let cnt_faces = this.faces.length;
-        let subdivs = this.subdivisionCounter;
-
-        return new HalfedgeMeshStatistics(cnt_vertices, cnt_edges, cnt_faces, subdivs);
+        return new HalfedgeMeshStatistics(
+            this.vertices.length,
+            this.edges.length,
+            this.faces.length,
+            this.subdivisionCounter,
+            this.lastSubdivisionTime);
     }
 
     getFaceVertexCountAfterTriangulation() {
@@ -1020,11 +1018,81 @@ export class HalfedgeMesh {
 }
 
 export class HalfedgeMeshStatistics {
-    constructor(cnt_vertices = 0, cnt_edges = 0, cnt_faces = 0, subdivisions = 0) {
+    constructor(cnt_vertices = 0, cnt_edges = 0, cnt_faces = 0, subdivisions = 0, subdivisionTime = 0, subdivHistory = []) {
         this.cnt_vertices = cnt_vertices;
         this.cnt_edges = cnt_edges;
         this.cnt_faces = cnt_faces;
         this.subdivisions = subdivisions;
+        this.subdivisionTimeMs = subdivisionTime;
+    }
+
+    /**
+     *
+     * @param t_ms time in milliseconds
+     * @param format   <br/>
+     * "raw" or "max-precision" - milliseconds unformatted but with "ms" appended e.g '123.465879012356ms'<br/>
+     * "ms" - milliseconds only e.g '123ms'<br/>
+     * "s.fff" - seconds with milliseconds e.g '123.456s' <br/>
+     * "s.ffffff" - seconds up to microseconds  e.g '123.456789s'<br/>
+     * "hh:mm:ss" - timestamp format  <br/>
+     * "hh:mm:ss ms" - timestamp format with ms  <br/>
+     * "hh:mm:ss.fff" - timestamp format(with ms).  <br/>
+     * "hh:mm:ss.ffffff" - timestamp format(with ms and us),  <br/>
+     * f = fractions of a second
+     * @returns {string}
+     */
+    formatElapsedTime(t_ms, format  = "hh:mm:ss.fff"){
+        let hh_padded = Math.floor(t_ms / 1000 / 60 / 60).toString().padStart(2,"0");
+        let min_padded = Math.floor(t_ms / 1000 / 60).toString().padStart(2,"0");
+
+        let formatted;
+
+        switch (format) {
+            case "raw":
+            case "max-precision":
+                formatted =  t_ms + "ms";
+                break;
+            case "ms":
+                formatted = Math.floor(t_ms % 1000) + "ms";
+                break;
+            case "s.fff":
+                formatted = (t_ms/1000).toFixed(3) + "s";
+                break;
+            case "s.ffffff":
+                formatted = (t_ms/1000).toFixed(6) + "s";
+                break;
+            case "hh:mm:ss":
+                let s_padded2 = Math.floor(t_ms / 1000).toString().padStart(2,"0");
+                formatted = `${hh_padded}:${min_padded}:${s_padded2}`;
+                break;
+            case "hh:mm:ss ms":
+                let s_padded = Math.floor(t_ms / 1000).toString().padStart(2,"0");
+                let ms = (t_ms % 1000).toFixed(2);
+                formatted = `${hh_padded}:${min_padded}:${s_padded} ${ms}ms`;
+                break;
+            case "hh:mm:ss.ffffff": // ms & us
+                let s_msus_padded = (t_ms / 1000).toFixed(6).padStart(9,"0");
+                formatted = `${hh_padded}:${min_padded}:${s_msus_padded}`;
+                break;
+            case "hh:mm:ss.fff": // ms
+            default:
+                let s_ms_padded = (t_ms / 1000).toFixed(3).padStart(6,"0");
+                formatted = `${hh_padded}:${min_padded}:${s_ms_padded}`;
+                break;
+        }
+
+        return formatted;
+    }
+    _testFormatElapsedTime(){
+        console.log("original value    %s", this.subdivisionTimeMs)
+        console.log("raw|max-precision %s", this.formatElapsedTime(this.subdivisionTimeMs, "raw"))
+        console.log("ms                %s", this.formatElapsedTime(this.subdivisionTimeMs, "ms"))
+        console.log("s.fff             %s", this.formatElapsedTime(this.subdivisionTimeMs, "s.fff"))
+        console.log("s.ffffff          %s", this.formatElapsedTime(this.subdivisionTimeMs, "s.ffffff"))
+        console.log("hh:mm:ss          %s", this.formatElapsedTime(this.subdivisionTimeMs, "hh:mm:ss"))
+        console.log("hh:mm:ss ms       %s", this.formatElapsedTime(this.subdivisionTimeMs, "hh:mm:ss ms"))
+        console.log("hh:mm:ss.fff      %s", this.formatElapsedTime(this.subdivisionTimeMs, "hh:mm:ss.fff"))
+        console.log("hh:mm:ss.ffffff   %s", this.formatElapsedTime(this.subdivisionTimeMs, "hh:mm:ss.ffffff"))
     }
 }
 

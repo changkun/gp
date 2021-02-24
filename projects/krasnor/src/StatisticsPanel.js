@@ -12,7 +12,7 @@ export class StatisticsPanel {
      * @param {string} comparisonStyle 'none', 'numbers','percentage', 'percentage_increase'
      * @param {boolean} OmitSubdivisionCount
      */
-    constructor(panelName = '', css_bottom = '0px', css_left = '0px', comparisonStyle = 'percentage_increase', showPanelName = true,OmitSubdivisionCount = false) {
+    constructor(panelName = '', css_bottom = '0px', css_left = '0px', comparisonStyle = 'percentage_increase', showPanelName = true, OmitSubdivisionCount = false, showSubdivisionTime = false) {
         this.domElement = document.createElement('div');
         this.panelConent = document.createElement('div');
         this.panelHeader = document.createElement('div');
@@ -22,6 +22,7 @@ export class StatisticsPanel {
         // this.panelHeader.className = "statistics-panel-header";
 
         this.omitSubdivisionCount = OmitSubdivisionCount;
+        this.showSubdivisionTime = showSubdivisionTime;
         this.comparisonStyle = comparisonStyle;
         this.panelName = panelName;
         this.showPanelName = showPanelName;
@@ -41,7 +42,7 @@ export class StatisticsPanel {
     }
 
     _setStyle() {
-        let minWidth = "200px";
+        let minWidth = "225px";
         let minHeight = "100px";
         this.domElement.style.minWidth = minWidth;
         this.domElement.style.minHeight = minHeight;
@@ -53,7 +54,7 @@ export class StatisticsPanel {
         this.domElement.style.fontFamily = "Lucida Grande,sans-serif";
 
         this.domElement.style.font = 'bold 16px Helvetica,Arial,sans-serif';
-        this.panelConent.style.font = 'bold 12px Helvetica,Arial,sans-serif';
+        this.panelConent.style.font = '12px Helvetica,Arial,sans-serif';
 
         this.domElement.style.paddingLeft = "16px";
         this.domElement.style.paddingLeft = "6px";
@@ -112,14 +113,14 @@ export class StatisticsPanel {
                 switch (comparisonStyle) {
                     case 'percentage_increase':
                         let d_perc_incr = formatNumber(percentageIncrease(stats[field], comparisonStats[field]));
-                        return '<td> (+' + d_perc_incr + '&#37;)</td>';
+                        return `<td>/ <i>+${d_perc_incr}&#37;</i> </td>`;
                     case 'percentage':
                         let d_percentage = formatNumber(percentage(stats[field], comparisonStats[field]));
-                        return '<td> (' + d_percentage + '&#37;)</td>';
+                        return `<td>/ <i>&nbsp;${d_percentage}&#37;</i></td>`;
                     case 'numbers':
-                        return '<td>/ ' + formatNumber(comparisonStats[field]) + '</td>';
+                        return `<td>/ <i>${formatNumber(comparisonStats[field])}</i></td>`;
                     case 'numbers_increase':
-                        return '<td>/ +' + formatNumber(stats[field] - comparisonStats[field]) + '</td>';
+                        return `<td>/ <i>+${formatNumber(stats[field] - comparisonStats[field])}</i></td>`;
                     case 'none':
                     default:
                         return '';
@@ -127,21 +128,27 @@ export class StatisticsPanel {
             }
         }
 
-        let formatStats = function (stats, comparisonStats, comparisonStyle = 'increase', omit_subdivisions = false) {
-            let statsText = "<table style=\"width:100%\">";
-            statsText += "<tr><td><b>Vertices </b></td> <td>" + formatNumber(stats.cnt_vertices) + "</td>" + makeCompareStatColumn(stats, comparisonStats, 'cnt_vertices', comparisonStyle) + "</tr>";
-            statsText += "<tr><td><b>Edges </b></td> <td>" + formatNumber(stats.cnt_edges) + "</td>" + makeCompareStatColumn(stats, comparisonStats, 'cnt_edges', comparisonStyle) + "</tr>";
-            statsText += "<tr><td><b>Faces </b></td> <td>" + formatNumber(stats.cnt_faces) + "</td>" + makeCompareStatColumn(stats, comparisonStats, 'cnt_faces', comparisonStyle) + "</tr>";
+        let stats = statistic;
+        let comparisonStats = compareToStatistic;
+        let comparisonStyle = this.comparisonStyle;
+        let omit_subdivisions = this.omitSubdivisionCount;
+        let showSubdivisionTime = this.showSubdivisionTime;
 
-            if (!omit_subdivisions) {
-                statsText += "<tr><td><b>Subdivisions </b></td> <td>" + formatNumber(stats.subdivisions) + "</td></tr>";
-            } else {
-                statsText += "<tr><td><b>&nbsp;</b></td><td>&nbsp;</td></tr>";
-            }
+        let statsText = `<table style=\"width:100%\">`;
+        statsText += `<tr><td><b>Vertices </b></td> <td><b>${formatNumber(stats.cnt_vertices)}</b></td> ${makeCompareStatColumn(stats, comparisonStats, 'cnt_vertices', comparisonStyle)}</tr>`;
+        statsText += `<tr><td><b>Edges </b></td>    <td><b>${formatNumber(stats.cnt_edges)}</b></td>    ${makeCompareStatColumn(stats, comparisonStats, 'cnt_edges', comparisonStyle)}</tr>`;
+        statsText += `<tr><td><b>Faces </b></td>    <td><b>${formatNumber(stats.cnt_faces)}</b></td>    ${makeCompareStatColumn(stats, comparisonStats, 'cnt_faces', comparisonStyle)}</tr>`;
 
-            return statsText;
+        if (!omit_subdivisions) {
+            statsText += `<tr><td><b>Subdivisions </b></td> <td colspan="1"><b> ${formatNumber(stats.subdivisions)}</b></td></tr>`;
+        } else {
+            statsText += "<tr><td><b>&nbsp;</b></td><td>&nbsp;</td></tr>";
         }
-        this.panelConent.innerHTML = formatStats(statistic, compareToStatistic, this.comparisonStyle, this.omitSubdivisionCount);
+        if (showSubdivisionTime) {
+            statsText += `<tr><td><b>Time </b></td><td><b>${stats.formatElapsedTime(stats.subdivisionTimeMs)}</b></td></tr>`;
+        }
+
+        this.panelConent.innerHTML = statsText;
     }
 
 
