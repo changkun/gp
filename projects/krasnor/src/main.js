@@ -13,7 +13,8 @@ import {
     MeshPhongMaterial,
     Geometry,
     BoxGeometry,
-    EdgesGeometry, MeshBasicMaterial,
+    EdgesGeometry,
+    MeshBasicMaterial,
 } from 'three'
 import {
     VertexNormalsHelper
@@ -183,10 +184,10 @@ export default class Main extends Renderer {
         // just for the first load
         // fetch('./assets/cube3.obj')
         // fetch('./assets/triangle.obj')
-        // fetch('./assets/cube4.obj')
+        fetch('./assets/cube4.obj')
         // fetch('./assets/Face4.obj')
         // fetch('./assets/Face3.obj')
-        fetch('./assets/bunny_tri.obj')
+        // fetch('./assets/bunny_tri.obj')
         // fetch('./assets/tetrahedron.obj')
         // fetch('./assets/bunny_quad.obj')
             .then(resp => resp.text())
@@ -518,7 +519,7 @@ export default class Main extends Renderer {
     }
 
     resetLeft(skipRender = false) {
-        // TODO implement full deep copy in HalfedgeMesh, then reparsing would not be needed anymore or maybe a format that can be easily exchanged with webworkers
+        // TODO implement full deep copy in HalfedgeMesh, then reparsing would not be needed anymore or maybe a format that can be easily exchanged with Web Workers
         if (this.internal.mesh3jsLeft !== null) {
             this.sceneLeft.remove(this.internal.mesh3jsLeft)
             this.internal.mesh3jsLeft = null;
