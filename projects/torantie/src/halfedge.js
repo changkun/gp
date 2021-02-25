@@ -54,7 +54,6 @@ class Halfedge {
     return vector
   }
 
-
   cotan() {
     if (this.onBoundary) {
       return 0
@@ -66,21 +65,33 @@ class Halfedge {
     return c
   }
 
+  /**
+   * wij = (1 / ||fi -fj||) * (tan(γij/2) + tan(δij/2))
+   * @returns {number}
+   */
   meanValueWeight(){
     if (this.onBoundary) {
       return 0
     }
 
+    // tan(γij/2)
     const gamma = this.getAngle()
+    // tan(δij/2)
     const delta = this.twin.next.getAngle()
+    // (tan(γij/2) + tan(δij/2))
     const angles =Math.tan(gamma/2) + Math.tan(delta/2)
-    //||vi - v0||
-    const viMv0 = this.getVector().norm()
-    const weight = angles/viMv0
-    console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " viMv0: " + viMv0 + " weight: " + weight)
+    // ||fi -fj||
+    const norm = this.getVector().norm()
+    // wij
+    const weight = angles/norm
+    console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " ||fi -fj||: " + norm + " weight: " + weight)
     return weight
   }
 
+  /**
+   * Get angle between the current Halfedges vector and the previous twins vector.
+   * @returns {number} Angle
+   */
   getAngle() {
     let a = this.getVector()
     let b = this.prev.twin.getVector()
@@ -184,6 +195,10 @@ class Face {
     }
   }
 
+  /**
+   * Get area of two Triangles making up the quad and add them up.
+   * @returns {number} Area of quad.
+   */
   getAreaQuad() {
     if(this.halfedge.onBoundary)
       return 0
@@ -249,6 +264,7 @@ class Vertex {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
   }
+
   normal(method='equal-weighted') {
     let sum = new Vector()
 
@@ -327,10 +343,27 @@ export class HalfedgeMesh {
    * @param {string} data is a text string from an .obj file
    */
   constructor(data) {
+    this.initProperties();
+
+    let {faceIndicesCollection, positions, containsQuad} = this.readObjectFile(data);
+
+    let indices = this.readToIndicesArray(faceIndicesCollection, containsQuad);
+
+    this.createHalfedgeStructure(containsQuad, indices, positions);
+
+    this.resetCacheIndices();
+
+    this.createVertexCacheCopy();
+  }
+
+  /**
+   * Init properties associated with the HalfedgeMesh class.
+   */
+  initProperties() {
     // properties we plan to cache
-    this.vertices  = [] // an array of Vertex object
-    this.edges     = [] // an array of Edge object
-    this.faces     = [] // an array of Face object
+    this.vertices = [] // an array of Vertex object
+    this.edges = [] // an array of Edge object
+    this.faces = [] // an array of Face object
     this.halfedges = [] // an array of Halfedge object
     this.vertsOrig = []
 
@@ -338,114 +371,126 @@ export class HalfedgeMesh {
       isTriangleMesh: 'Triangle Mesh',
       isQuadMesh: 'Quad Mesh',
       isTriangleDominantMesh: 'Triangle-Dominant Mesh',
-      isQuadDominantMesh: 'Quad-Dominant Mesh'
+      isQuadDominantMesh: 'Quad-Dominant Mesh',
+      isUndefined: 'Mesh is undefined'
     }
     this.meshType = this.meshTypes.isTriangleMesh
     this.isQuadMesh = false
+  }
 
-    // load .obj file
-    let indices   = []
+  /**
+   * Read the data of the .obj text file into various data structures.
+   * @param data
+   * @returns {{positions: [], containsQuad: boolean, faceIndicesCollection: []}} Vertex positions, flag for
+   * identifying a quad mesh and collection of all faces vertex indices.
+   */
+  readObjectFile(data) {
+    let faceIndicesCollection = []
     let positions = []
     let lines = data.split('\n')
     let containsQuad = false
-    // search for the a quad in the object file
+
     for (let line of lines) {
       line = line.trim()
       const tokens = line.split(' ')
-      switch(tokens[0].trim()) {
-        case 'f':
-          const isQuad = tokens.length == 5
-          containsQuad = containsQuad || isQuad
-          break;
-
-      }
-
-      if(containsQuad)
-        break;
-    }
-
-    let quadCount = 0
-    let faceCount = 0
-    for (let line of lines) {
-      line = line.trim()
-      const tokens = line.split(' ')
-      switch(tokens[0].trim()) {
+      switch (tokens[0].trim()) {
         case 'v':
           positions.push(new Vector(
               parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3]),
           ))
-          continue
+          break
         case 'f':
           const isQuad = tokens.length == 5
-          faceCount++
-          if(isQuad)
-            quadCount++
-
+          containsQuad = containsQuad || isQuad
+          let tmp = []
           // only load indices of vertices
           for (let i = 1; i < tokens.length; i++) {
-            indices.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
+            tmp.push(parseInt((tokens[i].split('/')[0]).trim()) - 1)
           }
-
-          if(containsQuad && !isQuad)
-            indices.push(-1)
-
-          continue
+          faceIndicesCollection.push(tmp)
+          break;
       }
     }
+    return {faceIndicesCollection, positions, containsQuad};
+  }
 
-    if(faceCount == quadCount){
+  /**
+   * Read 2 dimensional collection of all faces vertex indices faceIndicesCollection to a single indices array.
+   * @param faceIndicesCollection
+   * @param containsQuad
+   * @returns {[]} Vertex indices array describing the faces.
+   */
+  readToIndicesArray(faceIndicesCollection, containsQuad) {
+    let indices = []
+    let quadCount = 0
+    let faceCount = 0
+    let triangleCount = 0
+    for (let i = 0; i < faceIndicesCollection.length; i++) {
+      const face = faceIndicesCollection[i]
+      const isQuad = face.count == 4
+      const isTriangle = face.count == 3
+      faceCount++
+      if (isQuad)
+        quadCount++
+      if (isTriangle)
+        triangleCount++
+
+      for (let j = 0; j < face.length; j++) {
+        indices.push(face[j])
+      }
+      // if the mesh contains quads and the current face is not a Quad push an additional -1 to indices,
+      // which signals a missing vertex index
+      if (containsQuad && !isQuad)
+        indices.push(-1)
+    }
+
+    this.setMeshType(faceCount, triangleCount, quadCount);
+    return indices;
+  }
+
+  /**
+   * Accoring to the number of triangles, quads and other face types, set the specific meshType of the mesh.
+   * @param faceCount
+   * @param triangleCount
+   * @param quadCount
+   */
+  setMeshType(faceCount, triangleCount, quadCount) {
+    let undefinedFacesCount = faceCount - triangleCount - quadCount
+    // set the meshType according to the ratio of quads to triangles
+    if (faceCount == quadCount) {
       this.meshType = this.meshTypes.isQuadMesh
-    }else if(quadCount == 0){
+    } else if (quadCount == triangleCount) {
       this.meshType = this.meshTypes.isTriangleMesh
-    }else if(faceCount/2<quadCount){
+    } else if (quadCount > undefinedFacesCount && quadCount > triangleCount) {
       this.meshType = this.meshTypes.isQuadDominantMesh
-    }else if(faceCount/2>quadCount){
+    } else if (triangleCount > undefinedFacesCount && triangleCount > quadCount) {
       this.meshType = this.meshTypes.isTriangleDominantMesh
+    } else {
+      this.meshType = this.meshTypes.isUndefined
     }
+  }
 
-    // build the halfedge connectivity
-    const edges = new Map()
-    let nOfEdges = 3
-    if(containsQuad){
+  /**
+   * Create Faces, Edges, Halfedges, Vertex objects and their connections.
+   * @param containsQuad
+   * @param indices
+   * @param positions
+   */
+  createHalfedgeStructure(containsQuad, indices, positions) {
+    let numOfEdgesPerFace = 3
+    if (containsQuad) {
       this.isQuadMesh = true
-      nOfEdges = 4
+      numOfEdgesPerFace = 4
     }
 
+    const edges = this.createEdgesMap(indices, numOfEdgesPerFace, containsQuad);
 
-    for (let i = 0; i < indices.length; i += nOfEdges) {
+    this.vertices = new Array(positions.length)
+    this.edges = new Array(edges.size)
+    this.faces = new Array(indices.length / numOfEdgesPerFace)
+    this.halfedges = new Array(edges.size * 2)
 
-      let nFaceEdges = indices[i + (nOfEdges-1)] != -1 && containsQuad  ? 4 : 3
-
-      for (let j = 0; j < nFaceEdges; j++) { // check a face
-        let a = indices[i + j]
-        let b = indices[i + (j+1)%nFaceEdges]
-
-        if (a > b) {
-          const tmp = b
-          b = a
-          a = tmp
-        }
-
-        // store the edge if not exists
-        const e = `${a}-${b}`
-        if (!edges.has(e)) {
-          edges.set(e, [a, b])
-        }
-      }
-    }
-
-    this.vertices   = new Array(positions.length)
-    this.edges      = new Array(edges.size)
-    this.faces      = new Array(indices.length / nOfEdges)
-    this.halfedges  = new Array(edges.size*2)
-
-    const idx2vert = new Map()
-    for (let i = 0; i < positions.length; i++) {
-      const v = new Vertex()
-      v.position = positions[i]
-      this.vertices[i] = v
-      idx2vert.set(i, v)
-    }
+    const idx2vert = this.getIdxToVertexMap(positions);
 
     let eidx = 0
     let existedHe = new Map()
@@ -453,30 +498,30 @@ export class HalfedgeMesh {
     let trueIndex = 0
 
     // construct halfedges, edges
-    for (let i = 0; i < indices.length; i += nOfEdges) {
+    for (let i = 0; i < indices.length; i += numOfEdgesPerFace) {
       // construct face
       const f = new Face()
-      this.faces[i / nOfEdges] = f
+      this.faces[i / numOfEdgesPerFace] = f
       // if it contains quads set default value to true else false
-      let isQuad = indices[i + (nOfEdges-1)] != -1 && containsQuad
+      let isQuad = indices[i + (numOfEdgesPerFace - 1)] != -1 && containsQuad
       let nFaceEdges = isQuad ? 4 : 3
 
       // construct halfedges of the face
       for (let j = 0; j < nFaceEdges; j++) {
         const he = new Halfedge()
-        this.halfedges[trueIndex+j] = he
+        this.halfedges[trueIndex + j] = he
       }
 
       // construct connectivities of the new halfedges
       for (let j = 0; j < nFaceEdges; j++) {
         // halfedge from vertex a to vertex b
         let a = indices[i + j]
-        let b = indices[i + (j+1)%nFaceEdges]
+        let b = indices[i + (j + 1) % nFaceEdges]
 
         // halfedge properties
         const he = this.halfedges[trueIndex + j]
-        he.next = this.halfedges[trueIndex + (j+1)%nFaceEdges]
-        he.prev = this.halfedges[trueIndex + (j+(nFaceEdges-1))%nFaceEdges]
+        he.next = this.halfedges[trueIndex + (j + 1) % nFaceEdges]
+        he.prev = this.halfedges[trueIndex + (j + (nFaceEdges - 1)) % nFaceEdges]
         he.onBoundary = false
         hasTwin.set(he, false)
 
@@ -562,46 +607,108 @@ export class HalfedgeMesh {
         current.twin = bhe
 
         current = next
-      } while(current != he)
+      } while (current != he)
 
       // link the cycle of boundary halfedges together
       const n = bcycle.length
       for (let j = 0; j < n; j++) {
-        bcycle[j].next = bcycle[(j+n-1)%n]
-        bcycle[j].prev = bcycle[(j+1)%n]
+        bcycle[j].next = bcycle[(j + n - 1) % n]
+        bcycle[j].prev = bcycle[(j + 1) % n]
         hasTwin.set(bcycle[j], true)
         hasTwin.set(bcycle[j].twin, true)
       }
     }
-
-    // reset indices
-    let index = 0
-    this.vertices.forEach(v => { v.idx = index++ })
-    index = 0
-    this.edges.forEach(e => { e.idx = index++ })
-    index = 0
-    this.faces.forEach(f => { f.idx = index++ })
-    index = 0
-    this.halfedges.forEach(h => { h.idx = index++ })
-
-    //Create Copy
-    for (const vertex of this.vertices) {
-      let vertexCopy = new Vertex()
-      vertexCopy.idx = vertex.idx
-      vertexCopy.halfedge = vertex.halfedge
-      vertexCopy.position = new Vector(vertex.position.x,vertex.position.y,vertex.position.z)
-      this.vertsOrig.push(vertexCopy)
-    }
-    /*index = 0
-    this.halfedges.forEach(he => {
-      // HACK: all halfedge now accessible to the original vertices
-      he.vertsOrig = this.vertsOrig
-      he.idx = index++
-    })*/
-
   }
 
+  /**
+   *
+   * @param indices
+   * @param numOfEdgesPerFace
+   * @param containsQuad
+   * @returns {Map<any, any>}
+   */
+  createEdgesMap(indices, numOfEdgesPerFace, containsQuad) {
+    const edges = new Map()
+    for (let i = 0; i < indices.length; i += numOfEdgesPerFace) {
+      let nFaceEdges = indices[i + (numOfEdgesPerFace - 1)] != -1 && containsQuad ? 4 : 3
 
+      for (let j = 0; j < nFaceEdges; j++) { // check a face
+        let a = indices[i + j]
+        let b = indices[i + (j + 1) % nFaceEdges]
+
+        if (a > b) {
+          const tmp = b
+          b = a
+          a = tmp
+        }
+
+        // store the edge if not exists
+        const e = `${a}-${b}`
+        if (!edges.has(e)) {
+          edges.set(e, [a, b])
+        }
+      }
+    }
+    return edges;
+  }
+
+  /**
+   * Get a map containing the vertex positions, for fast access.
+   * @param positions
+   * @returns {Map<any, any>} Mapping from vertex index to vertex position.
+   */
+  getIdxToVertexMap(positions) {
+    const idx2vert = new Map()
+    for (let i = 0; i < positions.length; i++) {
+      const v = new Vertex()
+      v.position = positions[i]
+      this.vertices[i] = v
+      idx2vert.set(i, v)
+    }
+    return idx2vert;
+  }
+
+  /**
+   * Reset cache properties index.
+   */
+  resetCacheIndices() {
+    let index = 0
+    this.vertices.forEach(v => {
+      v.idx = index++
+    })
+    index = 0
+    this.edges.forEach(e => {
+      e.idx = index++
+    })
+    index = 0
+    this.faces.forEach(f => {
+      f.idx = index++
+    })
+    index = 0
+    this.halfedges.forEach(h => {
+      h.idx = index++
+    })
+  }
+
+  /**
+   * Create a copy of the vertex cache.
+   */
+  createVertexCacheCopy() {
+    for (const vertex of this.vertices) {
+      const vertexCopy = new Vertex()
+      const position = vertex.position;
+      vertexCopy.idx = vertex.idx
+      vertexCopy.halfedge = vertex.halfedge
+      vertexCopy.position = new Vector(position.x, position.y, position.z)
+      this.vertsOrig.push(vertexCopy)
+    }
+  }
+
+  /**
+   * Create the Laplace Matrix based on weight type.
+   * @param weightType
+   * @returns {SparseMatrix} Weight matrix as SparseMatrix.
+   */
   laplaceMatrix(weightType) {
     const numberOfVertices = this.vertices.length
     let weightTriplet = new Triplet(numberOfVertices, numberOfVertices)
@@ -666,6 +773,11 @@ export class HalfedgeMesh {
     return weightMatrix
   }
 
+  /**
+   * Create the mass matrix based on mass matrix type.
+   * @param massMatrixType
+   * @returns {*} SparseMatrix
+   */
   massMatrix(massMatrixType){
     const numberOfVertices = this.vertices.length
     let massTriplet = new Triplet(numberOfVertices, numberOfVertices)
@@ -696,7 +808,6 @@ export class HalfedgeMesh {
     return massMatrix
   }
 
-
   /**
    * smooth performs the Laplacian smoothing algorithm.
    * @param {string} weightType indicates the type of the weight for
@@ -726,27 +837,23 @@ export class HalfedgeMesh {
         let W = this.laplaceMatrix(weightType)
         let M = this.massMatrix(massMatrixType)
         //   2. Solve linear equation: (I-tλL) f' = f using a Cholesky solver.
-        let result = this.solveLinearEquation(M, W, timeStep, lambda);
+        let linearEquationResult = this.solveLinearEquation(M, W, timeStep, lambda);
         //   3. Update the position of mesh vertices based on the solution f'.
-        this.updateVertexPositions(result);
+        this.updateVertexPositions(linearEquationResult);
       } catch (e) {
         console.error(e)
       }
     }
   }
 
-  updateVertexPositions(result) {
-    for (const v of this.vertices) {
-      let resultX = result.get(v.idx, 0)
-      let resultY = result.get(v.idx, 1)
-      let resultZ = result.get(v.idx, 2)
-      let currentPosition = v.position
-      currentPosition.x = (resultX)
-      currentPosition.y = (resultY)
-      currentPosition.z = (resultZ)
-    }
-  }
-
+  /**
+   * Solve the linear equation with mass matrix, weight matrix, timeStep and a scaling lambda.
+   * @param M
+   * @param W
+   * @param timeStep
+   * @param lambda
+   * @returns {DenseMatrix} DenseMatrix as linear equation result.
+   */
   solveLinearEquation(M, W, timeStep, lambda) {
     let f = M.plus(W.timesReal(timeStep).timesReal(lambda))
     let cholskyDecompositionMatrix = f.chol()
@@ -759,8 +866,25 @@ export class HalfedgeMesh {
       b.set(v.position.z, v.idx, 2)
     }
 
-    let result = cholskyDecompositionMatrix.solvePositiveDefinite(M.timesDense(b))
+    let linearEquationResult = cholskyDecompositionMatrix.solvePositiveDefinite(M.timesDense(b))
 
-    return result;
+    return linearEquationResult;
   }
+
+  /**
+   * Update the current vertex positions with the result of the previously solved linear equation.
+   * @param linearEquationResult
+   */
+  updateVertexPositions(linearEquationResult) {
+    for (const v of this.vertices) {
+      const resultX = linearEquationResult.get(v.idx, 0)
+      const resultY = linearEquationResult.get(v.idx, 1)
+      const resultZ = linearEquationResult.get(v.idx, 2)
+      const currentPosition = v.position
+      currentPosition.x = (resultX)
+      currentPosition.y = (resultY)
+      currentPosition.z = (resultZ)
+    }
+  }
+
 }
