@@ -32,16 +32,38 @@ export default class Main extends Renderer {
     constructor() {
         super()
 
-        this.LoadingOverlay = new LoadingOverlay(true);
-        this.LoadingOverlay.insertDefaultStyleToDom();
-        document.body.appendChild(this.LoadingOverlay.domElement);
+        this.internal = {
+            mesh: null,     // internal halfedge mesh object
+            meshOriginal: null, // internal halfedge mesh object
+            mesh3jsLeft: null,  // three.js buffer geometry object for mesh
+            mesh3jsRight: null, // three.js buffer geometry object for mesh
+            meshLeftNormalHelper: null,
+            meshRightNormalHelper: null,
+            meshLeftWireframeHelper: null,
+            meshRightWireframeHelper: null,
 
-        this.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
-        // this.statisticsPanelLeft.showSubdivisionTime = true;
-        this.statisticsPanelLeft.subdivisionTimeFormat = "hh:mm:ss.ffffff";
-        this.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%', 'none', true, true);
-        document.body.appendChild(this.statisticsPanelLeft.domElement);
-        document.body.appendChild(this.statisticsPanelRight.domElement);
+            meshOriginalAABB: null,
+
+            mesh_overlay_wireframe: null,
+            mesh_overlay_model: null,
+            raw_obj_data: "",
+
+            statisticsPanelLeft: null,
+            statisticsPanelRight: null,
+
+            LoadingOverlay: null,
+        }
+
+        this.internal.LoadingOverlay = new LoadingOverlay(true);
+        this.internal.LoadingOverlay.insertDefaultStyleToDom();
+        document.body.appendChild(this.internal.LoadingOverlay.domElement);
+
+        this.internal.statisticsPanelLeft = new StatisticsPanel('Subdivided', '0px', '0px', 'none');
+        // this.internal.statisticsPanelLeft.showSubdivisionTime = true;
+        this.internal.statisticsPanelLeft.subdivisionTimeFormat = "hh:mm:ss.ffffff";
+        this.internal.statisticsPanelRight = new StatisticsPanel('Unaltered', '0px', '50%', 'none', true, true);
+        document.body.appendChild(this.internal.statisticsPanelLeft.domElement);
+        document.body.appendChild(this.internal.statisticsPanelRight.domElement);
 
         // a hidden input field that responsible for loading meshes
         this.input = document.createElement('input')
@@ -59,22 +81,7 @@ export default class Main extends Renderer {
         })
         document.body.appendChild(this.input)
 
-        this.internal = {
-            mesh: null,     // internal mesh object
-            mesh3jsLeft: null,  // three.js buffer geometry object for mesh
-            mesh3jsRightOrig: null,    // three.js buffer geometry object for UV map
-            mesh3jsRightSim: null,
-            meshLeftNormalHelper: null,
-            meshRightNormalHelper: null,
-            meshLeftWireframeHelper: null,
-            meshRightWireframeHelper: null,
 
-            meshOriginalAABB: null,
-
-            mesh_overlay_wireframe: null,
-            mesh_overlay_model: null,
-            raw_obj_data: "",
-        }
         this.params = {
             import: () => this.input.click(),
             export: () => this.exportScreenshot(),
@@ -87,9 +94,9 @@ export default class Main extends Renderer {
             normalMethod: 'equal-weighted',
 
             overlayOriginalOverSubdivided: false,
-            statisticsPanelComparisonMethod: this.statisticsPanelLeft.comparisonStyle,
-            statisticsPanelShowTime: this.statisticsPanelLeft.showSubdivisionTime,
-            statisticsPanelSubdivisionTimeFormat: this.statisticsPanelLeft.subdivisionTimeFormat,
+            statisticsPanelComparisonMethod: this.internal.statisticsPanelLeft.comparisonStyle,
+            statisticsPanelShowTime: this.internal.statisticsPanelLeft.showSubdivisionTime,
+            statisticsPanelSubdivisionTimeFormat: this.internal.statisticsPanelLeft.subdivisionTimeFormat,
             subdivisions_req: 0.0,
             boundaryHandling: 'smooth',
         }
@@ -105,15 +112,19 @@ export default class Main extends Renderer {
         const vis = this.gui.addFolder('Visualization')
         vis.add(this.params, 'statisticsPanelComparisonMethod', [
             'none', 'numbers', 'numbers_increase', 'percentage', 'percentage_increase'
-        ]).name('comparison style').onChange((p) => {
-                this.statisticsPanelLeft.comparisonStyle = p;
-                this.statisticsPanelRight.comparisonStyle = p;
+        ]).name('comparison style').onChange(() => {
+                // FIXME BUG Chrome 88 (when Mesh is large ~3Million faces) Even if this callback is empty "() => {}" and nothing would be done, the UI hangs/lags for 1-2 seconds
+                //  in Firefox 86.0 there seems to be no UI lag to be observable. After some debugging it seems, that something in the call chain causes in chrome a garbage collection.
+                console.time("comparison_style_change")
+                this.internal.statisticsPanelLeft.comparisonStyle = this.params.statisticsPanelComparisonMethod;
+                this.internal.statisticsPanelRight.comparisonStyle = this.params.statisticsPanelComparisonMethod; //(' ' + p).slice(1);
                 this.updateStatistics();
+                console.timeEnd("comparison_style_change")
             }
         )
         vis.add(this.params, 'statisticsPanelShowTime').name('show subdiv. time').listen()
             .onChange(show => {
-                this.statisticsPanelLeft.showSubdivisionTime = show;
+                this.internal.statisticsPanelLeft.showSubdivisionTime = show;
                 this.updateStatistics();
             })
         vis.add(this.params, 'showNormals').name('show normals').listen()
@@ -142,9 +153,9 @@ export default class Main extends Renderer {
         vis.add(this.params, 'flatShading').name('flat shading').listen()
             .onChange(flat => {
                 this.internal.mesh3jsLeft.material.flatShading = flat
-                this.internal.mesh3jsRightSim.material.flatShading = flat
+                this.internal.mesh3jsRight.material.flatShading = flat
                 this.internal.mesh3jsLeft.material.needsUpdate = true
-                this.internal.mesh3jsRightSim.material.needsUpdate = true
+                this.internal.mesh3jsRight.material.needsUpdate = true
             })
         vis.add(this.params, 'overlayOriginalOverSubdivided').name('overlay original').listen()
             .onChange(show => {
@@ -173,9 +184,9 @@ export default class Main extends Renderer {
         // fetch('./assets/cube3.obj')
         // fetch('./assets/triangle.obj')
         // fetch('./assets/cube4.obj')
-        fetch('./assets/Face4.obj')
+        // fetch('./assets/Face4.obj')
         // fetch('./assets/Face3.obj')
-        // fetch('./assets/bunny_tri.obj')
+        fetch('./assets/bunny_tri.obj')
         // fetch('./assets/tetrahedron.obj')
         // fetch('./assets/bunny_quad.obj')
             .then(resp => resp.text())
@@ -185,7 +196,7 @@ export default class Main extends Renderer {
     loadMesh(data) {
         if (this.internal.mesh3jsLeft !== null) {
             this.sceneLeft.remove(this.internal.mesh3jsLeft)
-            this.sceneRight.remove(this.internal.mesh3jsRightSim)
+            this.sceneRight.remove(this.internal.mesh3jsRight)
         }
         this.internal.raw_obj_data = data;
 
@@ -224,7 +235,7 @@ export default class Main extends Renderer {
             this.bufnormals[3 * v.idx + 1] = n.y
             this.bufnormals[3 * v.idx + 2] = n.z
         })
-        this.internal.mesh3jsRightSim.geometry.attributes.normal.needsUpdate = true
+        this.internal.mesh3jsRight.geometry.attributes.normal.needsUpdate = true
         this.internal.meshRightNormalHelper.update()
     }
 
@@ -372,8 +383,8 @@ export default class Main extends Renderer {
         if (this.internal.meshRightWireframeHelper !== null) {
             this.sceneRight.remove(this.internal.meshRightWireframeHelper)
         }
-        if (this.internal.mesh3jsRightOrig !== null) {
-            this.sceneRight.remove(this.internal.mesh3jsRightOrig)
+        if (this.internal.mesh3jsRight !== null) {
+            this.sceneLeft.remove(this.internal.mesh3jsRight)
         }
 
         if (this.internal.mesh_overlay_wireframe !== null) {
@@ -428,7 +439,7 @@ export default class Main extends Renderer {
         g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
         g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
 
-        this.internal.mesh3jsRightSim = new Mesh(g, new MeshPhongMaterial({
+        this.internal.mesh3jsRight = new Mesh(g, new MeshPhongMaterial({
             vertexColors: VertexColors,
             polygonOffset: true,
             polygonOffsetFactor: 1,
@@ -438,7 +449,7 @@ export default class Main extends Renderer {
         }))
 
         this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-            this.internal.mesh3jsRightSim, 0.03, 0xaa0000,
+            this.internal.mesh3jsRight, 0.03, 0xaa0000,
         )
         this.internal.meshRightWireframeHelper = new LineSegments(
             g_lines_r,
@@ -457,7 +468,7 @@ export default class Main extends Renderer {
         }))
 
         // scene handling
-        this.sceneRight.add(this.internal.mesh3jsRightSim)
+        this.sceneRight.add(this.internal.mesh3jsRight)
         if (this.params.showNormals) {
             this.sceneRight.add(this.internal.meshRightNormalHelper)
         }
@@ -477,20 +488,20 @@ export default class Main extends Renderer {
         let statsMesh_left = this.internal.mesh.getStatistics();
         let statsMesh_right = this.internal.meshOriginal.getStatistics();
 
-        this.statisticsPanelLeft.updateStatistics(statsMesh_left, statsMesh_right);
-        this.statisticsPanelRight.updateStatistics(statsMesh_right);
+        this.internal.statisticsPanelLeft.updateStatistics(statsMesh_left, statsMesh_right);
+        this.internal.statisticsPanelRight.updateStatistics(statsMesh_right);
     }
 
     doSubdivide() {
         // before next repaint set loading overlay visible
         requestAnimationFrame(() => {
-            this.LoadingOverlay.setVisible(true, "Subdividing...");
+            this.internal.LoadingOverlay.setVisible(true, "Subdividing...");
 
             let context = this;
 
-            // doing subdivide would block repaint, but overlay cannot be rendered visible until repaint is done
+            // doing subdivide now would block repaint, but overlay cannot be rendered visible until repaint is done
             // -> execute the subdivision some time after the repaint
-            // => do subdivide in (macro)-task
+            // => do subdivision in (macro)-task
             window.setTimeout(
                 function () {
                     context.resetLeft(true);
@@ -501,13 +512,13 @@ export default class Main extends Renderer {
                     context.renderMeshLeft()
                     context.updateStatistics()
 
-                    context.LoadingOverlay.setVisible(false);
+                    context.internal.LoadingOverlay.setVisible(false);
                 }, 0);
         })
     }
 
     resetLeft(skipRender = false) {
-        // TODO implement full deep copy in HalfedgeMesh, then reparsing would be not needed anymore
+        // TODO implement full deep copy in HalfedgeMesh, then reparsing would not be needed anymore or maybe a format that can be easily exchanged with webworkers
         if (this.internal.mesh3jsLeft !== null) {
             this.sceneLeft.remove(this.internal.mesh3jsLeft)
             this.internal.mesh3jsLeft = null;
@@ -522,7 +533,7 @@ export default class Main extends Renderer {
         }
 
         this.internal.mesh = new HalfedgeMesh(this.internal.raw_obj_data)
-        if(!skipRender){
+        if (!skipRender) {
             this.renderMeshLeft()
             this.updateStatistics()
         }

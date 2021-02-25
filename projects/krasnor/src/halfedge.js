@@ -1000,10 +1000,38 @@ export class HalfedgeMesh {
             this.edges.length,
             this.faces.length,
             this.subdivisionCounter,
-            this.lastSubdivisionTime);
+            this.lastSubdivisionTime,
+            this.getTriangleCount()
+        );
+    }
+
+    getTriangleCount(){
+        // let t0_count_for = performance.now();
+        let cnt_triangles_for = 0;
+        this.faces.forEach(f => {
+                if (false === f.isQuad) {
+                    // triangle
+                    cnt_triangles_for++;
+                }
+            }
+        );
+        // let t0_count_for_end = performance.now();
+        // let t1_count_for = performance.now();
+        // var count_reduce = this.faces.reduce(function(n, f) {
+        //     return n + (false === f.isQuad);
+        // }, 0);
+        // let t1_count_for_end = performance.now();
+        //
+        //
+        // console.log("for-loop: %s elapsed %s", cnt_triangles_for, t0_count_for_end-t0_count_for)
+        // console.log("reduce:   %s elapsed %s", count_reduce,      t1_count_for_end-t1_count_for)
+        // reduce unnoticeable faster in Firefox in Chrome for-loop is faster, in both cases performance gain is not significant
+
+        return cnt_triangles_for;
     }
 
     getFaceVertexCountAfterTriangulation() {
+        // let t0_count_for = performance.now();
         let cnt_vertices = 0;
         this.faces.forEach(f => {
                 if (f.isQuad) {
@@ -1013,17 +1041,35 @@ export class HalfedgeMesh {
                 }
             }
         );
+        // let t0_count_for_end = performance.now();
+        // let t0_count_for2 = performance.now();
+        // let cnt_triangles_for = 0;
+        // this.faces.forEach(f => {
+        //         if (false === f.isQuad) {
+        //             // triangle
+        //             cnt_triangles_for++;
+        //         }
+        //     }
+        // );
+        // let cnt_vertices2 = cnt_triangles_for*3 + (this.faces.length-cnt_triangles_for) * 6 // this would be slightly faster
+        // let t0_count_for_end2 = performance.now();
+        //
+        // console.log("getFaceVertexCountAfterTriangulation-add:      %s elapsed %s", cnt_vertices, t0_count_for_end-t0_count_for)
+        // console.log("getFaceVertexCountAfterTriangulation-multiply: %s elapsed %s", cnt_vertices2, t0_count_for_end2-t0_count_for2)
+        // multiply unnoticeable faster
+
         return cnt_vertices;
     }
 }
 
 export class HalfedgeMeshStatistics {
-    constructor(cnt_vertices = 0, cnt_edges = 0, cnt_faces = 0, subdivisions = 0, subdivisionTime = 0, subdivHistory = []) {
+    constructor(cnt_vertices = 0, cnt_edges = 0, cnt_faces = 0, subdivisions = 0, subdivisionTime = 0, triangleCount = 0) {
         this.cnt_vertices = cnt_vertices;
         this.cnt_edges = cnt_edges;
         this.cnt_faces = cnt_faces;
         this.subdivisions = subdivisions;
         this.subdivisionTimeMs = subdivisionTime;
+        this.triangleCount = triangleCount;
     }
 
     /**

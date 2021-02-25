@@ -81,31 +81,35 @@ export class StatisticsPanel {
          * e.g. formatNumber(123456) => "123,456"
          * e.g. formatNumber(123456.789) => "123,456.789"
          *
-         * @param {number|string} num
+         * @param {number} num
          * @returns {string}
          */
-        const formatNumber = function (num) {
-            return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+        const formatNumber = function (num, fractionDigits = 0) {
+            return num.toFixed(fractionDigits).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
         }
         /**
          * Calculates the percentage of a to b.
          * E.g "40 is 400% of 10"
          * @param {number} a
          * @param {number} b
-         * @returns {string} percentage e.g. '400.00'
+         * @returns {number} percentage e.g. '400.00'
          */
-        const percentage = function (a, b, fractionDigits = 2) {
-            return (a / b * 100).toFixed(fractionDigits);
+        const percentage = function (a, b) {
+            if(b === 0)
+                return (0);
+            return (a / b * 100);
         }
         /**
          * Calculates the increase from b to a
          * Example "The increase from 40 to 10 is 300%"
          * @param {number} a
          * @param  {number} b
-         * @returns {string} percentage e.g. '300.00'
+         * @returns {number} percentage e.g. '300.00'
          */
-        const percentageIncrease = function (a, b, fractionDigits = 2) {
-            return ((a - b) / b * 100).toFixed(fractionDigits)
+        const percentageIncrease = function (a, b) {
+            if(b === 0)
+                return (0);
+            return ((a - b) / b * 100);
         }
         const makeCompareStatColumn = function (stats, comparisonStats, field, comparisonStyle = 'increase') {
             if (compareToStatistic == null) {
@@ -113,15 +117,24 @@ export class StatisticsPanel {
             } else {
                 switch (comparisonStyle) {
                     case 'percentage_increase':
-                        let d_perc_incr = formatNumber(percentageIncrease(stats[field], comparisonStats[field]));
-                        return `<td>/ <i>+${d_perc_incr}&#37;</i> </td>`;
+                        let d_percent_incr = percentageIncrease(stats[field], comparisonStats[field]);
+                        if(d_percent_incr >= 0){
+                            return `<td>/ <i>+${formatNumber(d_percent_incr,2)}&#37;</i> </td>`;
+                        }else{
+                            return `<td>/ <i> ${formatNumber(d_percent_incr,2)}&#37;</i> </td>`;
+                        }
                     case 'percentage':
-                        let d_percentage = formatNumber(percentage(stats[field], comparisonStats[field]));
+                        let d_percentage = formatNumber(percentage(stats[field], comparisonStats[field]),2);
                         return `<td>/ <i>&nbsp;${d_percentage}&#37;</i></td>`;
                     case 'numbers':
                         return `<td>/ <i>${formatNumber(comparisonStats[field])}</i></td>`;
                     case 'numbers_increase':
-                        return `<td>/ <i>+${formatNumber(stats[field] - comparisonStats[field])}</i></td>`;
+                        let d_increase = stats[field] - comparisonStats[field];
+                        if(d_increase  >= 0){
+                            return `<td>/ <i>+${formatNumber(d_increase)}</i></td>`;
+                        }else{
+                            return `<td>/ <i>&nbsp;${formatNumber(d_increase)}</i></td>`;
+                        }
                     case 'none':
                     default:
                         return '';
@@ -140,6 +153,7 @@ export class StatisticsPanel {
         statsText += `<tr><td><b>Vertices </b></td> <td><b>${formatNumber(stats.cnt_vertices)}</b></td> ${makeCompareStatColumn(stats, comparisonStats, 'cnt_vertices', comparisonStyle)}</tr>`;
         statsText += `<tr><td><b>Edges </b></td>    <td><b>${formatNumber(stats.cnt_edges)}</b></td>    ${makeCompareStatColumn(stats, comparisonStats, 'cnt_edges', comparisonStyle)}</tr>`;
         statsText += `<tr><td><b>Faces </b></td>    <td><b>${formatNumber(stats.cnt_faces)}</b></td>    ${makeCompareStatColumn(stats, comparisonStats, 'cnt_faces', comparisonStyle)}</tr>`;
+        statsText += `<tr><td><b>Triangles </b></td><td><b>${formatNumber(stats.triangleCount)}</b></td>${makeCompareStatColumn(stats, comparisonStats, 'triangleCount', comparisonStyle)}</tr>`;
 
         if (!omit_subdivisions) {
             statsText += `<tr><td><b>Subdivisions </b></td> <td colspan="2"><b> ${formatNumber(stats.subdivisions)}</b></td></tr>`;
