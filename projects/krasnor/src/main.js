@@ -108,7 +108,7 @@ export default class Main extends Renderer {
         const io = this.gui.addFolder('I/O')
         io.add(this.params, 'import').name('import mesh')
         io.add(this.params, 'export').name('export screenshot')
-        io.add(this.params, 'downloadMesh').name('export mesh as .obj')
+        io.add(this.params, 'downloadMesh').name('[dbg] export mesh')
 
         const vis = this.gui.addFolder('Visualization')
         vis.add(this.params, 'statisticsPanelComparisonMethod', [
@@ -118,7 +118,7 @@ export default class Main extends Renderer {
                 //  in Firefox 86.0 there seems to be no UI lag to be observable. After some debugging it seems, that something in the call chain causes in chrome a garbage collection.
                 console.time("comparison_style_change")
                 this.internal.statisticsPanelLeft.comparisonStyle = this.params.statisticsPanelComparisonMethod;
-                this.internal.statisticsPanelRight.comparisonStyle = this.params.statisticsPanelComparisonMethod; //(' ' + p).slice(1);
+                this.internal.statisticsPanelRight.comparisonStyle = this.params.statisticsPanelComparisonMethod;
                 this.updateStatistics();
                 console.timeEnd("comparison_style_change")
             }
@@ -182,14 +182,9 @@ export default class Main extends Renderer {
         mod.open()
 
         // just for the first load
-        // fetch('./assets/cube3.obj')
-        // fetch('./assets/triangle.obj')
-        fetch('./assets/cube4.obj')
-        // fetch('./assets/Face4.obj')
-        // fetch('./assets/Face3.obj')
-        // fetch('./assets/bunny_tri.obj')
-        // fetch('./assets/tetrahedron.obj')
-        // fetch('./assets/bunny_quad.obj')
+        // fetch('./assets/cube_quad.obj')
+        // fetch('./assets/cube_tri.obj')
+        fetch('./assets/bunny_tri_medium.obj')
             .then(resp => resp.text())
             .then(data => this.loadMesh(data))
     }

@@ -554,7 +554,7 @@ export class HalfedgeMesh {
         let t_subdiv_elapsed = t1_subdiv - t0_subdiv;
 
         this.lastSubdivisionTime = t_subdiv_elapsed;
-        console.log("##### Finished Subdivision ## %smin %ss %sms ###########", Math.floor(t_subdiv_elapsed / 1000 / 60), Math.floor(t_subdiv_elapsed / 1000), t_subdiv_elapsed % 1000);
+        console.log("##### Finished Subdivision ## %smin %ss %sms ###########", Math.floor(t_subdiv_elapsed / 1000 / 60), Math.floor((t_subdiv_elapsed / 1000) % 60), t_subdiv_elapsed % 1000);
         // this.plotVertices();
         // this.plotFaces(true);
     }
@@ -929,18 +929,19 @@ export class HalfedgeMesh {
 
     /**
      * Parses the HalfeEdgeMesh into an .obj compatible format
-     * Currently only vertices and faces are exported (e.g. normals are not exported)
+     * Currently only vertices and faces and face normals are exported (e.g. UVs are not exported)
      *
      * Mainly used for debugging
      *
      * @returns {Blob} parsing result
      */
     parseToObj() {
-        let lineSeperator = "\n";
-        let exp_header = "# Javascript Halfedge implementation .obj exporter";
-        let exp_header2 = "# subdivision count: " + this.subdivisionCounter;
-        let exp_objName = "o subdivided_object";
+        const lineSeperator = "\n";
+        const exp_header = "# Javascript Halfedge implementation - .obj exporter";
+        const exp_header2 = "# subdivision count: " + this.subdivisionCounter;
+        const exp_objName = "o subdivided_object";
         let exp_vertices = "";
+        let exp_normals = "";
         let exp_faces = "";
 
         // parse into .obj format
@@ -952,28 +953,29 @@ export class HalfedgeMesh {
         );
 
         this.faces.forEach(
-            f => {
-                // format: f v1 v2 v3 ....
-                let line = "f ";
+            (f, f_i)  => {
+                // format: f v1//vn v2//vn v3//vn ....
+                const normal = f.normal();
+                exp_normals += "vn " + normal.x + " " + normal.y + " " + normal.z + lineSeperator;
+                let line_face = "f";
                 f.vertices(
-                    (f_v, i) => {
-                        if (i != 0) {
-                            line += " ";
-                        }
-                        line += f_v.idx + 1; // +1 as in  obj format index starts at one instead of zero
+                    f_v => {
+                        line_face += " " + (f_v.idx + 1) + "//" + (f_i+1); // +1 as in  obj format index starts at one instead of zero
                     }
                 )
-                exp_faces += line + lineSeperator;
+                exp_faces += line_face + lineSeperator;
             }
         );
 
-        let objectData =
+        const objectData =
             exp_header + lineSeperator +
             exp_header2 + lineSeperator +
             exp_objName + lineSeperator +
             exp_vertices + // no line sep as there is already one
+            exp_normals + // no line sep as there is already one
+            "s off" + lineSeperator +
             exp_faces;
-        let type = "text/plain";
+        const type = "text/plain";
         let file = new Blob([objectData], {type: type});
 
         return file;
@@ -1046,7 +1048,7 @@ export class HalfedgeMeshStatistics {
      */
     formatElapsedTime(t_ms, format  = "hh:mm:ss.fff"){
         let hh_padded = Math.floor(t_ms / 1000 / 60 / 60).toString().padStart(2,"0");
-        let min_padded = Math.floor(t_ms / 1000 / 60).toString().padStart(2,"0");
+        let min_padded = Math.floor((t_ms / 1000 / 60) % 60).toString().padStart(2,"0");
 
         let formatted;
 
@@ -1065,21 +1067,21 @@ export class HalfedgeMeshStatistics {
                 formatted = (t_ms/1000).toFixed(6) + "s";
                 break;
             case "hh:mm:ss":
-                let s_padded2 = Math.floor(t_ms / 1000).toString().padStart(2,"0");
+                let s_padded2 = Math.floor((t_ms / 1000) % 60).toString().padStart(2,"0");
                 formatted = `${hh_padded}:${min_padded}:${s_padded2}`;
                 break;
             case "hh:mm:ss ms":
-                let s_padded = Math.floor(t_ms / 1000).toString().padStart(2,"0");
+                let s_padded = Math.floor((t_ms / 1000) % 60).toString().padStart(2,"0");
                 let ms = (t_ms % 1000).toFixed(2);
                 formatted = `${hh_padded}:${min_padded}:${s_padded} ${ms}ms`;
                 break;
             case "hh:mm:ss.ffffff": // ms & us
-                let s_msus_padded = (t_ms / 1000).toFixed(6).padStart(9,"0");
+                let s_msus_padded = ((t_ms / 1000) % 60).toFixed(6).padStart(9,"0");
                 formatted = `${hh_padded}:${min_padded}:${s_msus_padded}`;
                 break;
             case "hh:mm:ss.fff": // ms
             default:
-                let s_ms_padded = (t_ms / 1000).toFixed(3).padStart(6,"0");
+                let s_ms_padded = ((t_ms / 1000) % 60).toFixed(3).padStart(6,"0");
                 formatted = `${hh_padded}:${min_padded}:${s_ms_padded}`;
                 break;
         }
