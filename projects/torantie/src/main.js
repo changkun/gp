@@ -66,6 +66,7 @@ export default class Main extends Renderer {
     this.input.setAttribute('type', 'file')
     this.input.addEventListener('change', () => {
       let file = this.input.files[0]
+      let name = this.input.name
       if (!file.name.endsWith('.obj')) {
         alert('Only .OBJ files are supported')
       }
@@ -100,8 +101,14 @@ export default class Main extends Renderer {
     }
 
     this.params = {
-      importLeft: () => this.input.click(),
-      importRight: () => this.input.click(),
+      importLeft: () => {
+        this.params.loadLeft = true
+        this.input.click()
+      },
+      importRight: () => {
+        this.params.loadLeft = false
+        this.input.click()
+      },
       loadLeft: false,
       export: () => this.exportScreenshot(),
       showNormals: false,

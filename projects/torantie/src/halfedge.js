@@ -47,9 +47,6 @@ class Halfedge {
   }
 
   getVector() {
-    /*const a = this.vertsOrig[this.next.vertex.idx]
-    const b = this.vertsOrig[this.vertex.idx]
-    return a.position.sub(b.position)*/
     const vector = this.twin.vertex.position.sub(this.vertex.position)
     return vector
   }
@@ -84,7 +81,7 @@ class Halfedge {
     const norm = this.getVector().norm()
     // wij
     const weight = angles/norm
-    console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " ||fi -fj||: " + norm + " weight: " + weight)
+    //console.log("meanValueWeight " + "gamma: " + gamma + " delta: " + delta + " angles: " + angles + " ||fi -fj||: " + norm + " weight: " + weight)
     return weight
   }
 
@@ -96,16 +93,12 @@ class Halfedge {
     let a = this.getVector()
     let b = this.prev.twin.getVector()
 
-    /*const a = this.prev.getVector().unit()
-    const b = this.next.getVector().scale(-1).unit()
-    let angle = Math.acos(Math.max(-1, Math.min(1, a.dot(b))))*/
     /*console.log("angle" +
         " first vector vertex ids: " + this.vertex.idx + " to " + this.twin.vertex.idx
         + " x: " + a.x + " y: " + a.y + " z: " + a.z +
         " second vector vertex ids:" + this.prev.twin.vertex.idx + " to " + this.prev.twin.twin.vertex.idx
         + " x: " + b.x + " y: " + b.y + " z: " + b.z +
         " angle: " + angle)*/
-    //console.log("angle: " + angle)
     let dot = a.unit().dot(b.unit())
     let angle = Math.acos(Math.max(-1, Math.min(1, dot)))
     return angle
@@ -427,8 +420,8 @@ export class HalfedgeMesh {
     let triangleCount = 0
     for (let i = 0; i < faceIndicesCollection.length; i++) {
       const face = faceIndicesCollection[i]
-      const isQuad = face.count == 4
-      const isTriangle = face.count == 3
+      const isQuad = face.length == 4
+      const isTriangle = face.length == 3
       faceCount++
       if (isQuad)
         quadCount++
@@ -744,8 +737,7 @@ export class HalfedgeMesh {
       weightTriplet.addEntry(sum/*/count*/, i, i)
 
       // test to see if sum of w'ij = 1 and if w'ij = wij/sum of wij works for mean value weights
-      /*
-      let sum2 = 1e-8
+      /*let sum2 = 1e-8
       vert.forEachHalfEdge(h => {
         let w = 0
         switch (weightType) {
@@ -759,13 +751,12 @@ export class HalfedgeMesh {
             w = h.meanValueWeight()
             break;
         }
-        //weightTriplet.addEntry(-(w / sum), i, h.twin.vertex.idx)
+        weightTriplet.addEntry(-(w / sum), i, h.twin.vertex.idx)
         sum2 += (w / sum)
       })
-      console.log("sum2 " + sum2)
 
-       */
-
+      weightTriplet.addEntry(1, i, i)
+      console.log("sum2 " + sum2)*/
     }
 
     let weightMatrix = SparseMatrix.fromTriplet(weightTriplet)
@@ -785,7 +776,6 @@ export class HalfedgeMesh {
     for (const vert of this.vertices) {
       const i = vert.idx
       let neighbours = 0
-      //let l = vert.halfedge.next.vertex.position.sub(vert.position).norm()
 
       switch (massMatrixType) {
         case 'identity':
