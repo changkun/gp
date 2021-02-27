@@ -34,7 +34,7 @@ export default class Main extends Renderer {
     this.createGUIFolders();
 
     // just for the first load
-    fetch('./assets/deformed sphere triangulated.obj')
+    fetch('./assets/demo_objects/deformed_plane_triangle.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data,true))
   }

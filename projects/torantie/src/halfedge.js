@@ -452,7 +452,7 @@ export class HalfedgeMesh {
     // set the meshType according to the ratio of quads to triangles
     if (faceCount == quadCount) {
       this.meshType = this.meshTypes.isQuadMesh
-    } else if (quadCount == triangleCount) {
+    } else if (faceCount == triangleCount) {
       this.meshType = this.meshTypes.isTriangleMesh
     } else if (quadCount > undefinedFacesCount && quadCount > triangleCount) {
       this.meshType = this.meshTypes.isQuadDominantMesh
