@@ -1,8 +1,10 @@
-This should be a README document for your code.
-
 To run the code:
-npm install
-npm start
+
+- download node.js
+
+- npm install
+
+- npm start
 
 
-bunny_quad.obj will be loaded at the start of the program.
+./assets/demo_objects/deformed_plane_triangle.obj will be loaded at the start of the program.
