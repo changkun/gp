@@ -736,7 +736,8 @@ export class HalfedgeMesh {
       })
       weightTriplet.addEntry(sum/*/count*/, i, i)
 
-      // test to see if sum of w'ij = 1 and if w'ij = wij/sum of wij works for mean value weights
+      // test to see if sum of w'ij = 1 and if w'ij = wij/sum of wij (other weight definition)
+      // works for mean value weights
       /*let sum2 = 1e-8
       vert.forEachHalfEdge(h => {
         let w = 0
