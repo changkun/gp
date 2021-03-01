@@ -1,5 +1,5 @@
 {
-  "name": "Quadrilateral Mesh Smoothing with mean value weights",
+  "name": "Quadrilateral_Mesh_Smoothing_with_mean_value_weights",
   "version": "1.0.0",
   "description": "Geometry Processing project. Provides a half-edge data structure supporting conversion of an .obj file with quadrilateral faces. Contains an attempt (not functioning) at implementing mean value weight laplacian smoothing.",
   "main": "src/main.js",
