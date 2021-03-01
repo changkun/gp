@@ -1,13 +1,13 @@
 {
-  "name": "gp-3-smooth",
+  "name": "Quadrilateral Mesh Smoothing with mean value weights",
   "version": "1.0.0",
-  "description": "Geometry Processing",
+  "description": "Geometry Processing project. Provides a half-edge data structure supporting conversion of an .obj file with quadrilateral faces. Contains an attempt (not functioning) at implementing mean value weight laplacian smoothing.",
   "main": "src/main.js",
   "scripts": {
     "start": "webpack-dev-server --host localhost --open",
     "build": "webpack --env.prod"
   },
-  "author": "Changkun Ou",
+  "author": "Michael Hufnagel",
   "license": "GPL-3.0",
   "dependencies": {
     "@penrose/linear-algebra": "^1.0.1",
