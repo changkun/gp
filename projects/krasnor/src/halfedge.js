@@ -1,3 +1,10 @@
+/**
+ * Copyright © 2021 Karlheinz Reinhardt. All rights reserved.
+ * Portions Copyright © 2020-2021 Changkun Ou (contact@changkun.de)
+ *
+ * Use of this source code is governed by a GNU GLPv3 license that can be
+ * found in the LICENSE file.
+ */
 import Vector from './vec'
 
 class Halfedge {
