@@ -1,3 +1,16 @@
+/**
+
+ * Copyright © 2021 Michael Hufnagel. All rights reserved.
+
+ * Portions Copyright © 2020-2021 Changkun Ou (contact@changkun.de)
+
+ *
+
+ * Use of this source code is governed by a GNU GLPv3 license that can be
+
+ * found in the LICENSE file.
+
+ */
 // API Usage about @penrose/linear-algebra:
 //
 //   - There are two types of matrices: SparseMatrix and DenseMatrix
@@ -25,19 +38,6 @@
 // in node_modules/@penrose/linear-algebra/docs/*.html, but the above
 // information are all the APIs you need for this project.
 
-/**
-
- * Copyright © 2021 Michael Hufnagel. All rights reserved.
-
- * Portions Copyright © 2020-2021 Changkun Ou (contact@changkun.de)
-
- *
-
- * Use of this source code is governed by a GNU GLPv3 license that can be
-
- * found in the LICENSE file.
-
- */
 import {
   SparseMatrix,
   DenseMatrix,
