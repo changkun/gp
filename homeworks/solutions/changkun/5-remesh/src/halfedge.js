@@ -44,7 +44,15 @@ class Edge {
     this.halfedge = null // Halfedge
     this.idx      = -1   // Number
   }
-  // TODO: you can add more methods if you need here
+  /**
+   * quadric computes and returns the quadric matrix of the given edge
+   * @returns {Matrix}
+   */
+  quadric() {
+    const v1q = this.halfedge.vertex.quadric()
+    const v2q = this.halfedge.twin.vertex.quadric()
+    return v1q.add(v2q) 
+  }
 }
 
 class Face {
@@ -100,6 +108,27 @@ class Face {
     let b = h.prev.vertex.position.sub(h.vertex.position).scale(-1)
     return a.cross(b).norm() * 0.5
   }
+  /**
+   * quadric computes and returns the quadric matrix of the given face
+   * @returns {Matrix}
+   */
+  quadric() {
+    const n = this.normal()
+    const x = this.halfedge.vertex.position.x
+    const y = this.halfedge.vertex.position.y
+    const z = this.halfedge.vertex.position.z
+    const a = n.x
+    const b = n.y
+    const c = n.z
+    const d = -a*x - b*y - c*z
+    const m = new Matrix(
+      a*a, a*b, a*c, a*d,
+      a*b, b*b, b*c, b*d,
+      a*c, b*c, c*c, c*d,
+      a*d, b*d, c*d, d*d,
+    )
+    return m
+  }
 }
 
 class Vertex {
@@ -154,6 +183,17 @@ class Vertex {
     this.halfedges((h, i) => {
       fn(h.next.vertex, i)
     })
+  }
+  /**
+   * quadric computes and returns the quadric matrix of the given vertex
+   * @returns {Matrix}
+   */
+  quadric() {
+    let q = new Matrix()
+    this.faces(f => {
+      q = q.add(f.quadric())
+    })
+    return q
   }
 }
 
