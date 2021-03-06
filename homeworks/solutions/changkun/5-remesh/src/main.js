@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Changkun Ou <https://changkun.de>. All rights reserved.
+ * Copyright 2021 Changkun Ou <https://changkun.de>. All rights reserved.
  * Use of this source code is governed by a GNU GLPv3 license that can be
  * found in the LICENSE file.
  */
@@ -52,6 +52,7 @@ export default class Main extends Renderer {
     document.body.appendChild(this.input)
 
     this.internal = {
+      raw: null,              // raw obj data
       mesh: null,             // internal mesh object
       mesh3jsLeft: null,      // three.js buffer geometry for QEM simplification
       mesh3jsRightOrig: null, // three.js buffer geometry for melax simplification
@@ -65,9 +66,8 @@ export default class Main extends Renderer {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
       showNormals: false,
-      showWireframe: false,
-      flatShading: false,
-      showTexture: true,
+      showWireframe: true,
+      flatShading: true,
       normalMethod: 'equal-weighted',
 
       qSim: 0.0,
@@ -110,23 +110,12 @@ export default class Main extends Renderer {
       this.internal.mesh3jsLeft.material.needsUpdate = true
       this.internal.mesh3jsRightSim.material.needsUpdate = true
     })
-    vis.add(this.params, 'showTexture').name('texture').listen()
-    .onChange(showTex => {
-      if (showTex) {
-        this.internal.mesh3jsLeft.material.map = this.checkboardTexture()
-        this.internal.mesh3jsRightSim.material.map = this.checkboardTexture()
-      } else {
-        this.internal.mesh3jsLeft.material.map = null
-        this.internal.mesh3jsRight.material.map = null
-      }
-      this.internal.mesh3jsLeft.material.needsUpdate = true
-      this.internal.mesh3jsRightSim.material.needsUpdate = true
-    })
     vis.open()
 
     const mod = this.gui.addFolder('Reduce Ratio')
     mod.add(this.params, 'qSim', 0.0, 1.0, 0.001).name('Left (QEM)')
     .onChange(v => {
+      this.internal.mesh = new HalfedgeMesh(this.internal.raw)
       this.internal.mesh.simplify(v)
       this.prepareBuf()
       this.renderMeshLeft()
@@ -188,8 +177,12 @@ export default class Main extends Renderer {
       .then(data => this.loadMesh(data))
   }
   loadMesh(data) {
+    this.internal.raw = data
     if (this.internal.mesh3jsLeft !== null) {
       this.sceneLeft.remove(this.internal.mesh3jsLeft)
+    }
+    if (this.internal.mesh3jsRightSim !== null) {
+      this.sceneRight.remove(this.internal.mesh3jsRightSim)
     }
 
     this.internal.mesh = new HalfedgeMesh(data)
@@ -287,6 +280,7 @@ export default class Main extends Renderer {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
+      flatShading: this.params.flatShading,
     }))
 
     this.internal.meshLeftNormalHelper = new VertexNormalsHelper(
@@ -334,6 +328,7 @@ export default class Main extends Renderer {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
+      flatShading: this.params.flatShading,
     }))
     this.internal.meshRightNormalHelper = new VertexNormalsHelper(
       this.internal.mesh3jsRightOrig, 0.03, 0xaa0000,
