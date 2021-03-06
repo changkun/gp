@@ -1,3 +1,9 @@
+/**
+ * Copyright 2020 Changkun Ou <https://changkun.de>. All rights reserved.
+ * Use of this source code is governed by a GNU GLPv3 license that can be
+ * found in the LICENSE file.
+ */
+
 import Renderer from './renderer'
 import { HalfedgeMesh } from './halfedge'
 import { GUI } from 'dat.gui'
@@ -46,9 +52,9 @@ export default class Main extends Renderer {
     document.body.appendChild(this.input)
 
     this.internal = {
-      mesh: null,     // internal mesh object
-      mesh3jsLeft: null,  // three.js buffer geometry object for mesh
-      mesh3jsRightOrig: null,    // three.js buffer geometry object for UV map
+      mesh: null,             // internal mesh object
+      mesh3jsLeft: null,      // three.js buffer geometry for QEM simplification
+      mesh3jsRightOrig: null, // three.js buffer geometry for melax simplification
       mesh3jsRightSim: null,
       meshLeftNormalHelper: null,
       meshRightNormalHelper: null,
@@ -229,7 +235,6 @@ export default class Main extends Renderer {
     // prepare threejs buffer data
     const v = this.internal.mesh.vertices.length
     this.bufpos     = new Float32Array(v*3)
-    this.bufuvs     = new Float32Array(v*3)
     this.bufcolors  = new Float32Array(v*3)
     this.bufnormals = new Float32Array(v*3)
 
@@ -241,11 +246,6 @@ export default class Main extends Renderer {
       this.bufpos[3*i+0] = p.x
       this.bufpos[3*i+1] = p.y
       this.bufpos[3*i+2] = p.z
-
-      // use vertex uv
-      this.bufuvs[3*i+0] = v.uv.x
-      this.bufuvs[3*i+1] = v.uv.y
-      this.bufuvs[3*i+2] = 0
 
       // default GP blue color
       this.bufcolors[3*i+0] = 0
@@ -278,7 +278,6 @@ export default class Main extends Renderer {
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
     g.setAttribute('position', new BufferAttribute(this.bufpos, 3))
-    g.setAttribute('uv', new BufferAttribute(this.bufuvs, 3))
     g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
     g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
 
@@ -325,8 +324,7 @@ export default class Main extends Renderer {
 
     const g = new BufferGeometry()
     g.setIndex(new BufferAttribute(idxs, 1))
-    g.setAttribute('position', new BufferAttribute(this.bufpos, 3)) // use uv as position
-    g.setAttribute('uv', new BufferAttribute(this.bufuvs, 3))
+    g.setAttribute('position', new BufferAttribute(this.bufpos, 3))
     g.setAttribute('color', new BufferAttribute(this.bufcolors, 3))
     g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3))
 
