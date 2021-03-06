@@ -51,12 +51,24 @@ class Edge {
    * @returns {Number}
    */
   error() {
-    if (this.errorCache === null) {
-      const q = this.quadric()
-      const v = this.bestVertex()
-      this.errorCache = this.quadricError(q, v)
+    if (this.errorCache != null) {
       return this.errorCache
     }
+
+    // We do not work on boundary edges, set their error to infinity, so
+    // that the priority queue will never pop these edges.
+    //
+    // This is preferred. Boundary of a mesh are considered as features,
+    // except the faulty noisy meshes. If that happens, we need clean up
+    // the mesh first.
+    if (this.halfedge.onBoundary || this.halfedge.twin.onBoundary) {
+      this.errorCache = 1e9
+      return this.errorCache
+    }
+
+    const q = this.quadric()
+    const v = this.bestVertex()
+    this.errorCache = this.quadricError(q, v)
     return this.errorCache
   }
   /**
@@ -461,6 +473,22 @@ export class HalfedgeMesh {
     }
 
     // reset indices
+    this.resetIndices()
+  }
+  /**
+   * resetIndices clears all invalid (null) elements and reset
+   * the indices.
+   */
+  resetIndices() {
+    // clear null elements
+    const notnull = e => e == null ? false : true
+    this.vertices = this.vertices.filter(notnull)
+    this.edges = this.edges.filter(notnull)
+    this.faces = this.faces.filter(notnull)
+    this.halfedges = this.halfedges.filter(notnull)
+    this.boundaries = this.boundaries.filter(notnull)
+
+    // reset indices
     let index = 0
     this.vertices.forEach(v => { v.idx = index++ })
     index = 0
@@ -478,6 +506,163 @@ export class HalfedgeMesh {
    * should be removed.
    */
   simplify(reduceRatio) {
-    // TODO: implement the QEM simplification
+    if (this.boundaries.length != 0) {
+      // KNOWN ISSUES: this implementation does not fully work with
+      // meshes that may contain boundaries, or have too few faces.
+      // This is caused because of the following reasons:
+      // 1. edge collapse is implemented via reconstructing everything
+      // around that edge, it can miss invalid edge collapse operation
+      // (see slides).
+      // 2. if the mesh contains too few faces, the process of finding
+      // opposite neighbor edges of the connecting vertices of the edge
+      // can be problematic.
+      // To fix this issue, we need to implement edge collapse in a
+      // different way (and possibly more efficient):
+      // 1. move a vertex, say v1, to the target position
+      // 2. detect if edge collapse from v2 to v1 is still valid
+      //    (detect flip faces). If not, skip this edge collapse
+      //    operation and restore the position of v1.
+      // 3. conduct edge collapse from v2 to v1.
+      throw 'do not work on mesh with boundaries'
+    }
+
+    // build edge error priority queue
+    const pq = new PriorityQueue((e1, e2) => e1.error() < e2.error())
+    pq.push(...this.edges)
+    
+    let reducedFaces = Math.floor(this.faces.length * reduceRatio)
+    for (; reducedFaces > 0; ) {
+      const e = pq.pop()
+      if (e.removed) { continue }
+
+      // Two vertex for edge collapse
+      const v1 = e.halfedge.vertex
+      const v2 = e.halfedge.twin.vertex
+
+      // Clear them from the vertex indices
+      this.vertices[v1.idx] = null
+      this.vertices[v2.idx] = null
+
+      // Clear everything connected with v1 and v2
+      v1.halfedges(h => {
+        h.edge.removed = true
+        this.edges[h.edge.idx] = null
+        this.faces[h.face.idx] = null
+        this.halfedges[h.idx] = null
+        this.halfedges[h.twin.idx] = null
+      })
+      v2.halfedges(h => {
+        h.edge.removed = true
+        this.edges[h.edge.idx] = null
+        this.faces[h.face.idx] = null
+        this.halfedges[h.idx] = null
+        this.halfedges[h.twin.idx] = null
+      })
+
+      // Construct new vertex based on the best vertex calculation.
+      const v = new Vertex()
+      v.position = e.bestVertex()
+      v.idx = this.vertices.length
+      this.vertices.push(v)
+
+      // Find the 1-ring of v1-v2, in counterclock-wise order.
+      let startHalfedge = null
+      if (v1.halfedge.twin.vertex != v2) {
+        startHalfedge = v1.halfedge
+      } else {
+        startHalfedge = v1.halfedge.twin.next
+      }
+      let start = null
+      if (startHalfedge.next.twin.vertex != v2) {
+        start = startHalfedge.next
+      } else {
+        start = startHalfedge.next.twin.next
+      }
+      let oppositeEdges = [start]
+      for (let current = start;;) {
+        if (current.next.twin.next.twin.vertex == v2 ||
+            current.next.twin.next.twin.vertex == v1) {
+          current = current.next.twin.next.twin.next
+        } else {
+          current = current.next.twin.next
+        }
+        if (current == start) {
+          break
+        }
+        oppositeEdges.push(current)
+      }
+
+      // It is important to maintain the order of the new
+      // edges. The implementation below depends on the order
+      // to be conterclock-wise.
+      let newEdges = []
+      let oppositeHalfdges = []
+      oppositeEdges.forEach(h => {
+        this.faces[h.face.idx] = null
+
+        const e = new Edge()
+        e.idx = this.edges.length
+        this.edges.push(e)
+
+        e.halfedge = new Halfedge()
+        e.halfedge.idx = this.halfedges.length
+        e.halfedge.edge = e
+        this.halfedges.push(e.halfedge)
+
+        e.halfedge.twin = new Halfedge()
+        e.halfedge.twin.idx = this.halfedges.length
+        e.halfedge.twin.edge = e
+        e.halfedge.twin.twin = e.halfedge
+        this.halfedges.push(e.halfedge.twin)
+
+        newEdges.push(e)
+        oppositeHalfdges.push(h)
+      })
+
+      for (let i = 0; i < oppositeHalfdges.length; i++) {
+
+        // build new connectivity between e1, e2, and h.
+        const e1 = newEdges[i]
+        const e2 = newEdges[(i+1)%oppositeHalfdges.length]
+        const h = oppositeHalfdges[i]
+
+        // 1. connect opposite halfedge to new edges
+        v.halfedge = e1.halfedge
+        e1.halfedge.next = h
+        e1.halfedge.prev = e2.halfedge.twin
+        e2.halfedge.twin.next = e1.halfedge
+        e2.halfedge.twin.prev = h
+        h.prev = e1.halfedge
+        h.next = e2.halfedge.twin
+
+        // 2. constrct new face
+        const f = new Face()
+        f.halfedge = e1.halfedge
+        f.idx = this.faces.length
+        this.faces.push(f)
+
+        // 3. associate all edges to the new face
+        e1.halfedge.face = f
+        h.face = f
+        e2.halfedge.twin.face = f
+
+        // 4. associate vertex to new half
+        e1.halfedge.vertex = v
+        e1.halfedge.twin.vertex = h.vertex
+        e2.halfedge.vertex = v
+        e2.halfedge.twin.vertex = h.twin.vertex
+
+        // 5. this is necessary to prevent a vertex
+        // reference to a removed halfedge 
+        h.vertex.halfedge = h
+      }
+
+      // push new edges into priority queue, the push
+      // will automatically adjust the order of elements.
+      pq.push(...newEdges)
+      reducedFaces -= 2
+
+      this.resetIndices()
+    }
   }
 }

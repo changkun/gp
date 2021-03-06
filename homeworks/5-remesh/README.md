@@ -41,6 +41,18 @@ Think and answer the following questions:
 TODO: your answer goes here
 ```
 
+## Reference Results
+
+The simplified meshes using different algorithms (0.9 reduction ratio):
+
+|QEM[1] |Melax[2] |Original|
+|:--:|:--:|:--:|
+|![](./references/qsim-bunny.png)|![](./references/melax-bunny.png)|![](./references/origin-bunny.png)|
+|![](./references/qsim-sphere.png)|![](./references/melax-sphere.png)|![](./references/origin-sphere.png)|
+
+1. QEM: Garland, Michael, and Paul S. Heckbert. "Surface simplification using quadric error metrics." Proceedings of the 24th annual conference on Computer graphics and interactive techniques. 1997.
+2. Melax: Melax, Stan. "A simple, fast, and effective polygon reduction algorithm." Game Developer 11.Nov (1998): 44-49.
+
 ## Submission
 
 Before you submit, please read [this](../README.md) document and understand

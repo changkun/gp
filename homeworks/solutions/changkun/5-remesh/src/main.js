@@ -172,7 +172,7 @@ export default class Main extends Renderer {
     mod.open()
 
     // just for the first load
-    fetch('./assets/closed_cube.obj')
+    fetch('./assets/closed_sphere.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }
