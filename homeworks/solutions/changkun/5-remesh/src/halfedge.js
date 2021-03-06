@@ -41,8 +41,62 @@ class Halfedge {
 
 class Edge {
   constructor() {
-    this.halfedge = null // Halfedge
-    this.idx      = -1   // Number
+    this.halfedge = null   // Halfedge
+    this.idx      = -1     // Number
+    this.errorCache = null // Number
+    this.removed = false   // Boolean
+  }
+  /**
+   * error returns the edge error of the given edge
+   * @returns {Number}
+   */
+  error() {
+    if (this.errorCache === null) {
+      const q = this.quadric()
+      const v = this.bestVertex()
+      this.errorCache = this.quadricError(q, v)
+      return this.errorCache
+    }
+    return this.errorCache
+  }
+  /**
+   * bestVertex returns the optimal vertex that can replaces the connecting vertices
+   * of the given edge.
+   * @returns {Vector}
+   */
+  bestVertex() {
+    const q = this.quadric()
+    const dd = Math.abs(q.det())
+    if (dd > 1e-3) {
+      const qq = new Matrix(
+        q.x00, q.x01, q.x02, q.x03,
+        q.x10, q.x11, q.x12, q.x13,
+        q.x20, q.x21, q.x22, q.x23,
+        0, 0, 0, 1
+      ).inv()
+      const v = new Vector(qq.x03, qq.x13, qq.x23)
+      if (v.x !== NaN && v.y !== NaN && v.z != NaN) {
+        return v
+      }
+    }
+
+    // Ill-posed quadric equation, just search best vertex on the edge.
+    const n = 16
+    const a = this.halfedge.vertex.position
+    const b = this.halfedge.next.vertex.position
+    const d = b.sub(a)
+    let beste = -1.0
+    let bestv = new Vector()
+    for (let i = 0; i <= n; i++) {
+      const t = i / n
+      const v = a.add(d.scale(t))
+      const e = this.quadricError(q, v)
+      if (beste < 0 || e < beste) {
+        beste = e
+        bestv = v
+      }
+    }
+    return bestv
   }
   /**
    * quadric computes and returns the quadric matrix of the given edge
@@ -52,6 +106,20 @@ class Edge {
     const v1q = this.halfedge.vertex.quadric()
     const v2q = this.halfedge.twin.vertex.quadric()
     return v1q.add(v2q) 
+  }
+  /**
+   * quadricError computes and returns the quadric error v^T q v.
+   * @param {Matrix} q a 4x4 quadric matrix
+   * @param {Vector} v the vertex for calculating quadric error
+   * @returns {Number} quadric error
+   */
+  quadricError(q, v) {
+    return (
+      v.x*q.x00*v.x + v.y*q.x10*v.x + v.z*q.x20*v.x + q.x30*v.x +
+      v.x*q.x01*v.y + v.y*q.x11*v.y + v.z*q.x21*v.y + q.x31*v.y +
+      v.x*q.x02*v.z + v.y*q.x12*v.z + v.z*q.x22*v.z + q.x32*v.z +
+      v.x*q.x03     + v.y*q.x13     + v.z*q.x23     + q.x33
+    )
   }
 }
 
