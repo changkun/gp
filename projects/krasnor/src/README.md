@@ -1,4 +1,20 @@
-This should be a README document for your code.
+## How-To Run
 
-It should contain the basic information about how others could compile and
-run your code on a different machine.
+**Software Requirements**
+
+- Node.js (v14+)
+- Web Browser
+
+**Installation**
+
+1. Install dependencies
+   Open a command line in the directory where "package.json" is located (parent directory) and run
+   `npm i` or `npm install`
+
+2. Start the server
+
+   `npm start`
+
+3. The webpage should open automatically in your browser
+
+   `http://localhost:8080/`
