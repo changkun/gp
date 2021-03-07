@@ -1,4 +1,4 @@
-# Homework 1: Getting Started with Mesh
+# Homework 1: Rendering a Mesh
 
 1. Re-implement the rasterization and ray tracing pipeline
 
