@@ -12,7 +12,7 @@
   "dependencies": {
     "dat.gui": "^0.7.7",
     "stats.js": "^0.17.0",
-    "three": "^0.118.3"
+    "three": "^0.126.1"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",
