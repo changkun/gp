@@ -39,7 +39,9 @@ export default class Renderer {
     // camera
     this.camera = new PerspectiveCamera(
       45, window.innerWidth/window.innerHeight, 0.1, 1000)
-    this.camera.position.z = 3.5
+      this.camera.position.x = 0.5
+      this.camera.position.y = 1.5
+      this.camera.position.z = 2.5
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.renderer.setSize(window.innerWidth, window.innerHeight)

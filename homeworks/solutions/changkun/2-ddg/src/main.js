@@ -59,10 +59,10 @@ export default class Main extends Renderer {
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
-      showNormals: false,
-      showWireframe: false,
+      showNormals: true,
+      showWireframe: true,
       normalMethod: 'equal-weighted',
-      curvatureMethod: 'none'
+      curvatureMethod: 'Mean'
     }
 
     this.gui = new GUI()
@@ -102,6 +102,7 @@ export default class Main extends Renderer {
     }
     this.internal.mesh = new HalfedgeMesh(data)
     this.renderMesh()
+    this.updateCurvature()
   }
   exportScreenshot() {
     const url = this.renderer.domElement.toDataURL('image/png', 'export')

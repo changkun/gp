@@ -116,7 +116,9 @@ export default class Main extends Renderer {
     mod.add(this.params, 'qSim', 0.0, 1.0, 0.001).name('Left (QEM)')
     .onChange(v => {
       this.internal.mesh = new HalfedgeMesh(this.internal.raw)
+      const was = this.internal.mesh.faces.length
       this.internal.mesh.simplify(v)
+      console.log(`QEM: reduced from ${was/2} to ${this.internal.mesh.faces.length/2}.`)
       this.prepareBuf()
       this.renderMeshLeft()
     })
@@ -124,11 +126,9 @@ export default class Main extends Renderer {
     const simplifier = new SimplifyModifier()
     mod.add(this.params, 'melaxSim', 0.0, 1.0, 0.001).name('Right (three.js)')
     .onChange(v => {
-      let g = new Geometry().fromBufferGeometry(
-        this.internal.mesh3jsRightOrig.geometry
-      )
-      const prevc = g.vertices.length
-      const count = Math.floor(g.vertices.length*v)
+      let g = this.internal.mesh3jsRightOrig.geometry
+      const prevc = g.attributes.position.count
+      const count = Math.floor(g.attributes.position.count*v)
       g = simplifier.modify(g, count)
       g.computeVertexNormals()
       const nv = g.getAttribute('position').array.length
@@ -172,7 +172,7 @@ export default class Main extends Renderer {
     mod.open()
 
     // just for the first load
-    fetch('./assets/closed_sphere.obj')
+    fetch('./assets/bunny_tri.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data))
   }

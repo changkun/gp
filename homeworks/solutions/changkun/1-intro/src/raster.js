@@ -51,18 +51,30 @@ export default class Rasterizer {
   constructor(params) {
     this.screen = params.screen
     this.camera = {
-      position: new Vector(-550, 194, 734, 1),
-      fov: 45, aspect: this.screen.width/this.screen.height,
-      near: 100, far: 600,
-      lookAt: new Vector(-1000, 0, 0, 1),
-      up: new Vector(0, 1, 1, 0),
+      position: new Vector(
+        params.camera.position.x,
+        params.camera.position.y,
+        params.camera.position.z, 1),
+      fov: params.camera.fov, aspect: this.screen.width/this.screen.height,
+      near: params.camera.near, far: params.camera.far,
+      lookAt: new Vector(
+        params.camera.lookAt.x,
+        params.camera.lookAt.y,
+        params.camera.lookAt.z, 1),
+      up: new Vector(
+        params.camera.up.x,
+        params.camera.up.y,
+        params.camera.up.z, 0),
     }
     this.light = {
-      color: 0xffffff,
-      Kamb: 0.5, // ambient
-      Kdiff: 0.6, // diffuse
-      Kspec: 1, // specular
-      position: new Vector(-200, 250, 600, 1),
+      color: params.light.color,
+      Kamb: params.light.Kamb,   // ambient
+      Kdiff: params.light.Kdiff, // diffuse
+      Kspec: params.light.Kspec, // specular
+      position: new Vector(
+        params.light.position.x,
+        params.light.position.y,
+        params.light.position.z, 1),
     }
     this.model = {
       url: params.model.geometry,
@@ -77,8 +89,14 @@ export default class Rasterizer {
         height: params.model.texture.height,
         shininess: params.model.texture.shininess,
       },
-      scale: new Vector(1500, 1500, 1500, 0),
-      position: new Vector(-700, -5, 350, 1),
+      scale: new Vector(
+        params.model.scale.x,
+        params.model.scale.y,
+        params.model.scale.z, 0),
+      position: new Vector(
+        params.model.position.x,
+        params.model.position.y,
+        params.model.position.z, 1),
     }
 
     // Buffers that is used in the rasterizer.
@@ -113,7 +131,7 @@ export default class Rasterizer {
   initBuffers() {
     // buffer initialization
     for (let i = 0; i < this.screen.width*this.screen.height; i++) {
-      this.frameBuf[i] = [0 /* r */, 0 /* g */, /* b */ 0]
+      this.frameBuf[i] = [128 /* r */, 128/* g */, 128/* b */]
       this.depthBuf[i] = -Infinity
     }
   }

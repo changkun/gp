@@ -34,17 +34,33 @@ class Renderer {
     const canvas = document.createElement('canvas')
     this.renderer = new WebGLRenderer({
       canvas: canvas,
-      context: canvas.getContext('webgl2'),
       antialias: true,
+      preserveDrawingBuffer: true,
     })
     container.appendChild(this.renderer.domElement)
 
     // scene graph
     this.scene = new Scene()
+    this.scene.background = new Color(0xffffff)
 
-    this.panel = {onlyScreen: true}
+    this.panel = {
+      onlyScreen: true,
+      export: () => this.exportScreenshot(),
+    }
     this.gui = new GUI()
-    this.gui.add(this.panel, 'onlyScreen').listen()
+    this.gui.add(this.panel, 'onlyScreen').listen().onChange(v => {
+      if (v) {
+        this.scene.remove(this.cameraHelper)
+        this.scene.remove(this.axesHelper)
+        return
+      }
+
+      this.cameraHelper = new CameraHelper(this.camera)
+      this.scene.add(this.cameraHelper)
+      this.axesHelper = new AxesHelper(1000)
+      this.scene.add(this.axesHelper)
+    })
+    this.gui.add(this.panel, 'export').name('export screenshot')
 
     // user eye
     const eyeParams = {
@@ -103,6 +119,16 @@ class Renderer {
     this.stats.showPanel(0)
     container.appendChild(this.stats.domElement)
   }
+  exportScreenshot() {
+    const url = this.renderer.domElement.toDataURL('image/png', 'export')
+    const e = document.createElement('a')
+    e.setAttribute('href', url)
+    e.style.display = 'none'
+    e.setAttribute('download', 'export.png')
+    document.body.appendChild(e)
+    e.click()
+    document.body.removeChild(e)
+  }
   /**
    * update is empty by design, this method should be implemented in a
    * sub class.
@@ -143,17 +169,17 @@ class Monitor extends Renderer {
     this.params = {
       screen: {width: 800, height: 500},
       camera: {
-        position: new Vector3(-550, 194, 734),
-        fov: 45, aspect: 1.6, near: 100, far: 600,
-        lookAt: new Vector3(-1000, 0, 0),
-        up: new Vector3(0, 1, 1),
+        position: new Vector3(0.5, 1.5, 2.5),
+        fov: 45, aspect: 800/500, near: 0.1, far: 1000,
+        lookAt: new Vector3(0, 0, 0),
+        up: new Vector3(0, 1, 0),
       },
       light: {
         color: 0xffffff,
         Kamb: 0.5, // ambient
         Kdiff: 0.6, // diffuse
         Kspec: 1, // specular
-        position: new Vector3(-200, 250, 600),
+        position: new Vector3(2, 20, 15),
       },
       model: {
         // Replaced by OBJ model object when asset is loaded
@@ -165,8 +191,8 @@ class Monitor extends Renderer {
           height: 0,
           shininess: 150,
         },
-        scale: new Vector3(1500, 1500, 1500),
-        position: new Vector3(-700, -5, 350),
+        scale: new Vector3(10, 10, 10),
+        position: new Vector3(0.5, -0.8, 0),
       },
     }
 
@@ -180,10 +206,6 @@ class Monitor extends Renderer {
     this.camera.position.copy(this.params.camera.position)
     this.camera.up.copy(this.params.camera.up)
     this.camera.lookAt(this.params.camera.lookAt)
-    this.scene.add(new CameraHelper(this.camera))
-
-    // Create a axes helper to visualize the axes.
-    this.scene.add(new AxesHelper(1000))
     this.setup()
   }
   /**
@@ -297,8 +319,9 @@ class Monitor extends Renderer {
     const material = new LineBasicMaterial({vertexColors: true})
     material.opacity = 0.05
     material.transparent = true
-    const screen = new LineSegments(geometry, material)
-    this.scene.add(screen)
+    // Enable screen to show the grids
+    // const screen = new LineSegments(geometry, material)
+    // this.scene.add(screen)
   }
   /**
    * flushFrameBuffer flushes the stored colors in `r.frameBuf` to

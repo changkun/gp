@@ -661,8 +661,7 @@ export class HalfedgeMesh {
       // will automatically adjust the order of elements.
       pq.push(...newEdges)
       reducedFaces -= 2
-
-      this.resetIndices()
     }
+    this.resetIndices()
   }
 }

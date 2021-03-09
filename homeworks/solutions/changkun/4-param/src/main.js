@@ -64,8 +64,8 @@ export default class Main extends Renderer {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
       showNormals: false,
-      showWireframe: false,
-      flatShading: false,
+      showWireframe: true,
+      flatShading: true,
       showTexture: true,
 
       normalMethod: 'equal-weighted',
@@ -258,6 +258,7 @@ export default class Main extends Renderer {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
       side: DoubleSide,
+      flatShading: this.params.flatShading,
     }))
     this.internal.mesh3js.material.map = this.checkboardTexture()
 
