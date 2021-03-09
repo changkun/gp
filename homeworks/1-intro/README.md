@@ -1,4 +1,4 @@
-# Homework 1: Rendering a Mesh
+# Homework 1: Rendering A Mesh on CPU
 
 1. Re-implement the rasterization and ray tracing pipeline
 
