@@ -41,12 +41,12 @@ Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
 | Date | Topic | Projects | Preview |
 |:----:|:------|:-----------------|:---:|
-| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Rendering a Mesh](./homeworks/1-intro) | <img src="./homeworks/1-intro/assets/raster.png" width="200" /> |
-| 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) | <img src="./homeworks/2-ddg/reference/cur-mean.png" width="200" /> |
-| 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) | <img src="./homeworks/3-smooth/references/cotan-10.000.png" width="200" /> |
-| 14.12.2020 | [Parameterization](https://changkun.de/s/gp-4-param) | [Tutte's Embedding](./homeworks/4-param/) | <img src="./homeworks/4-param/references/uniform-rect.png" width="200" /> |
-| 11.01.2021 | [Remeshing](https://changkun.de/s/gp-5-remesh) | [Quadric Error Metric Simplification](./homeworks/5-remesh/) | <img src="./homeworks/5-remesh/references/qsim-bunny.png" width="200" /> |
-| 08.02.2021 | [Deformation](https://changkun.de/s/gp-6-deform)  | [Delta Mush](./homeworks/6-deform/README.md) | <img src="./homeworks/6-deform/references/delta-mush.png" width="200" /> |
+| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Rendering A Mesh on CPU](./homeworks/1-intro) | <img src="./assets/proj1.png" width="200"/> <a href="https://mimuc.github.io/gp-ws2021/1-intro/">Live Demo</a>|
+| 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) | <img src="./assets/proj2.png" width="200"/> <a href="https://mimuc.github.io/gp-ws2021/2-ddg/">Live Demo</a> |
+| 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) | <img src="./assets/proj3.png" width="200"/> <a href="https://mimuc.github.io/gp-ws2021/3-smooth/">Live Demo</a> |
+| 14.12.2020 | [Parameterization](https://changkun.de/s/gp-4-param) | [Tutte's Embedding](./homeworks/4-param/) | <img src="./assets/proj4.png" width="200"/> <a href="https://mimuc.github.io/gp-ws2021/4-param/">Live Demo</a> |
+| 11.01.2021 | [Remeshing](https://changkun.de/s/gp-5-remesh) | [Quadric Error Metric Simplification](./homeworks/5-remesh/) | <img src="./assets/proj5.png" width="200"/> <a href="https://mimuc.github.io/gp-ws2021/5-remesh/">Live Demo</a> |
+| 08.02.2021 | [Deformation](https://changkun.de/s/gp-6-deform)  | [Delta Mush](./homeworks/6-deform/README.md) | <img src="./assets/proj6.png" width="200"/> |
 | 08.02.2021 | [Data-driven Approach](https://changkun.de/s/gp-7-dda) | DGCNN for Normals | ![](./homeworks/) |
 | 22.02.2021 | Guest Talk: Industrial Modeling Practice | - |
 | 01.03.2021 | Final Project Presentation | See below |
