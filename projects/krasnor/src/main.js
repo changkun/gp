@@ -367,7 +367,7 @@ export default class Main extends Renderer {
         )
         this.internal.meshLeftWireframeHelper = new LineSegments(
             g_lines,
-            new LineBasicMaterial({color: 0x000000, linewidth: 9})
+            new LineBasicMaterial({color: 0x000000, linewidth: 1})
         )
 
         this.sceneLeft.add(this.internal.mesh3jsLeft)
