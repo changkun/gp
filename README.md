@@ -1,4 +1,4 @@
-# Geometry Processing ![](https://changkun.de/urlstat?mode=github&repo=mimuc/gp-ws2021)
+# Geometry Processing ![](https://changkun.de/urlstat?mode=github&repo=mimuc/gp)
 
 [![](./assets/teaser-medium.png)](./assets/teaser.png)
 
