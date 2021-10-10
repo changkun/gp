@@ -8,7 +8,7 @@ Geometry Processing @ LMU Munich Winter Semester 2021/22
 - Instructor: [Changkun Ou](https://www.medien.ifi.lmu.de/team/changkun.ou/)
 - Responsible Professor: [Prof. Dr. Butz](https://www.medien.ifi.lmu.de/team/andreas.butz/)
 - Date: Monday, 2 p.m. - 6 p.m. [c.t.](https://en.wikipedia.org/wiki/Academic_quarter_(class_timing)) (starts on Oct 18, 2021)
-- Location: Frauenlobstr. 7a, Raum 357 (subject to change)
+- Location: Frauenlobstr. 7a, Raum 357
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ Please install all of them in advance and take a glance to these tools beforehan
 
 ## Communication
 
-We use [GitHub](https://github.com/mimuc/gp-ws2122) to manage all course resources, submissions, project proposals, etc. and use the [discussions](https://github.com/mimuc/gp-ws2122/discussions) feature for online questions and discussions.
+We use [GitHub](https://github.com/mimuc/gp) to manage all course resources, submissions, project proposals, etc. and use the [discussions](https://github.com/mimuc/gp/discussions) feature for online questions and discussions.
 
 Please register yourself on GitHub if you do not have a GitHub account. You can use any distinguishable identifier for your username if you do not want your real name to appear on GitHub publicly.
 
@@ -48,13 +48,13 @@ During the rest of the semester, students should propose a project idea througho
 
 | Date | Topic | Homework |
 |:----:|:------|:-----------------|
-|           |Organization                   |-|-|
-|18.10.2021 |Introduction                   | TBA | TBA |
-|25.10.2021 |Discrete Differential Geometry | TBA | TBA |
-|01.11.2021 |Smoothing                      | TBA | TBA |
-|08.11.2021 |Parameterization               | TBA | TBA |
-|15.11.2021 |Remeshing                      | TBA | TBA |
-|22.11.2021 |Deformation                    | TBA | TBA |
+|           |Organization                                      | -   | -   |
+|18.10.2021 |Introduction                                      | TBA | TBA |
+|25.10.2021 |Discrete Differential Geometry                    | TBA | TBA |
+|01.11.2021 |Smoothing                                         | TBA | TBA |
+|08.11.2021 |Parameterization                                  | TBA | TBA |
+|15.11.2021 |Remeshing                                         | TBA | TBA |
+|22.11.2021 |Deformation                                       | TBA | TBA |
 |29.11.2021 |Data-driven Approach I: Geometric Deep Learning   | TBA | TBA |
 |06.12.2021 |Data-driven Approach II: Differentiable Rendering | TBA | TBA |
 |10.01.2022 |Project Idea-Pitch                                |Presentation| |
