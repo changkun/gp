@@ -37,7 +37,7 @@ should answer the following questions:
 ```
 The most difficult part was definitely the construction of the halfedge structure. (lines 353 - 533)
 With my first implementation my bunny looked (a bit) wrong. (At least I could tell it could be a bunny :-P)
-To debug my code I decided to use a simpple cube first, that I exportet from blender - 
+To debug my code I decided to use a simpple cube first, that I exportet from blender -
 because it's much easier to get an overview of what is happening and the processing is much faster.
 In the end the order of how the vertices where modified in vertices function of face was wrong.
 Furthermore the handling of the hole at the bottom of the bunny was a bit tricky.
@@ -52,7 +52,7 @@ we would have to adjust color mapping for getting the reference result I was sur
 ```
 As described above, the order of the vertices modified in vertices function of face class was wrong.
 It got much clearer to me that something was wrong with the vertices, when I tried my code with a simple cube object.
-And first I used vertex.idx for i in the callback function instead of a range from 0 - 2. 
+And first I used vertex.idx for i in the callback function instead of a range from 0 - 2.
 ```
 
 ## Reference Results
@@ -81,6 +81,6 @@ For this project, you should submit the following files (i.e. exclude the `asset
 └── webpack.config.js
 ```
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 30.11.2020 00:00:00.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp/pulls) before 30.11.2020 00:00:00.
 
-If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp-ws2021/issues/2).
+If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp/issues/2).

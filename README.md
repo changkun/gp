@@ -32,22 +32,22 @@ Along the semester, students should propose a project idea, and by the end of se
 
 ### Materials
 
-Organization slides: [Link](https://changkun.de/s/gp-0-org)
+Organization slides: [Link](./slides/gp-ws2021-00-org.pdf)
 
 | Date | Topic | Projects | Preview |
 |:----:|:------|:-----------------|:---:|
-| 02.11.2020 | [Introduction](https://changkun.de/s/gp-1-intro) | [Rendering A Mesh on CPU](./homeworks/1-intro) | <img src="./assets/proj1.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp-ws2021/1-intro/)</br>[Reference Solution](https://github.com/mimuc/gp-ws2021/tree/master/homeworks/solutions/changkun/1-intro) |
-| 16.11.2020 | [Discrete Differential Geometry](https://changkun.de/s/gp-2-ddg) | [Visualizing Curvatures](./homeworks/2-ddg) | <img src="./assets/proj2.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp-ws2021/2-ddg/)<br/>[Reference Solution](https://github.com/mimuc/gp-ws2021/tree/master/homeworks/solutions/changkun/2-ddg) |
-| 30.11.2020 | [Smoothing](https://changkun.de/s/gp-3-smooth) | [Laplacian Smoothing](./homeworks/3-smooth/) | <img src="./assets/proj3.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp-ws2021/3-smooth/)<br/>[Reference Solution](https://github.com/mimuc/gp-ws2021/tree/master/homeworks/solutions/changkun/3-smooth) |
-| 14.12.2020 | [Parameterization](https://changkun.de/s/gp-4-param) | [Tutte's Embedding](./homeworks/4-param/) | <img src="./assets/proj4.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp-ws2021/4-param/)<br/>[Reference Solution](https://github.com/mimuc/gp-ws2021/tree/master/homeworks/solutions/changkun/4-param) |
-| 11.01.2021 | [Remeshing](https://changkun.de/s/gp-5-remesh) | [Quadric Error Metric Simplification](./homeworks/5-remesh/) | <img src="./assets/proj5.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp-ws2021/5-remesh/)<br/>[Reference Solution](https://github.com/mimuc/gp-ws2021/tree/master/homeworks/solutions/changkun/5-remesh) |
-| 08.02.2021 | [Deformation](https://changkun.de/s/gp-6-deform)  | [Delta Mush](./homeworks/6-deform/README.md) | <img src="./assets/proj6.png" width="200"/> |
-| 08.02.2021 | [Data-driven Approach](https://changkun.de/s/gp-7-dda) | DGCNN for Normals | ![](./homeworks/) |
+| 02.11.2020 | [Introduction](./slides/gp-ws2021-01-intro.pdf) | [Rendering A Mesh on CPU](./homeworks/1-intro) | <img src="./assets/proj1.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp/ws2021/1-intro/)</br>[Reference Solution](https://github.com/mimuc/gp/tree/ws2021/homeworks/solutions/changkun/1-intro) |
+| 16.11.2020 | [Discrete Differential Geometry](./slides/gp-ws2021-02-ddg.pdf) | [Visualizing Curvatures](./homeworks/2-ddg) | <img src="./assets/proj2.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp/ws2021/2-ddg/)<br/>[Reference Solution](https://github.com/mimuc/gp/tree/ws2021/homeworks/solutions/changkun/2-ddg) |
+| 30.11.2020 | [Smoothing](./slides/gp-ws2021-03-smooth.pdf) | [Laplacian Smoothing](./homeworks/3-smooth/) | <img src="./assets/proj3.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp/ws2021/3-smooth/)<br/>[Reference Solution](https://github.com/mimuc/gp/tree/ws2021/homeworks/solutions/changkun/3-smooth) |
+| 14.12.2020 | [Parameterization](./slides/gp-ws2021-04-param.pdf) | [Tutte's Embedding](./homeworks/4-param/) | <img src="./assets/proj4.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp/ws2021/4-param/)<br/>[Reference Solution](https://github.com/mimuc/gp/tree/ws2021/homeworks/solutions/changkun/4-param) |
+| 11.01.2021 | [Remeshing](./slides/gp-ws2021-05-remesh.pdf) | [Quadric Error Metric Simplification](./homeworks/5-remesh/) | <img src="./assets/proj5.png" width="200"/> </br>[Live Demo](https://mimuc.github.io/gp/ws2021/5-remesh/)<br/>[Reference Solution](https://github.com/mimuc/gp/tree/ws2021/homeworks/solutions/changkun/5-remesh) |
+| 08.02.2021 | [Deformation](./slides/gp-ws2021-06-deform.pdf)  | [Delta Mush](./homeworks/6-deform/README.md) | <img src="./assets/proj6.png" width="200"/> |
+| 08.02.2021 | [Data-driven Approach](./slides/gp-ws2021-07-dda.pdf) | DGCNN for Normals | ![](./homeworks/) |
 | 22.02.2021 | Guest Talk: Industrial Modeling Practice | - |
 | 01.03.2021 | Final Project Presentation | See below |
 
-- The project [discussions](https://github.com/mimuc/gp-ws2021/discussions)
-- The submission [code reviews](https://github.com/mimuc/gp-ws2021/pulls?q=is%3Apr+is%3Aclosed+label%3Areviewed)
+- The project [discussions](https://github.com/mimuc/gp/discussions)
+- The submission [code reviews](https://github.com/mimuc/gp/pulls?q=is%3Apr+is%3Aclosed+label%3Areviewed)
 
 ### Solutions
 
@@ -58,8 +58,8 @@ Organization slides: [Link](https://changkun.de/s/gp-0-org)
 
 | Student | Title | Preview |
 |:--|:--|:--:|
-|[krasnor](https://github.com/krasnor)|Catmull-Clark Subdivision for A Halfedge-Mesh Structure| <img src="./assets/submit1.png" width="255"/> </br> [Video Intro](https://youtu.be/GRI_i9wvukw), [Live Demo](https://mimuc.github.io/gp-ws2021/final-krasnor/), [Code](./projects/krasnor/README.md)|
-|[torantie](https://github.com/torantie)|Quadrilateral Mesh Smoothing with Mean Value Weights| <img src="./assets/submit2.png" width="255"/> </br>[Video Intro](https://youtu.be/bVtcDBfH6eU), [Live Demo](https://mimuc.github.io/gp-ws2021/final-torantie/), [Code](./projects/torantie/README.md)|
+|[krasnor](https://github.com/krasnor)|Catmull-Clark Subdivision for A Halfedge-Mesh Structure| <img src="./assets/submit1.png" width="255"/> </br> [Video Intro](https://youtu.be/GRI_i9wvukw), [Live Demo](https://mimuc.github.io/gp/ws2021/final-krasnor/), [Code](./projects/krasnor/README.md)|
+|[torantie](https://github.com/torantie)|Quadrilateral Mesh Smoothing with Mean Value Weights| <img src="./assets/submit2.png" width="255"/> </br>[Video Intro](https://youtu.be/bVtcDBfH6eU), [Live Demo](https://mimuc.github.io/gp/ws2021/final-torantie/), [Code](./projects/torantie/README.md)|
 
 ## Grading
 

@@ -19,28 +19,28 @@
 3. Extend the rasterizer, implement an .obj file loader that loads the model into your mesh data structure instead using [THREE.OBJLoader](https://threejs.org/docs/#examples/en/loaders/OBJLoader)
 
    - Think about how would you turn the learned data structure to code.
-     
+
      - see `main.js` line 220-224 and `BasicOBJImporter.js`
    - Read blender's [developer documentation](https://wiki.blender.org/wiki/Source/Modeling/BMesh/Design), try to answer these questions:
      - What is the blender's internal mesh data structure?
 
-       Blenders internal mesh structure is called BMesh. The topology is stored in 4 main element structures 
+       Blenders internal mesh structure is called BMesh. The topology is stored in 4 main element structures
 
        - Faces: contains basic face information and a reference to its loop.
 
        - Loops - very similar to the Half-Edge approach, but can handle a polygon of any size
 
-       - Edges: additionally to the basic edge information there is the radial cycle (stored in the Loop). It stores all Loops an edge is connected to. 
+       - Edges: additionally to the basic edge information there is the radial cycle (stored in the Loop). It stores all Loops an edge is connected to.
 
          This solves the Non-Manifold condition, that the Half-Edge algorithm cannot represent.
 
        - Verts - additionally to the basic vertex data you can access an edge in the disk cycle of the vertex. The Disk Cycle stores all edges a vertex is connected to. This also solves one of the Non-Manifold condition that the Half-Edge algorithm cannot represent.
      - How it works and what are the differences compare to what we learned in the kick-off session?
-       
+
        - Very similar to the half edge approach, but can handle non manifold meshes
 
 4. Start think about your individual project
 
 ## Submission
 
-**This homework is not mandatory, but we highly recommend you to do it.** Feel free to send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) and submit your answers.
+**This homework is not mandatory, but we highly recommend you to do it.** Feel free to send a [pull request](https://github.com/mimuc/gp/pulls) and submit your answers.

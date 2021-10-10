@@ -18,6 +18,6 @@ Joe Mancewicz, Matt L. Derksen, Hans Rijpkema, and Cyrus A. Wilson. 2014. Delta 
 
 ## Submission
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls), no deadline.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp/pulls), no deadline.
 
-If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp-ws2021/discussions/6).
+If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp/discussions/6).

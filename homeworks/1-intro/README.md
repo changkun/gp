@@ -21,4 +21,4 @@
 
 ## Submission
 
-**This homework is not mandatory, but we highly recommend you to do it.** Feel free to send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) and submit your answers.
+**This homework is not mandatory, but we highly recommend you to do it.** Feel free to send a [pull request](https://github.com/mimuc/gp/pulls) and submit your answers.

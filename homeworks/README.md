@@ -42,11 +42,11 @@ homeworks
         └── 1-intro             <-- One of your submissions (this case is homework 1)
             ├── assets          <-- Folder for your assets
             │   └── figure.png
-            ├── README.md       <-- README that explains your submission 
+            ├── README.md       <-- README that explains your submission
             └── src             <-- Folder for all of your code
                 └── main.js
 ```
 
 ## Questions?
 
-[Start a new discussion thread](https://github.com/mimuc/gp-ws2021/discussions/new).
+[Start a new discussion thread](https://github.com/mimuc/gp/discussions/new).

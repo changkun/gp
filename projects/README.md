@@ -28,7 +28,7 @@ but remember to submit corresponding files before the deadline.
 
 It is required that your project is related to geometry processing topics, and topics outside this field may not be accepted (ask if you are not sure). For instance, replacing a human's face is a computer vision topic instead of geometry processing; Creating a model from scratch using 3D modeling software (e.g., Blender) is from 3D modeling instead of geometry processing.
 
-Your project must be a programming project. We would _not_ provide any code skeleton as your starting point. This also implies that there are no constraints on what you can use (e.g., programming language, framework, tools, etc.). Pick the one that you can use most comfortably and efficiently. 
+Your project must be a programming project. We would _not_ provide any code skeleton as your starting point. This also implies that there are no constraints on what you can use (e.g., programming language, framework, tools, etc.). Pick the one that you can use most comfortably and efficiently.
 
 However, your project proposal must be subject to the given template (all sections must be filled in) in Markdown format.
 
@@ -71,8 +71,8 @@ Note that:
   `.gitignore` is, please check [here](https://github.com/github/gitignore)
   and get a template.
 
-To submit your proposal and code, send [pull requests](https://github.com/mimuc/gp-ws2021/pulls) to the `master` branch.
+To submit your proposal and code, send [pull requests](https://github.com/mimuc/gp/pulls) to the `master` branch.
 
 ## Questions?
 
-[Submit an issue](https://github.com/mimuc/gp-ws2021/discussions/new).
+[Submit an issue](https://github.com/mimuc/gp/discussions/new).

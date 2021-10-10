@@ -6,7 +6,7 @@
     "start": "webpack-dev-server --host localhost --open",
     "build": "webpack --env.prod"
   },
-  "repository": "mimuc/gp-ws2021",
+  "repository": "mimuc/gp",
   "author": "Changkun Ou <hi@changkun.us>",
   "license": "GPL-3.0+",
   "dependencies": {

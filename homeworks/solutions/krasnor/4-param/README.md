@@ -38,7 +38,7 @@ Mostly because debugging the laplace matrix is difficult.
 Most time consuming was to implement the disk parameterization (~line 457) and finding the bug in the laplace matrix.
 First I always thought my border-uv-mapping is wrong.
 After just plotting my calculated border-uvs I was also able to check if my border-uv-mapping was correct.
-Then after a while I found out, that my matrix was incorrect (values in the millions -> nothing rendered). 
+Then after a while I found out, that my matrix was incorrect (values in the millions -> nothing rendered).
 
 Square parameterization (~line 469) took some time too, mostly because it was always a differently rotated (than in the reference pictures). My first attempt was based on a sine/cosine function for even spacing.
 Creating a version that is rotated in the same way as the reference took some time.
@@ -76,6 +76,6 @@ For this project, you should submit the following files (i.e. exclude the `asset
 └── webpack.config.js
 ```
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 11.01.2021 00:00:00.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp/pulls) before 11.01.2021 00:00:00.
 
-If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp-ws2021/discussions/4).
+If you have any questions regarding the skeleton, please comment on [the discussion thread](https://github.com/mimuc/gp/discussions/4).

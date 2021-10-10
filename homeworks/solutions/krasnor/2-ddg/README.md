@@ -35,7 +35,7 @@ should answer the following questions:
 1. Which code snippet (report in line numbers) in the `halfedge.js` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-Writing the code for parsing the halfedge mesh (mainly lines 452-633) took the most time as you have to write a lot of code before you can even run a first test. So I had to constatnly double check and rethink if everything I wrote makes sense. After finishing the first version I got a bunny with "holes" (see 2.). Debugging and finding the reason took some time, I created other simpler meshes such as a plane with a few vertices for debugging. 
+Writing the code for parsing the halfedge mesh (mainly lines 452-633) took the most time as you have to write a lot of code before you can even run a first test. So I had to constatnly double check and rethink if everything I wrote makes sense. After finishing the first version I got a bunny with "holes" (see 2.). Debugging and finding the reason took some time, I created other simpler meshes such as a plane with a few vertices for debugging.
 
 After the fix, implementing the methods for the normals(lines 236-282) was no problem.
 
@@ -78,6 +78,6 @@ For this project, you should submit the following files (i.e. exclude the `asset
 └── webpack.config.js
 ```
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 30.11.2020 00:00:00.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp/pulls) before 30.11.2020 00:00:00.
 
-If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp-ws2021/issues/2).
+If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp/issues/2).

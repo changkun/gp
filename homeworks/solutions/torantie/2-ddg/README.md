@@ -38,7 +38,7 @@ Creating the halfedge structure was the most time consuming (lines 233-385). Spe
 
 2. Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
-I gave edges, vertices and faces ids, starting from one, which resulted in the first coordinate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow. 
+I gave edges, vertices and faces ids, starting from one, which resulted in the first coordinate/edge going to the middle of the cube. Additionally, i used a cube with quad faces not rectangulars, which resulted in the image bellow.
 I fixed the first issue by counting from 0 and the second one by triangulating the faces of my test cube.
 
 
@@ -70,6 +70,6 @@ For this project, you should submit the following files (i.e. exclude the `asset
 └── webpack.config.js
 ```
 
-To submit your solution, please send a [pull request](https://github.com/mimuc/gp-ws2021/pulls) before 30.11.2020 00:00:00.
+To submit your solution, please send a [pull request](https://github.com/mimuc/gp/pulls) before 30.11.2020 00:00:00.
 
-If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp-ws2021/issues/2).
+If you have any questions regarding the skeleton, please comment on [this issue](https://github.com/mimuc/gp/issues/2).
