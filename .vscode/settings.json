@@ -1,0 +1,14 @@
+{
+	"[javascript]": {
+		"editor.tabSize": 2
+	},
+	"[typescript]": {
+		"editor.tabSize": 2
+	},
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true
+	},
+	"editor.fontFamily": "'Source Code Pro for Powerline', Menlo, Monaco, 'Courier New', monospace",
+	"editor.fontSize": 12,
+	"editor.rulers": [80, 100],
+}
