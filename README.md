@@ -46,7 +46,7 @@ During the rest of the semester, students should propose a project idea througho
 | Date      | Topic                                            | Slides |
 |:---------:|:-------------------------------------------------|:--|
 |           | Organization                                     | [Link](https://changkun.de/s/gp/ws21/0-org) |
-|18.10.2021 | Introduction                                     | TBA |
+|18.10.2021 | Introduction                                     | [Link](https://changkun.de/s/gp/ws21/1-intro) |
 |25.10.2021 | Discrete Differential Geometry                   | TBA |
 |01.11.2021 | Smoothing                                        | TBA |
 |08.11.2021 | Parameterization                                 | TBA |
