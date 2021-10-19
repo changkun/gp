@@ -88,14 +88,14 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
   buildMesh(indices: number[], positions: Vector[]) {
-    // create all vertecies at once
+    // create all vertices at once
     for(let i = 0; i < positions.length; i++) {
       const vert = new Vertex(positions[i]);
       vert.idx = this.verts.length;
       this.verts.push(vert);
     }
 
-    // containes all halfedges that dont belong to a face yet
+    // contains all halfedges that dont belong to a face yet
     const unusedHalfedgeIDs: number[] = [];
 
     const getOrCreateHalfedge = (startVert: Vertex, endVert: Vertex) => {
@@ -109,12 +109,12 @@ export class HalfedgeMesh {
             if (unusedId > -1) {
               unusedHalfedgeIDs.splice(unusedId,1);
             } else {
-              console.log("WARNING DIDNT FIND UNUSEDHALFEDGE TO DELETE!");
+              console.log("WARNING DIDN'T FIND UNUSED HALFEDGE TO DELETE!");
             }
             return this.halfedges[halfedgeID];
           }
         } else {
-          console.log("WARNING HALFEDGE DIDNT HAVE A TWIN OR TWIN DIDNT HAVE A VERT");
+          console.log("WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT");
         }
       }
       // create new full edge with opposite twins that will be unused for now
