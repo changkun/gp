@@ -8,12 +8,13 @@
 - Think about how to turn the learned data structure to code.
 - Read blender's [developer documentation](https://wiki.blender.org/wiki/Source/Modeling/BMesh/Design), try to answer these questions:
 - What is the blender's internal mesh data structure?
-- How it works and what are the differences compare to Halfedge-based mesh strcture?
+- How it works and what are the differences compare to Halfedge-based mesh structure?
 
 Write the answers here:
 
 ```
-Answers go here...
+1. Blenders internal mesh data structure is a geometry representation that simplifies processing non-manifold meshes through its data structure.
+2. BMesh stores the element structures Faces, Loops, Edges and Verts. Vertices, Edges and Faces each have individual loop types, which store information about the connectivity between all element structures. The comprehensive connectivity information embedded in the BMesh data structure enables clear representations of any kind of non-manifold condition and therefore simplifies processing of non-manifold geometry. A halfedge-based mesh however cant represent such conditions.
 ```
 
 **Task 2. Write a reproducer of teaser image in [teaser.py](./teaser.py).**
