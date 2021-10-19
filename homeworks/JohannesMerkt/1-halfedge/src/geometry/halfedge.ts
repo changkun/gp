@@ -100,22 +100,27 @@ export class HalfedgeMesh {
 
     const getOrCreateHalfedge = (startVert: Vertex, endVert: Vertex) => {
       // first search for existing edge
-      const halfedgeID = unusedHalfedgeIDs.find((id) => this.halfedges[id].vert?.idx === startVert.idx);
-      if(halfedgeID) {
-        const twin = this.halfedges[halfedgeID].twin;
-        if (twin && twin.vert) {
-          if (twin.vert.idx === endVert.idx) {
-            const unusedId = unusedHalfedgeIDs.findIndex((id) => id === halfedgeID);
-            if (unusedId > -1) {
-              unusedHalfedgeIDs.splice(unusedId,1);
-            } else {
-              console.log("WARNING DIDN'T FIND UNUSED HALFEDGE TO DELETE!");
+      const halfedgeID = unusedHalfedgeIDs.find((id) => {
+        if (this.halfedges[id].vert?.idx === startVert.idx) {
+          const twin = this.halfedges[id].twin;
+          if (twin && twin.vert) {
+            if (twin.vert.idx === endVert.idx) {
+              return true;
             }
-            return this.halfedges[halfedgeID];
+          } else {
+            console.log("WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT");
           }
-        } else {
-          console.log("WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT");
         }
+        return false;
+      });
+      if(halfedgeID) {
+        const unusedId = unusedHalfedgeIDs.findIndex((id) => id === halfedgeID);
+        if (unusedId > -1) {
+          unusedHalfedgeIDs.splice(unusedId,1);
+        } else {
+          console.log("WARNING DIDN'T FIND UNUSED HALFEDGE TO DELETE!");
+        }
+        return this.halfedges[halfedgeID];
       }
       // create new full edge with opposite twins that will be unused for now
       const edge = new Edge();
