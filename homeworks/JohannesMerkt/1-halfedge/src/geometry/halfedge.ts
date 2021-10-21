@@ -89,7 +89,7 @@ export class HalfedgeMesh {
    */
   buildMesh(indices: number[], positions: Vector[]) {
     // create all vertices at once
-    for(let i = 0; i < positions.length; i++) {
+    for (let i = 0; i < positions.length; i++) {
       const vert = new Vertex(positions[i]);
       vert.idx = this.verts.length;
       this.verts.push(vert);
@@ -100,23 +100,25 @@ export class HalfedgeMesh {
 
     const getOrCreateHalfedge = (startVert: Vertex, endVert: Vertex) => {
       // first search for existing edge
-      const halfedgeID = unusedHalfedgeIDs.find((id) => {
-        if (this.halfedges[id].vert?.idx === startVert.idx) {
+      const halfedgeID = unusedHalfedgeIDs.find(id => {
+        if (this.halfedges[id].vert?.idx === endVert.idx) {
           const twin = this.halfedges[id].twin;
           if (twin && twin.vert) {
-            if (twin.vert.idx === endVert.idx) {
+            if (twin.vert.idx === startVert.idx) {
               return true;
             }
           } else {
-            console.log("WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT");
+            console.log(
+              "WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT"
+            );
           }
         }
         return false;
       });
-      if(halfedgeID) {
-        const unusedId = unusedHalfedgeIDs.findIndex((id) => id === halfedgeID);
+      if (halfedgeID) {
+        const unusedId = unusedHalfedgeIDs.findIndex(id => id === halfedgeID);
         if (unusedId > -1) {
-          unusedHalfedgeIDs.splice(unusedId,1);
+          unusedHalfedgeIDs.splice(unusedId, 1);
         } else {
           console.log("WARNING DIDN'T FIND UNUSED HALFEDGE TO DELETE!");
         }
@@ -128,28 +130,28 @@ export class HalfedgeMesh {
       this.edges.push(edge);
       const newHalfedge = new Halfedge();
       newHalfedge.idx = this.halfedges.length;
-      newHalfedge.vert = startVert;
+      newHalfedge.vert = endVert;
       newHalfedge.edge = edge;
       this.halfedges.push(newHalfedge);
       const twinHalfedge = new Halfedge();
       twinHalfedge.idx = this.halfedges.length;
-      twinHalfedge.vert = endVert;
+      twinHalfedge.vert = startVert;
       twinHalfedge.edge = edge;
       this.halfedges.push(twinHalfedge);
 
       newHalfedge.twin = twinHalfedge;
       twinHalfedge.twin = newHalfedge;
       edge.halfedge = newHalfedge;
-      
+
       unusedHalfedgeIDs.push(twinHalfedge.idx as number);
       return newHalfedge;
-    }
-    
+    };
+
     const faceCount = indices.length / 3;
-    for(let i = 0; i < faceCount; i++) {
+    for (let i = 0; i < faceCount; i++) {
       const faceVerts: Vertex[] = [];
-      for(let fv = 0; fv < 3; fv++) {
-        faceVerts.push(this.verts[indices[i*3 + fv]]);
+      for (let fv = 0; fv < 3; fv++) {
+        faceVerts.push(this.verts[indices[i * 3 + fv]]);
       }
       const halfedge1 = getOrCreateHalfedge(faceVerts[0], faceVerts[1]);
       const halfedge2 = getOrCreateHalfedge(faceVerts[1], faceVerts[2]);
@@ -173,7 +175,7 @@ export class HalfedgeMesh {
     }
 
     // mark all unusedHalfedges as boundary edges
-    for(let i = 0; i < unusedHalfedgeIDs.length; i++) {
+    for (let i = 0; i < unusedHalfedgeIDs.length; i++) {
       this.halfedges[unusedHalfedgeIDs[i]].onBoundary = true;
     }
   }
