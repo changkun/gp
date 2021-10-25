@@ -33,7 +33,7 @@ Blenders internal mesh data structure is a geometry representation that simplifi
 Write initial ideas here:
 
 ```
-Answers go here...
+Write a little engine that allows the user to write a shader with math functions to describe a geometry. Similar to how openGL shaders can be used to draw an image.
 ```
 
 ## Submission Instruction

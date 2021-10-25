@@ -101,10 +101,10 @@ export class HalfedgeMesh {
     const getOrCreateHalfedge = (startVert: Vertex, endVert: Vertex) => {
       // first search for existing edge
       const halfedgeID = unusedHalfedgeIDs.find(id => {
-        if (this.halfedges[id].vert?.idx === endVert.idx) {
+        if (this.halfedges[id].vert?.idx === startVert.idx) {
           const twin = this.halfedges[id].twin;
           if (twin && twin.vert) {
-            if (twin.vert.idx === startVert.idx) {
+            if (twin.vert.idx === endVert.idx) {
               return true;
             }
           } else {
@@ -130,12 +130,12 @@ export class HalfedgeMesh {
       this.edges.push(edge);
       const newHalfedge = new Halfedge();
       newHalfedge.idx = this.halfedges.length;
-      newHalfedge.vert = endVert;
+      newHalfedge.vert = startVert;
       newHalfedge.edge = edge;
       this.halfedges.push(newHalfedge);
       const twinHalfedge = new Halfedge();
       twinHalfedge.idx = this.halfedges.length;
-      twinHalfedge.vert = startVert;
+      twinHalfedge.vert = endVert;
       twinHalfedge.edge = edge;
       this.halfedges.push(twinHalfedge);
 
