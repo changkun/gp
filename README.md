@@ -48,15 +48,15 @@ During the rest of the semester, students should propose a project idea througho
 |           | Organization                                     | [Link](https://changkun.de/s/gp/ws21/0-org) |
 |18.10.2021 | Introduction                                     | [Link](https://changkun.de/s/gp/ws21/1-intro) |
 |25.10.2021 | Discrete Differential Geometry                   | [Link](https://changkun.de/s/gp/ws21/2-ddg) |
-|01.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
-|08.11.2021 | Parameterization                                 | TBA |
-|15.11.2021 | Remeshing                                        | TBA |
-|22.11.2021 | Deformation                                      | TBA |
-|29.11.2021 | Data-driven Approach I: Geometric Deep Learning  | TBA |
-|06.12.2021 | Data-driven Approach II: Differentiable Rendering| TBA |
-|10.01.2022 | Project Idea-Pitch                               | Presentation |
-|24.01.2022 | Project Intermediate                             | Presentation |
-|07.02.2022 | Project Final                                    | Presentation |
+|08.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
+|15.11.2021 | Parameterization                                 | TBA |
+|22.11.2021 | Remeshing                                        | TBA |
+|29.11.2021 | Deformation                                      | TBA |
+|06.12.2021 | Data-driven Approach I: Geometric Deep Learning  | TBA |
+|10.01.2021 | Data-driven Approach II: Differentiable Rendering| TBA |
+|27.01.2022 | Project Idea-Pitch                               | Presentation |
+|07.02.2022 | Project Intermediate                             | Presentation |
+|14.02.2022 | Project Final                                    | Presentation |
 
 ## Grading
 
