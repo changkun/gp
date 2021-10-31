@@ -93,7 +93,7 @@ export class HalfedgeMesh {
     // We can assume the input mesh is a manifold mesh.
     
     
-    indices = indices.slice(0, 6);
+    //indices = indices.slice(0, 300);
     console.log(indices)
     console.log(positions)
 
@@ -108,84 +108,84 @@ export class HalfedgeMesh {
     console.log(this.faces);
     console.log(this.halfedges);
 
-    indices.forEach((ele, index) => {
-      
-      
 
-      //if(index < indices.length-1){
+    // for each face
+    for(let index = 2; index < indices.length; index+=3) {
+      const face = new Face();
+      face.idx = Math.floor(index/3);
+      this.faces.push(face);
+
+      const halfedges: Halfedge[] = [];
+      const twins: Halfedge[] = [];
+
+      for(let ec = 0; ec < 3; ec++) {
         const edge = new Edge();
-        edge.idx = Math.floor(index/2);
+        edge.idx = Math.floor(index-2+ec);
         this.edges.push(edge);
+
         const halfedge = new Halfedge();
         halfedge.edge = edge;
-        halfedge.vert = this.verts[ele]; // Originating vertex
-        if(!this.verts[ele].halfedge) this.verts[ele].halfedge = halfedge;
-        
-        const prev = this.halfedges[this.halfedges.length-2];
-        if(prev) {
-          prev.next = halfedge;
-          halfedge.prev = prev;
+        halfedge.vert = this.verts[indices[index-2+ec]]; 
+        let nextVert: Number;
+        if(ec < 2) nextVert = this.verts[indices[index-1+ec]].idx; 
+        else nextVert = this.verts[indices[index-2]].idx; 
+
+        // Search if halfedge already exists
+        let exists = this.halfedges.find( aV => aV.twin?.vert?.idx == halfedge.vert?.idx && aV.twin?.next?.vert?.idx == nextVert  );
+        if(exists) {
+          console.log("Duplicate found!")
+          console.log(exists)
+          console.log(halfedge)
+          exists.onBoundary = false;
+          halfedges.push(exists);
+          if(exists.twin) {
+            twins.push(exists.twin);
+            exists.twin.onBoundary = false;
+          }
+        } 
+        else {
+          const twin = new Halfedge();
+          twin.edge = edge;
+          
+          halfedge.twin = twin;
+          twin.twin = halfedge;
+          twin.onBoundary = true;
+          halfedge.onBoundary = true;
+          halfedges.push(halfedge);
+          twins.push(twin);
+
+          if(ec > 0) {
+            halfedge.prev = halfedges[ec-1];
+            halfedges[ec-1].next = halfedge;
+            //twin.next = twins[ec-1];
+            //twins[ec-1].prev = twin;
+          }
+          if(ec < 2) {
+            //twin.prev = twins[ec+1];
+            twin.vert = this.verts[indices[index-1+ec]];
+          }
+          
+          if(ec == 2){
+            halfedge.next = halfedges[0];
+            halfedges[0].prev = halfedge;
+
+            //twin.prev = twins[0];
+            //twins[0].next = twin;
+            //twin.vert = this.verts[indices[index-2]];
+          }
+
+          this.halfedges.push(halfedge);
+          this.halfedges.push(twin);
+          
+          halfedge.vert.halfedge = halfedge;
+          halfedge.face = face;
         }
-        this.halfedges.push(halfedge);
         edge.halfedge = halfedge;
-
-        // Create Twin
-        const twin = new Halfedge();
-        twin.edge = edge;
-        twin.vert = this.verts[indices[index+1]];
-        if(!this.verts[indices[index]].halfedge) this.verts[indices[index]].halfedge = twin;
-        if(prev) {
-          twin.next = prev.twin;
-          if(prev.twin) prev.twin.prev = twin;
-        }
-        halfedge.twin = twin;
-        twin.twin = halfedge;
-        twin.onBoundary = true; // Assume this for now
-        this.halfedges.push(twin);
-      //}
-      
-
-      
-      if(index !== 0 && (index+1)%3 === 0) {
-        const face = new Face();
-        face.idx = Math.floor(index/3);
-        this.faces.push(face);
-
-        for(let k = this.halfedges.length-6; k < this.halfedges.length-1; k++) {
-          this.halfedges[k].face = face;
-        }
-
-        face.halfedge = this.halfedges[this.halfedges.length-6];
-        this.halfedges[this.halfedges.length-2].next = this.halfedges[this.halfedges.length-6];
-        this.halfedges[this.halfedges.length-6].prev = this.halfedges[this.halfedges.length-2];
-
-        //TODO: Twin edges
-        this.halfedges[this.halfedges.length-1].prev = this.halfedges[this.halfedges.length-5];
-        this.halfedges[this.halfedges.length-5].next = this.halfedges[this.halfedges.length-1];
+        if(ec == 0) face.halfedge = halfedge;
+        
       }
+    }
 
-    });
-
-    // Find duplicates
-    this.halfedges = this.halfedges.reduce( (a: Halfedge[] ,v) => {
-      let preExiststingVal = a.find( aV => aV.vert == v.vert && aV.edge == v.edge  );
-      if( preExiststingVal ){
-        console.log("PRE EXIST")
-        preExiststingVal.onBoundary = false;
-      } else {
-        a.push(v);
-      }
-      return a;
-    } ,[]);
-
-    /* const halfedges: Halfedge[] = [new Halfedge(), new Halfedge(), new Halfedge()];
-        halfedges.forEach(h => h.face = face);
-
-        halfedges.forEach(h => {
-          // TODO: vert is starting vertex
-          h.edge = this.edges
-        });
-        halfedges.forEach(h => this.halfedges.push(h)); // TODO: Sort out duplicates */
     let index = 0;
     this.halfedges.forEach(h => {
       h.idx = index++;
