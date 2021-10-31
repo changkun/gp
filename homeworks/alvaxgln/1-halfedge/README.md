@@ -14,6 +14,7 @@ Write the answers here:
 
 ```
 Blenders internal data structure is the BMesh Structure.
+
 The basic entities of the BMesh structure are:
 -Vertices
 -Edges
@@ -22,14 +23,19 @@ The basic entities of the BMesh structure are:
 
 Connectivity is stored using three Connectivity Cycles:
 
-All edges connected to a vertex make up the "disk cycle"
-The disk Cycle is maintained by using a data stored inside the edges; Each edge has two entries (one for each vertex of that edge)
+All edges connected to a vertex make up the "disk cycle";
+The "disk cycle" is maintained by using a data stored inside the edges;
+Each edge has two entries (one for each vertex of that edge)
 
-The "loop Cycle" allows navigation through edges of a Face (it is accessed through the Loop objects; in addition to the associated vertex and edge, each Loop has a reference to the next loop within the face)
+The "loop cycle" allows navigation through edges of a Face (it is accessed through the Loop objects;
+In addition to the associated vertex and edge, each Loop has a reference to the next loop within the face)
 
-The "radial cycle" contains all Faces connected to an edge; Each edge has a reference to one loop associated with the edge; each loop also has a reference to the next loop in the radial cycle stored in "radial_next"
+The "radial cycle" contains all Faces connected to an edge;
+Each edge has a reference to one loop associated with the edge;
+each loop also has a reference to the next loop in the radial cycle stored in "radial_next"
 
-Unlike the Halfedge, the BMesh data structure stores disk and Radial Cycle (and that independenty from face data), which means it can also be used to represent non Manifold meshes.
+Unlike Halfedge, the BMesh data structure also stores "disk cycle" and "radial cycle" (and that independenty from face data).
+That means it can also be used to represent non Manifold meshes.
 
 ```
 
