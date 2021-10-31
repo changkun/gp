@@ -117,34 +117,6 @@ export class HalfedgeMesh {
     console.log("Source:N vertices"+this.verts.length);
     console.log("Source:N indices"+indices.length);
     console.log("N faces:"+this.faces.length);
-
-  
-    /*for(let i=0;i<indices.length-1;i++){
-      var index1=indices[i];
-      var index2=indices[i+1];
-
-      for(let j=i+1;j<indices.length-1;j++){
-        if(indices[j]==index1 && indices[j+1]==index2){
-          console.log("Found"+index1+":"+index2+"-"+i+":"+j);
-        }
-      }
-      
-    }
-    console.log("Done Testing");
-
-    console.log(indices[3717]+":"+indices[3717+1]+" | "+indices[3740]+":"+indices[3740+1]);*/
-    /*for(let i=0;i<this.faces.length;i++){
-      var face=this.faces[i];
-
-      console.log("Length"+face.vertices.length);
-
-      const verts: Vertex[] = [];
-      face.vertices(v => {
-        verts.push(v);
-      });
-      console.log("Length2:"+verts.length);
-    }*/
-
   }
 
   // search for a halfedge that goes from idx1 to idx2
