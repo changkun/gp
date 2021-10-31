@@ -16,7 +16,7 @@ Write the answers here:
 Answers go here...
 ```
 
-**Task 2. Write a reproducer of teaser image in [teaser.py](./teaser.py).**
+**Task 2. (optional) Write a reproducer of teaser image in [teaser.py](./teaser.py).**
 
 - Tutorial: [The official Blender 2.8 Tutorial](https://www.youtube.com/playlist?list=PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6), [Blender Guru's Beginner Tutorial Series](https://www.youtube.com/playlist?list=PLjEaoINr3zgEq0u2MzVgAaHEBt--xLB6U), etc.
 - Checkout Blender's [Python API documentation](https://docs.blender.org/api/current/index.html).
