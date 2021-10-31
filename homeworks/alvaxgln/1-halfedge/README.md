@@ -33,7 +33,7 @@ Answers go here...
 Write initial ideas here:
 
 ```
-Answers go here...
+I have not had that many ideas yet, one thing i thought of was writing a script that creates 3D geometry from other kinds of data, like e.g. measurements.
 ```
 
 ## Submission Instruction
