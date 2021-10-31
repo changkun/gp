@@ -97,14 +97,14 @@ export class HalfedgeMesh {
 
 
 
-    indices = indices.slice(0, 60);
+    //indices = indices.slice(0, 120);
     console.log(indices)
     console.log(positions)
 
     positions.forEach((p, i) => {
       const vert = new Vertex(p);
       vert.idx = i;
-      this.verts.push(vert); //TODO: halfedge?
+      this.verts.push(vert);
     });
 
     console.log(this.verts);
@@ -113,103 +113,67 @@ export class HalfedgeMesh {
     console.log(this.halfedges);
 
 
-    // for each face
     for(let index = 2; index < indices.length; index+=3) {
       const face = new Face();
       face.idx = Math.floor(index/3);
       this.faces.push(face);
 
       const halfedges: Halfedge[] = [];
-      const twins: Halfedge[] = [];
 
-      for(let ec = 0; ec < 3; ec++) {
-        const edge = new Edge();
-        edge.idx = Math.floor(index-2+ec);
-        this.edges.push(edge);
+      for(let edge_count = 0; edge_count < 3; edge_count++) {
+        let edge: Edge;
 
-        let twin: Halfedge;
         let halfedge: Halfedge;
 
-        let nextVert: Number;
-        if(ec < 2) nextVert = this.verts[indices[index-1+ec]].idx; 
-        else nextVert = this.verts[indices[index-2]].idx; 
+        let vertex_from = this.verts[indices[index - 2 + edge_count]];
+        let vertex_to = this.verts[indices[index - 2 + ((edge_count+1) % 3)]];
 
-        // Search if halfedge already exists
-        let exists = this.halfedges.find( aV => aV.vert?.idx === this.verts[indices[index-2+ec]].idx && aV.next?.vert?.idx === nextVert);
-        if(exists) {
-          duplicates++;
+        halfedge = new Halfedge();
+        halfedge.onBoundary = true;
 
-          halfedge = exists;
+        // Twin halfedge exists
+        let existing_twin = this.halfedges.find( aV => aV.vert?.idx === vertex_to.idx && aV.next?.vert?.idx === vertex_from.idx);
+        if(existing_twin) {
+          duplicates++ // DEBUG
 
-          if(exists.twin) twin = exists.twin;
-          else {
-            console.log("ERROR: NO TWIN");
-            twin = new Halfedge();
-          }
-          //console.log("Duplicate found!")
-          //console.log(exists)
-          //console.log(halfedge)
-          exists.onBoundary = false;
           halfedge.onBoundary = false;
-          halfedges.push(halfedge);
-          twins.push(twin);
-          //twin = exists;
-          
-          
-        } 
+          existing_twin.onBoundary = false;
+
+          halfedge.twin = existing_twin;
+          existing_twin.twin = halfedge;
+
+          if(halfedge.twin.edge) edge = halfedge.twin.edge;
+          else {
+            console.log("ERROR: NO EDGE ON TWIN");
+            edge = new Edge();
+          }
+        }
         else {
-          halfedge = new Halfedge();
-          twin = new Halfedge();
-          twin.edge = edge;
-          twin.onBoundary = true;
-          halfedge.onBoundary = true;
-
-          halfedge.vert = this.verts[indices[index-2+ec]]; 
-          twin.vert = this.verts[indices[ index - 2 + ((ec+1) % 3) ]];
-          /* if(ec < 2) {
-            twin.vert = this.verts[indices[index-1+ec]];
-          } */
-
-          halfedge.twin = twin;
-          twin.twin = halfedge;
-
-          halfedges.push(halfedge);
-          twins.push(twin);
-
-          if(ec > 0) {
-            twin.next = twins[ec-1];
-            twins[ec-1].prev = twin;
-          }
-          
-          if(ec == 2){
-            twin.prev = twins[0];
-            twins[0].next = twin;
-            //twin.vert = this.verts[indices[index-2]];
-          }
-
-          this.halfedges.push(halfedge);
-          this.halfedges.push(twin);
-
-          //twin.vert.halfedge = halfedge;
+          edge = new Edge();
+          edge.idx = index-2+edge_count;
+          this.edges.push(edge);
         }
 
-
-        if(ec > 0) {
-          halfedge.prev = halfedges[ec-1];
-          halfedges[ec-1].next = halfedge;
+        if(edge_count > 0) {
+          halfedge.prev = halfedges[edge_count-1];
+          halfedges[edge_count-1].next = halfedge;
         }
 
-        if(ec == 2){
+        if(edge_count === 2) {
           halfedge.next = halfedges[0];
           halfedges[0].prev = halfedge;
-          this.verts[indices[ index - 2 + ((ec+1) % 3)]].halfedge = halfedge;
+          vertex_to.halfedge = halfedge; // Last vertex points to last halfedge
         }
 
-        halfedge.face = face;
+        edge.halfedge = halfedge; // TODO: Is this correct?
         halfedge.edge = edge;
-        edge.halfedge = halfedge;
-        if(ec == 0) face.halfedge = halfedge;
-        
+
+        if(edge_count === 0) face.halfedge = halfedge; // Face oints to first halfedge
+        halfedge.face = face;
+        halfedge.vert = vertex_from;
+
+        halfedges.push(halfedge);
+        this.halfedges.push(halfedge);
       }
     }
     
@@ -218,11 +182,12 @@ export class HalfedgeMesh {
     this.halfedges.forEach(h => {
       h.idx = index++;
     });
-    
+  
 
-
-
-    if(this.edges.length*2-duplicates > this.halfedges.length) console.log("ERROR: TOO MANY HALFEDGES")
+    let should_be = this.edges.length+duplicates;
+    let is = this.halfedges.length
+    if(should_be !== is) console.log("ERROR: WRONG NUMBER OF HALFEDGES (should be: " + should_be + " , is: " + is + " )");
+    if(duplicates === 0) console.log("WEIRD: NO DUPLICATES")
 
     this.halfedges.forEach(he => {
       if(he.next?.next?.next != he) {
