@@ -165,6 +165,7 @@ export class HalfedgeMesh {
         this.halfedges.push(halfedge);
       }
     }
+    
 
     let index = 0;
     this.halfedges.forEach(h => {
