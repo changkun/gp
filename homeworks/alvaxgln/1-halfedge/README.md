@@ -24,7 +24,7 @@ The basic entities of the BMesh structure are:
 Connectivity is stored using three Connectivity Cycles:
 
 All edges connected to a vertex make up the "disk cycle";
-The "disk cycle" is maintained by using a data stored inside the edges;
+The "disk cycle" is maintained by using links stored inside the edges;
 Each edge has two entries (one for each vertex of that edge)
 
 The "loop cycle" allows navigation through edges of a Face (it is accessed through the Loop objects;
