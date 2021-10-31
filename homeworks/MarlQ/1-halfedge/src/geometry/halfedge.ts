@@ -92,8 +92,12 @@ export class HalfedgeMesh {
     //
     // We can assume the input mesh is a manifold mesh.
     
+    let duplicates = 0;
     
-    //indices = indices.slice(0, 300);
+
+
+
+    indices = indices.slice(0, 60);
     console.log(indices)
     console.log(positions)
 
@@ -123,74 +127,122 @@ export class HalfedgeMesh {
         edge.idx = Math.floor(index-2+ec);
         this.edges.push(edge);
 
-        const halfedge = new Halfedge();
-        halfedge.edge = edge;
-        halfedge.vert = this.verts[indices[index-2+ec]]; 
+        let twin: Halfedge;
+        let halfedge: Halfedge;
+
         let nextVert: Number;
         if(ec < 2) nextVert = this.verts[indices[index-1+ec]].idx; 
         else nextVert = this.verts[indices[index-2]].idx; 
 
         // Search if halfedge already exists
-        let exists = this.halfedges.find( aV => aV.twin?.vert?.idx == halfedge.vert?.idx && aV.twin?.next?.vert?.idx == nextVert  );
+        let exists = this.halfedges.find( aV => aV.vert?.idx === this.verts[indices[index-2+ec]].idx && aV.next?.vert?.idx === nextVert);
         if(exists) {
-          console.log("Duplicate found!")
-          console.log(exists)
-          console.log(halfedge)
-          exists.onBoundary = false;
-          halfedges.push(exists);
-          if(exists.twin) {
-            twins.push(exists.twin);
-            exists.twin.onBoundary = false;
+          duplicates++;
+
+          halfedge = exists;
+
+          if(exists.twin) twin = exists.twin;
+          else {
+            console.log("ERROR: NO TWIN");
+            twin = new Halfedge();
           }
+          //console.log("Duplicate found!")
+          //console.log(exists)
+          //console.log(halfedge)
+          exists.onBoundary = false;
+          halfedge.onBoundary = false;
+          halfedges.push(halfedge);
+          twins.push(twin);
+          //twin = exists;
+          
+          
         } 
         else {
-          const twin = new Halfedge();
+          halfedge = new Halfedge();
+          twin = new Halfedge();
           twin.edge = edge;
-          
-          halfedge.twin = twin;
-          twin.twin = halfedge;
           twin.onBoundary = true;
           halfedge.onBoundary = true;
+
+          halfedge.vert = this.verts[indices[index-2+ec]]; 
+          twin.vert = this.verts[indices[ index - 2 + ((ec+1) % 3) ]];
+          /* if(ec < 2) {
+            twin.vert = this.verts[indices[index-1+ec]];
+          } */
+
+          halfedge.twin = twin;
+          twin.twin = halfedge;
+
           halfedges.push(halfedge);
           twins.push(twin);
 
           if(ec > 0) {
-            halfedge.prev = halfedges[ec-1];
-            halfedges[ec-1].next = halfedge;
-            //twin.next = twins[ec-1];
-            //twins[ec-1].prev = twin;
-          }
-          if(ec < 2) {
-            //twin.prev = twins[ec+1];
-            twin.vert = this.verts[indices[index-1+ec]];
+            twin.next = twins[ec-1];
+            twins[ec-1].prev = twin;
           }
           
           if(ec == 2){
-            halfedge.next = halfedges[0];
-            halfedges[0].prev = halfedge;
-
-            //twin.prev = twins[0];
-            //twins[0].next = twin;
+            twin.prev = twins[0];
+            twins[0].next = twin;
             //twin.vert = this.verts[indices[index-2]];
           }
 
           this.halfedges.push(halfedge);
           this.halfedges.push(twin);
-          
-          halfedge.vert.halfedge = halfedge;
-          halfedge.face = face;
+
+          //twin.vert.halfedge = halfedge;
         }
+
+
+        if(ec > 0) {
+          halfedge.prev = halfedges[ec-1];
+          halfedges[ec-1].next = halfedge;
+        }
+
+        if(ec == 2){
+          halfedge.next = halfedges[0];
+          halfedges[0].prev = halfedge;
+          this.verts[indices[ index - 2 + ((ec+1) % 3)]].halfedge = halfedge;
+        }
+
+        halfedge.face = face;
+        halfedge.edge = edge;
         edge.halfedge = halfedge;
         if(ec == 0) face.halfedge = halfedge;
         
       }
     }
+    
 
     let index = 0;
     this.halfedges.forEach(h => {
       h.idx = index++;
     });
     
+
+
+
+    if(this.edges.length*2-duplicates > this.halfedges.length) console.log("ERROR: TOO MANY HALFEDGES")
+
+    this.halfedges.forEach(he => {
+      if(he.next?.next?.next != he) {
+        console.log("ERROR: NON CIRCULAR");
+        console.log(he);
+        console.log(he.next?.next?.next);
+      }
+      if(he.onBoundary && he.twin?.face && he.face) {
+        console.log("ERROR: SHOULD NOT BE ON BOUNDARY");
+        console.log(he);
+      }
+      if(!he.onBoundary && (!he.twin?.face || !he.face)) {
+        console.log("ERROR: SHOULD BE ON BOUNDARY");
+        console.log(he);
+      }
+      if(he.vert?.halfedge == he) {
+        console.log("ERROR: VERT POINTS BACK");
+        console.log(he);
+      }
+    });
   }
 
   /**
