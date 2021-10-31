@@ -147,23 +147,6 @@ export class HalfedgeMesh {
 
   }
 
-  // Search for a Halfedge that goes from idx1 to idx2 or idx2 to idx1
-  // e.g a halfedge that goes from Vertex1 to Vertex2 or Vertex2 to Vertex1
-  // where Vertex1 has the idx idx1 and Vertex2 has the index idx2
-  /*findHalfedge(idx1:number,idx2:number):Halfedge | null{
-    for(let i=0;i<this.halfedges.length;i++){
-      const halfedge=this.halfedges[i];
-      const vert1=halfedge.prev?.vert;
-      const vert2=halfedge.vert;
-      if((vert1?.idx==idx1 && vert2?.idx==idx2) || 
-        (vert1?.idx==idx2 && vert2?.idx==idx1)){
-        //console.log("Found a matching halfedge");
-        return halfedge;
-      }
-    }
-    return null;
-  }*/
-
   // search for a halfedge that goes from idx1 to idx2
   // returns the halfedge if found, null otherwise
   findHalfedge(idx1:number,idx2:number):Halfedge | null{
@@ -281,66 +264,6 @@ export class HalfedgeMesh {
     //console.log("Hmm");
   }
 
-
-
-  appendSingleTriangle(pos1:Vector,pos2:Vector,pos3:Vector){
-    var halfedge1=new Halfedge();
-    var halfedge2=new Halfedge();
-    var halfedge3=new Halfedge();
-
-    var vertex1=new Vertex(pos1);
-    var vertex2=new Vertex(pos2);
-    var vertex3=new Vertex(pos3);
-
-    var edge1=new Edge();
-    //var edge2=new Edge();
-    //var edge3=new Edge();
-
-    var face1=new Face;
-
-    vertex1.halfedge=halfedge1;
-    vertex2.halfedge=halfedge2;
-    vertex3.halfedge=halfedge3;
-
-    halfedge1.vert=vertex1;
-    halfedge2.vert=vertex2;
-    halfedge3.vert=vertex3;
-
-    halfedge1.edge=edge1;
-    //halfedge2.edge=edge2;
-    //halfedge3.edge=edge3;
-
-    halfedge1.face=face1;
-    halfedge2.face=face1;
-    halfedge3.face=face1;
-
-    halfedge1.prev=halfedge3;
-    halfedge1.next=halfedge2;
-
-    halfedge2.next=halfedge3;
-    halfedge2.prev=halfedge1;
-
-    halfedge3.next=halfedge1;
-    halfedge3.prev=halfedge2;
-
-    edge1.halfedge=halfedge1;
-   // edge1.halfedge=halfedge1;
-    //edge1.halfedge=halfedge1;
-
-    face1.halfedge=halfedge1;
-
-    // append everything newly generated on the output array
-    this.verts.push(vertex1);
-    this.verts.push(vertex2)
-    this.verts.push(vertex3);
-    this.halfedges.push(halfedge1);
-    this.halfedges.push(halfedge2);
-    this.halfedges.push(halfedge3);
-    this.edges.push(edge1);
-    //this.edges.push(edge2);
-    //this.edges.push(edge3);
-    this.faces.push(face1);
-  }
 
   /**
    * modelMatrix returns the transformation context as the model matrix
