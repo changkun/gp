@@ -13,7 +13,7 @@
 Write the answers here:
 
 ```
-Answers go here...
+BMesh is designed to store vertices, faces, edges and loops. These element structures create connectivity cycles. Unlike a halfedge-based mesh structure faces of arbitrary length are possible. BMesh also allows for easier processing of manifold geometry. For example looking for neighbors of a vertex is very fast because every vertex knows which vertices it is connected to. With halfedge-based mesh this requires the use of halfedge-connectivity.
 ```
 
 **Task 2. Write a reproducer of teaser image in [teaser.py](./teaser.py).**
@@ -33,7 +33,7 @@ Answers go here...
 Write initial ideas here:
 
 ```
-Answers go here...
+Probably something related to Progressive Meshes, unless I have another project idea that interests me more. Since there is an abundance of possible projects in that area, I will keep thinking about this until the end of the year.
 ```
 
 ## Submission Instruction
