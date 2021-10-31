@@ -13,7 +13,11 @@
 Write the answers here:
 
 ```
-Answers go here...
+Blender's internal mesh data structure is BMesh.
+In contrast to Halfedge-based mesh structures, BMesh is designed to represent non-manifold meshes.
+BMesh's entities consist of Vertices, Edges, Loops, and Faces.
+Similar to Halfedge, BMesh uses double-linked, circular lists, but unlike Halfedge, the stored Cycles BMesh uses can have more complicated structures, like the Disk Cycle, which is independent from face data, making it able to represent wire edges and non-manifold faces.
+
 ```
 
 **Task 2. Write a reproducer of teaser image in [teaser.py](./teaser.py).**
@@ -33,7 +37,8 @@ Answers go here...
 Write initial ideas here:
 
 ```
-Answers go here...
+- Volume-preserving squash (and stretch) without physics simulation or animation, based on object collisions.
+- neural network processing (e.g. for smoothing)
 ```
 
 ## Submission Instruction
