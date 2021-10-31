@@ -34,7 +34,7 @@ Blenders internal data structure is called BMesh. A BMesh stores Faces,Loops,Edg
 Write initial ideas here:
 
 ```
-Answers go here...
+No idea yet unfortunately
 ```
 
 ## Submission Instruction
