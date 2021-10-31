@@ -92,26 +92,15 @@ export class HalfedgeMesh {
     //
     // We can assume the input mesh is a manifold mesh.
     
-    let duplicates = 0;
-    
-
-
-
-    //indices = indices.slice(0, 120);
-    console.log(indices)
-    console.log(positions)
+    // DEBUG
+    // let duplicates = 0;
+    // indices = indices.slice(0, 120); 
 
     positions.forEach((p, i) => {
       const vert = new Vertex(p);
       vert.idx = i;
       this.verts.push(vert);
     });
-
-    console.log(this.verts);
-    console.log(this.edges);
-    console.log(this.faces);
-    console.log(this.halfedges);
-
 
     for(let index = 2; index < indices.length; index+=3) {
       const face = new Face();
@@ -131,10 +120,10 @@ export class HalfedgeMesh {
         halfedge = new Halfedge();
         halfedge.onBoundary = true;
 
-        // Twin halfedge exists
+        
         let existing_twin = this.halfedges.find( aV => aV.vert?.idx === vertex_to.idx && aV.next?.vert?.idx === vertex_from.idx);
-        if(existing_twin) {
-          duplicates++ // DEBUG
+        if(existing_twin) { // Twin halfedge exists
+          //duplicates++ // DEBUG
 
           halfedge.onBoundary = false;
           existing_twin.onBoundary = false;
@@ -144,11 +133,11 @@ export class HalfedgeMesh {
 
           if(halfedge.twin.edge) edge = halfedge.twin.edge;
           else {
-            console.log("ERROR: NO EDGE ON TWIN");
+            console.log("ERROR: NO EDGE ON TWIN"); // Should never occur (thanks Typescript)
             edge = new Edge();
           }
         }
-        else {
+        else { // Create new edge
           edge = new Edge();
           edge.idx = index-2+edge_count;
           this.edges.push(edge);
@@ -165,10 +154,10 @@ export class HalfedgeMesh {
           vertex_to.halfedge = halfedge; // Last vertex points to last halfedge
         }
 
-        edge.halfedge = halfedge; // TODO: Is this correct?
+        edge.halfedge = halfedge; // TODO: Is this correct? In theory it should not matter...
         halfedge.edge = edge;
 
-        if(edge_count === 0) face.halfedge = halfedge; // Face oints to first halfedge
+        if(edge_count === 0) face.halfedge = halfedge; // Face points to first halfedge
         halfedge.face = face;
         halfedge.vert = vertex_from;
 
@@ -176,14 +165,13 @@ export class HalfedgeMesh {
         this.halfedges.push(halfedge);
       }
     }
-    
 
     let index = 0;
     this.halfedges.forEach(h => {
       h.idx = index++;
     });
   
-
+  /* DEBUG CODE
     let should_be = this.edges.length+duplicates;
     let is = this.halfedges.length
     if(should_be !== is) console.log("ERROR: WRONG NUMBER OF HALFEDGES (should be: " + should_be + " , is: " + is + " )");
@@ -207,7 +195,7 @@ export class HalfedgeMesh {
         console.log("ERROR: VERT POINTS BACK");
         console.log(he);
       }
-    });
+    }); */
   }
 
   /**
