@@ -89,8 +89,9 @@ export class HalfedgeMesh {
    */
   buildMesh(indices: number[], positions: Vector[]) {
 
-    this.faces = new Array(indices.length / 3);
-    this.verts = new Array(positions.length);
+    // TODO: preinit arrays size for performance improvements
+    //this.faces = new Array(indices.length / 3);
+    //this.verts = new Array(positions.length);
 
     // create all vertices at once
     for (let i = 0; i < positions.length; i++) {
