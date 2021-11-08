@@ -88,6 +88,10 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
   buildMesh(indices: number[], positions: Vector[]) {
+
+    this.faces = new Array(indices.length / 3);
+    this.verts = new Array(positions.length);
+
     // create all vertices at once
     for (let i = 0; i < positions.length; i++) {
       const vert = new Vertex(positions[i]);
@@ -176,6 +180,7 @@ export class HalfedgeMesh {
 
     // mark all unusedHalfedges as boundary edges
     for (let i = 0; i < unusedHalfedgeIDs.length; i++) {
+      // TODO: Link all hidden boundary faces
       this.halfedges[unusedHalfedgeIDs[i]].onBoundary = true;
     }
   }
