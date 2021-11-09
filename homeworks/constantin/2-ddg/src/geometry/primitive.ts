@@ -131,7 +131,7 @@ export class Vertex {
     // 1. EqualWeighted
     // 2. AreaWeighted
     // 3. AngleWeighted
-    return new Vector();
+    return new Vector(1);
   }
   curvature(method = CurvatureMethod.Mean): number {
     // TODO: compute curvature given different method:
@@ -140,7 +140,7 @@ export class Vertex {
     // 3. Gaussian
     // 4. Kmin
     // 5. Kmax
-    return 0;
+    return 1;
   }
   // NOTE: you can add more methods if needed
 }
