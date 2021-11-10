@@ -11,13 +11,17 @@
 Which code snippet (report in line numbers) in the `geometry/primitive.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+The most time consuming parts are calculating the kmin (line 310) or kmax (line 319) curvature since they require both the mean curvature and the gaussian curvature. The calculating the mean curvature is time consuming itself and is also the longest sub step when calculating kmin or kmax. 
+
+The most challanging parts for me were the cotangend formular calculation and the voronoi area calculation, since it involves formulars which I dont fully understand. (I hope they are correct)
 ```
 
 Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+When I started the program using my halfedge implementation it took minutes to load the halfedge structure from the obj file. So I needed to rewrite my halfedge implementation fron scratch with performance in mind.
+
+Then when first calculating the gaussian curvature I ran into the issue that some halfedge previous and next links where not properly set. To find out why this happened I wrote a halfedge implementation test. Then I found out this was due to not explicitly linking halfedges that are at a boundary. So I had to fix the halfedge implementation to also create halfedge loops on boundaries.
 ```
 
 ## Submission Instruction

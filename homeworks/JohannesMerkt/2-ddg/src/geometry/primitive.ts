@@ -6,6 +6,16 @@
 
 import {Vector} from '../linalg/vec';
 
+function triangleArea(a: number, b: number, c: number) {
+  const semiperimeter = (a + b + c) / 2;
+  return Math.sqrt(
+    semiperimeter *
+      (semiperimeter - a) *
+      (semiperimeter - b) *
+      (semiperimeter - c)
+  );
+}
+
 export class Halfedge {
   vert?: Vertex;
   edge?: Edge;
@@ -22,18 +32,47 @@ export class Halfedge {
     this.idx = -1;
     this.onBoundary = false;
   }
+
   vector(): Vector {
-    // TODO: compute the edge vector.
-    return new Vector();
+    if (!this.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    if (!this.vert || !this.twin!.vert) {
+      throw new Error('halfedge has no vertex assigned');
+    }
+    return this.twin.vert!.position.sub(this.vert.position);
   }
-  cotan(): number {
-    // TODO: Compute the cotan formula at this edge, if an edge
-    // is on the boundary, then return zero.
-    return 0;
+
+  partialCotan(): Vector {
+    if (this.onBoundary) {
+      return new Vector();
+    }
+    if (!this.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    if (!this.prev || !this.twin!.prev) {
+      throw new Error('halfedge has no prev assigned');
+    }
+    const alhpa = this.twin!.prev!.angle();
+    const beta = this.prev!.angle();
+    const cot = (x: number) => {
+      return 1 / Math.tan(x);
+    };
+    return this.vector().scale(cot(alhpa) + cot(beta));
   }
+
   angle(): number {
     // TODO: compute the tip angle at this edge.
-    return 0;
+    if (!this.prev) {
+      throw new Error('halfedge has no prev assigned');
+    }
+    if (!this.prev!.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    const faceAngle = Math.acos(
+      this.vector().unit().dot(this.prev!.twin!.vector().unit())
+    );
+    return faceAngle;
   }
 }
 
@@ -53,6 +92,7 @@ export class Face {
   constructor() {
     this.idx = -1;
   }
+
   vertices(fn: (v: Vertex, n: number) => void) {
     let start = true;
     let i = 0;
@@ -64,12 +104,71 @@ export class Face {
   }
 
   normal(): Vector {
-    // TODO: compute the face normal of this face.
-    return new Vector();
+    const positions: Vector[] = new Array(3);
+    this.vertices((vert, number) => {
+      positions[number] = vert.position;
+    });
+    const u = positions[1].sub(positions[0]);
+    const v = positions[2].sub(positions[0]);
+    return u.cross(v).unit();
   }
+
   area(): number {
-    // TODO: compute the area of this face.
-    return 0;
+    if (!this.halfedge) {
+      throw new Error('face has no halfedge assigned');
+    }
+    if (!this.halfedge!.next) {
+      throw new Error('halfedge has no next assigned');
+    }
+    if (!this.halfedge!.prev) {
+      throw new Error('halfedge has no prev assigned');
+    }
+    const a = this.halfedge.vector().len();
+    const b = this.halfedge.next!.vector().len();
+    const c = this.halfedge.prev!.vector().len();
+    return triangleArea(a, b, c);
+    /* const semiperimeter = (a + b + c) / 2;
+    return Math.sqrt(
+      semiperimeter *
+        (semiperimeter - a) *
+        (semiperimeter - b) *
+        (semiperimeter - c)
+    ); */
+  }
+
+  circumcenter(halfedge: Halfedge) {
+    if (halfedge.face?.idx !== this.idx) {
+      throw new Error('halfedge doesnt belong to face');
+    }
+    const a = halfedge.vert!.position;
+    const b = halfedge.prev!.vert!.position;
+    const c = halfedge.next!.vert!.position;
+    const acLengthPow = Math.pow(c.sub(a).len(), 2);
+    const abLengthPow = Math.pow(b.sub(a).len(), 2);
+    const crossbc = b.sub(a).cross(c.sub(a)).cross(b.sub(a));
+    const crosscb = c.sub(a).cross(b.sub(a)).cross(c.sub(a));
+    const dividend = crossbc.scale(acLengthPow).add(crosscb.scale(abLengthPow));
+    const divisor = 2 * Math.pow(b.sub(a).cross(c.sub(a)).len(), 2);
+    return a.add(dividend.scale(1 / divisor));
+  }
+
+  partialCellArea(halfedge: Halfedge) {
+    const circumcenter = this.circumcenter(halfedge);
+    const halfWay1 = halfedge.vert!.position.add(
+      halfedge.vector().scale(1 / 2)
+    );
+    const he2 = halfedge.prev!.twin!;
+    const halfWay2 = he2.vert!.position.add(he2.vector().scale(1 / 2));
+    const vertexCircumcenter = halfedge.vert!.position.sub(circumcenter).len();
+    const half1 = halfedge.vector().len() / 2;
+    const half2 = he2.vector().len() / 2;
+    const halfCircum1 = halfWay1.sub(circumcenter).len();
+    const halfCircum2 = halfWay2.sub(circumcenter).len();
+
+    return (
+      triangleArea(vertexCircumcenter, half1, halfCircum1) +
+      triangleArea(vertexCircumcenter, half2, halfCircum2)
+    );
   }
 }
 
@@ -96,6 +195,7 @@ export class Vertex {
     this.position = position;
     this.idx = -1;
   }
+
   faces(fn: (f: Face, i: number) => void) {
     let start = true;
     let i = 0;
@@ -112,6 +212,7 @@ export class Vertex {
       i++;
     }
   }
+
   halfedges(fn: (h: Halfedge, i: number) => void) {
     let start = true;
     let i = 0;
@@ -127,20 +228,100 @@ export class Vertex {
   }
 
   normal(method = NormalMethod.EqualWeighted): Vector {
-    // TODO: compute vertex normal given different method:
-    // 1. EqualWeighted
-    // 2. AreaWeighted
-    // 3. AngleWeighted
-    return new Vector();
+    const calculateVertexNormal = (weightFn: (face: Face) => number) => {
+      let normalSum: Vector = new Vector();
+      this.faces(face => {
+        normalSum = normalSum.add(face.normal().scale(weightFn(face)));
+      });
+      return normalSum.unit();
+    };
+    if (method === NormalMethod.AreaWeighted) {
+      return calculateVertexNormal(face => face.area());
+    }
+    if (method === NormalMethod.AngleWeighted) {
+      return calculateVertexNormal(face => {
+        if (!face.halfedge) {
+          throw new Error('face has no halfedge assigned');
+        }
+        if (!face.halfedge.vert) {
+          throw new Error('halfedge has no vert assigned');
+        }
+        let start = true;
+        let he = face.halfedge!;
+        while (start === true || he.vert!.idx !== this.idx) {
+          if (!he.next) {
+            throw new Error('halfedge has no next assigned');
+          }
+          he = he.next!;
+          start = false;
+        }
+        return he.angle();
+      });
+    }
+    return calculateVertexNormal(() => 1);
   }
+
   curvature(method = CurvatureMethod.Mean): number {
-    // TODO: compute curvature given different method:
-    // 1. None
-    // 2. Mean
-    // 3. Gaussian
-    // 4. Kmin
-    // 5. Kmax
-    return 0;
+    if (method === CurvatureMethod.Mean) {
+      return this.meanCurvature();
+    }
+    if (method === CurvatureMethod.Gaussian) {
+      return this.gaussianCurvature();
+    }
+    if (method === CurvatureMethod.Kmin) {
+      return this.kMinCurvature();
+    }
+    if (method === CurvatureMethod.Kmax) {
+      return this.kMaxCurvature();
+    }
+    return 1;
   }
-  // NOTE: you can add more methods if needed
+
+  meanCurvature() {
+    let edgeCotanSum = new Vector();
+    this.halfedges(halfedge => {
+      edgeCotanSum = edgeCotanSum.add(halfedge.partialCotan());
+    });
+    let voronoiCellArea = 0;
+    this.faces(face => {
+      let he = face.halfedge!;
+      let start = true;
+      while (start === true || he.vert!.idx !== this.idx) {
+        if (!he.next) {
+          throw new Error('halfedge has no next assigned');
+        }
+        he = he.next!;
+        start = false;
+      }
+      voronoiCellArea += face.partialCellArea(he);
+    });
+    const cotan = edgeCotanSum.scale(1 / (2 * voronoiCellArea));
+    return cotan.len() / 2;
+  }
+
+  gaussianCurvature() {
+    let angleSum = 0;
+    this.halfedges(he => {
+      angleSum += he.angle();
+    });
+    return 2 * Math.PI - angleSum;
+  }
+
+  kMinCurvature() {
+    const mean = this.meanCurvature();
+    const gaussian = this.gaussianCurvature();
+    const powMean = Math.pow(mean, 2);
+    const k1 = mean - Math.sqrt(powMean - gaussian);
+    const k2 = mean + Math.sqrt(powMean - gaussian);
+    return k1 > k2 ? k2 : k1;
+  }
+
+  kMaxCurvature() {
+    const mean = this.meanCurvature();
+    const gaussian = this.gaussianCurvature();
+    const powMean = Math.pow(mean, 2);
+    const k1 = mean - Math.sqrt(powMean - gaussian);
+    const k2 = mean + Math.sqrt(powMean - gaussian);
+    return k1 > k2 ? k1 : k2;
+  }
 }
