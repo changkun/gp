@@ -88,173 +88,101 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
   buildMesh(indices: number[], positions: Vector[]) {
-    console.log(indices.length);
-    console.log(positions.length);
-    console.log('start');
     // TODO: preinit arrays size for performance improvements
     //this.faces = new Array(indices.length / 3);
-    this.verts = new Array(positions.length);
-    this.faces = new Array(indices.length / 3);
+    //this.verts = new Array(positions.length);
 
     // create all vertices at once
     for (let i = 0; i < positions.length; i++) {
       const vert = new Vertex(positions[i]);
-      vert.idx = i;
-      this.verts[i] = vert;
+      vert.idx = this.verts.length;
+      this.verts.push(vert);
     }
 
-    const orderIds = (a: number, b: number) => {
-      if (a < b) {
-        return {a: b, b: a};
-      }
-      return {a, b};
-    };
+    // contains all halfedges that dont belong to a face yet
+    const unusedHalfedgeIDs: number[] = [];
 
-    const getOrderedIdKey = (a: number, b: number) => {
-      const ordered = orderIds(a, b);
-      return ordered.a + '-' + ordered.b;
-    };
-
-    // find all unique edges
-    const edges = new Map<
-      string,
-      {
-        vertA: number;
-        vertB: number;
-        created: boolean;
-        halfA: number;
-        halfB: number;
-      }
-    >();
-    for (let i = 0; i < indices.length; i += 3) {
-      for (let j = 0; j < 3; j++) {
-        const a = indices[i + j];
-        const b = indices[i + ((j + 1) % 3)];
-        const key = getOrderedIdKey(a, b);
-        if (!edges.has(key)) {
-          // store the edge
-          const orderedIds = orderIds(a, b);
-          edges.set(key, {
-            vertA: orderedIds.a,
-            vertB: orderedIds.b,
-            created: false,
-            halfA: -1,
-            halfB: -1,
-          });
-        }
-      }
-    }
-
-    this.edges = new Array(edges.size);
-    this.halfedges = new Array(edges.size * 2);
-    let nextEdgeID = 0;
-
-    // create faces, edges and halfedges
-    for (let i = 0; i < indices.length; i += 3) {
-      const f = new Face();
-      f.idx = i / 3;
-      this.faces[i / 3] = f;
-
-      for (let j = 0; j < 3; j++) {
-        const a = indices[i + j];
-        const b = indices[i + ((j + 1) % 3)];
-        const key = getOrderedIdKey(a, b);
-        const edge = edges.get(key);
-        if (edge) {
-          if (!edge.created) {
-            const e = new Edge();
-            e.idx = nextEdgeID;
-            const he1 = new Halfedge();
-            he1.edge = e;
-            he1.vert = this.verts[edge.vertA];
-            he1.face = f;
-            he1.onBoundary = true;
-            const he1ID = nextEdgeID * 2;
-            he1.idx = he1ID;
-            const he2 = new Halfedge();
-            he2.edge = e;
-            he2.vert = this.verts[edge.vertB];
-            he2.face = f;
-            he2.onBoundary = true;
-            const he2ID = nextEdgeID * 2 + 1;
-            he2.idx = he2ID;
-            he1.twin = he2;
-            he2.twin = he1;
-            this.verts[a].halfedge = he1;
-            this.verts[b].halfedge = he2;
-            if (a === edge.vertB) {
-              this.verts[a].halfedge = he2;
-              this.verts[b].halfedge = he1;
+    const getOrCreateHalfedge = (startVert: Vertex, endVert: Vertex) => {
+      // first search for existing edge
+      const halfedgeID = unusedHalfedgeIDs.find(id => {
+        if (this.halfedges[id].vert?.idx === startVert.idx) {
+          const twin = this.halfedges[id].twin;
+          if (twin && twin.vert) {
+            if (twin.vert.idx === endVert.idx) {
+              return true;
             }
-            e.halfedge = he1;
-            /* if (a === edge.a) {
-              he1.onBoundary = false;
-              he2.onBoundary = true;
-            } else {
-              he2.onBoundary = false;
-              he1.onBoundary = true;
-            } */
-            this.edges[nextEdgeID] = e;
-            this.halfedges[he1ID] = he1;
-            this.halfedges[he2ID] = he2;
-            nextEdgeID++;
-            edge.created = true;
-            edge.halfA = he1.idx as number;
-            edge.halfB = he2.idx as number;
+          } else {
+            console.log(
+              "WARNING HALFEDGE DIDN'T HAVE A TWIN OR TWIN DIDN'T HAVE A VERT"
+            );
           }
-          let faceHalfedgeID = edge.halfA;
-          if (a === edge.vertB) {
-            faceHalfedgeID = edge.halfB;
-          }
-          const he = this.halfedges[faceHalfedgeID];
-          // assign first halfedge to face
-          if (j === 0) {
-            f.halfedge = he;
-          }
-          he.onBoundary = false;
-        } else {
-          console.log('WARNING EDGE COULD NOT BE FOUND IN EDGE MAP');
         }
+        return false;
+      });
+      if (halfedgeID) {
+        const unusedId = unusedHalfedgeIDs.findIndex(id => id === halfedgeID);
+        if (unusedId > -1) {
+          unusedHalfedgeIDs.splice(unusedId, 1);
+        } else {
+          console.log("WARNING DIDN'T FIND UNUSED HALFEDGE TO DELETE!");
+        }
+        return this.halfedges[halfedgeID];
       }
+      // create new full edge with opposite twins that will be unused for now
+      const edge = new Edge();
+      edge.idx = this.edges.length;
+      this.edges.push(edge);
+      const newHalfedge = new Halfedge();
+      newHalfedge.idx = this.halfedges.length;
+      newHalfedge.vert = startVert;
+      newHalfedge.edge = edge;
+      this.halfedges.push(newHalfedge);
+      const twinHalfedge = new Halfedge();
+      twinHalfedge.idx = this.halfedges.length;
+      twinHalfedge.vert = endVert;
+      twinHalfedge.edge = edge;
+      this.halfedges.push(twinHalfedge);
 
-      // link prev and next halfedge circles
-      for (let j = 0; j < 3; j++) {
-        const a = indices[i + j];
-        const b = indices[i + ((j + 1) % 3)];
-        const key = getOrderedIdKey(a, b);
-        const edge = edges.get(key);
-        if (edge) {
-          let faceHalfedgeID = edge.halfA;
-          if (a === edge.vertB) {
-            faceHalfedgeID = edge.halfB;
-          }
-          const he = this.halfedges[faceHalfedgeID];
-          // next linking
-          const nextKey = getOrderedIdKey(
-            indices[i + ((j + 1) % 3)],
-            indices[i + ((j + 2) % 3)]
-          );
-          const nextEdge = edges.get(nextKey);
-          he.next = this.halfedges[nextEdge!.halfA];
-          if (indices[i + ((j + 1) % 3)] === nextEdge!.vertB) {
-            he.next = this.halfedges[nextEdge!.halfB];
-          }
-          // prev linking
-          const prevKey = getOrderedIdKey(
-            indices[i + ((j + 2) % 3)],
-            indices[i + ((j + 3) % 3)]
-          );
-          const prevEdge = edges.get(prevKey);
-          he.prev = this.halfedges[prevEdge!.halfA];
-          if (indices[i + ((j + 2) % 3)] === prevEdge!.vertB) {
-            he.prev = this.halfedges[prevEdge!.halfB];
-          }
-        } else {
-          console.log('WARNING EDGE COULD NOT BE FOUND IN EDGE MAP');
-        }
+      newHalfedge.twin = twinHalfedge;
+      twinHalfedge.twin = newHalfedge;
+      edge.halfedge = newHalfedge;
+
+      unusedHalfedgeIDs.push(twinHalfedge.idx as number);
+      return newHalfedge;
+    };
+
+    const faceCount = indices.length / 3;
+    for (let i = 0; i < faceCount; i++) {
+      const faceVerts: Vertex[] = [];
+      for (let fv = 0; fv < 3; fv++) {
+        faceVerts.push(this.verts[indices[i * 3 + fv]]);
       }
+      const halfedge1 = getOrCreateHalfedge(faceVerts[0], faceVerts[1]);
+      const halfedge2 = getOrCreateHalfedge(faceVerts[1], faceVerts[2]);
+      const halfedge3 = getOrCreateHalfedge(faceVerts[2], faceVerts[0]);
+      halfedge1.next = halfedge2;
+      halfedge2.next = halfedge3;
+      halfedge3.next = halfedge1;
+      halfedge1.prev = halfedge3;
+      halfedge2.prev = halfedge1;
+      halfedge3.prev = halfedge2;
+      faceVerts[0].halfedge = halfedge1;
+      faceVerts[1].halfedge = halfedge2;
+      faceVerts[2].halfedge = halfedge3;
+      const face = new Face();
+      face.idx = this.faces.length;
+      face.halfedge = halfedge1;
+      halfedge1.face = face;
+      halfedge2.face = face;
+      halfedge3.face = face;
+      this.faces.push(face);
     }
-    // finally create halfedge loops for boundaries
+
+    // mark all unusedHalfedges as boundary edges
+    for (let i = 0; i < unusedHalfedgeIDs.length; i++) {
+      // TODO: Link all hidden boundary faces
+      this.halfedges[unusedHalfedgeIDs[i]].onBoundary = true;
+    }
   }
 
   /**
