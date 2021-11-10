@@ -24,16 +24,36 @@ export class Halfedge {
   }
   vector(): Vector {
     // TODO: compute the edge vector.
+    // assuming that the vertex of each halfedge is the "starting vertex" of this halfedge
+    if(this.vert && this.next && this.next.vert){
+     const pos1=this.vert.position;
+     const pos2=this.next.vert.position;
+     return pos2.sub(pos1);
+    //return new Vector(pos2.x-pos1.x,pos2.y-pos1.y,pos2.z-pos1.z);
+    }  
     return new Vector();
   }
   cotan(): number {
     // TODO: Compute the cotan formula at this edge, if an edge
     // is on the boundary, then return zero.
-    return 0;
+    // From https://www.cuemath.com/cotangent-formula/
+    // cot A = Adjacent side / Opposite side
+    // And from https://stackoverflow.com/questions/31159016/how-to-efficiently-calculate-cotangents-from-vectors
+    // cot(a, b) = (a * b) / |a x b|, where a and b are vectors
+    if(this.onBoundary)return 0;
+    const vecAdjacent=this.vector();
+    const vecOposite=this.next!.vector();
+    return vecAdjacent.dot(vecOposite)/vecAdjacent.cross(vecOposite).len();
   }
   angle(): number {
     // TODO: compute the tip angle at this edge.
-    return 0;
+    // from https://www.euclideanspace.com/maths/algebra/vectors/angleBetween/
+    // Step 1: normalize both vectors
+    // Step 2: angle = acos(v1•v2)
+    // Note: a normalized vector is also called the unit vector
+    const vec1=this.vector().unit();
+    const vec2=this.next!.vector().unit();
+    return Math.acos(vec1.dot(vec2));
   }
 }
 
