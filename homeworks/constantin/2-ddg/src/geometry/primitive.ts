@@ -85,11 +85,19 @@ export class Face {
 
   normal(): Vector {
     // TODO: compute the face normal of this face.
-    return new Vector();
+    // Define the Face (aka plane) using two vectors
+    // calculate the vector perpendicular to them using cross product
+    // normalize the vector (unit)
+    const vec1=this.halfedge!.vector();
+    const vec2=this.halfedge!.next!.vector();
+    return vec1.cross(vec2).unit();
   }
   area(): number {
     // TODO: compute the area of this face.
-    return 0;
+    // simple: https://atozmath.com/example/Vectors.aspx?he=e&q=atri
+    const vec1=this.halfedge!.vector();
+    const vec2=this.halfedge!.next!.vector();
+    return 0.5*vec1.cross(vec2).len();
   }
 }
 
@@ -151,8 +159,23 @@ export class Vertex {
     // 1. EqualWeighted
     // 2. AreaWeighted
     // 3. AngleWeighted
-    return new Vector(1);
+    // NOTE: since we normalize the normal in the end anyway, we don't
+    // need to divide the final vector by count (==3)
+    var sum=new Vector(0);
+    var count=0;
+    switch(method){
+      case NormalMethod.EqualWeighted:
+        this.faces(f=>{ sum=sum.add(f.normal());count++});
+        return sum.scale(1.0/count).unit();
+      case NormalMethod.AreaWeighted:
+        this.faces(f=>{ sum=sum.add(f.normal().scale(f.area()));count++});
+        return sum.scale(1.0/count).unit();
+      case NormalMethod.AngleWeighted:
+        this.faces(f=>{ sum=sum.add(f.normal().scale(f.halfedge!.cotan()));count++});
+        return sum.scale(1.0/count).unit();
+    }
   }
+  
   curvature(method = CurvatureMethod.Mean): number {
     // TODO: compute curvature given different method:
     // 1. None
