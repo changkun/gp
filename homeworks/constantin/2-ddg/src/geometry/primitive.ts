@@ -49,7 +49,7 @@ export class Halfedge {
     // TODO: compute the tip angle at this edge.
     // from https://www.euclideanspace.com/maths/algebra/vectors/angleBetween/
     // Step 1: normalize both vectors
-    // Step 2: angle = acos(v1•v2)
+    // Step 2: angle = acos(v1*v2)
     // Note: a normalized vector is also called the unit vector
     const vec1=this.vector().unit();
     const vec2=this.next!.vector().unit();
@@ -85,9 +85,8 @@ export class Face {
 
   normal(): Vector {
     // TODO: compute the face normal of this face.
-    // Define the Face (aka plane) using two vectors
-    // calculate the vector perpendicular to them using cross product
-    // normalize the vector (unit)
+    // From lecture: A normal is a unit vector along with the cross product of any given two tangent vectors
+    // So it doesn't really matter which 2 halfedges we use, as long as they are tangent
     const vec1=this.halfedge!.vector();
     const vec2=this.halfedge!.next!.vector();
     return vec1.cross(vec2).unit();
@@ -159,21 +158,32 @@ export class Vertex {
     // 1. EqualWeighted
     // 2. AreaWeighted
     // 3. AngleWeighted
+    // from lecture: weighted average of the normal vectors of incident faces
     // NOTE: since we normalize the normal in the end anyway, we don't
-    // need to divide the final vector by count (==3)
+    // need to divide the final vector by how many normals we did "sum up".
     var sum=new Vector(0);
-    var count=0;
-    switch(method){
-      case NormalMethod.EqualWeighted:
-        this.faces(f=>{ sum=sum.add(f.normal());count++});
-        return sum.scale(1.0/count).unit();
-      case NormalMethod.AreaWeighted:
-        this.faces(f=>{ sum=sum.add(f.normal().scale(Math.abs(f.area())));count++});
-        return sum.scale(1.0/count).unit();
-      case NormalMethod.AngleWeighted:
-        this.faces(f=>{ sum=sum.add(f.normal().scale(f.halfedge!.cotan()));count++});
-        return sum.scale(1.0/count).unit();
-    }
+    // loop through all faces whose normals need to be taken into account for this vertex normal
+    // and sum them up, taking their weight (depending on the Method) into account.
+    this.faces(f=>{ 
+      var weight;
+      switch(method){
+        case NormalMethod.EqualWeighted:
+          // weight of each face normal is just 1
+          weight=1.0;
+          break;
+        case NormalMethod.AreaWeighted:
+           // weight of each face normal is the area
+          weight=f.area();
+          break;   
+        case NormalMethod.AngleWeighted:
+          // weight of each face normal is the tip angle 
+          weight=f.halfedge!.angle();
+          break;  
+      }
+      sum=sum.add(f.normal().scale(weight));
+    });
+    // normalize the sum (unit length 1)
+    return sum.unit();
   }
 
   curvature(method = CurvatureMethod.Mean): number {
