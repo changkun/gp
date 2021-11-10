@@ -168,14 +168,14 @@ export class Vertex {
         this.faces(f=>{ sum=sum.add(f.normal());count++});
         return sum.scale(1.0/count).unit();
       case NormalMethod.AreaWeighted:
-        this.faces(f=>{ sum=sum.add(f.normal().scale(f.area()));count++});
+        this.faces(f=>{ sum=sum.add(f.normal().scale(Math.abs(f.area())));count++});
         return sum.scale(1.0/count).unit();
       case NormalMethod.AngleWeighted:
         this.faces(f=>{ sum=sum.add(f.normal().scale(f.halfedge!.cotan()));count++});
         return sum.scale(1.0/count).unit();
     }
   }
-  
+
   curvature(method = CurvatureMethod.Mean): number {
     // TODO: compute curvature given different method:
     // 1. None
