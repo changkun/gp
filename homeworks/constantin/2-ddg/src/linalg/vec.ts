@@ -154,4 +154,5 @@ export class Vector {
     u.w = 0;
     return u;
   }
+
 }

@@ -193,7 +193,33 @@ export class Vertex {
     // 3. Gaussian
     // 4. Kmin
     // 5. Kmax
+    switch(method){
+      case CurvatureMethod.Gaussian: return this.calculateGausianCurvature();
+    }
     return 1;
   }
   // NOTE: you can add more methods if needed
+
+  // Sum up all the "tip angles" for this vertex
+  // ∑θj
+  sumUpTipAngles():number {
+    var sum=0.0;
+    this.faces(f=>{ 
+      sum+=f.halfedge!.angle();
+    });
+    return sum;
+  }
+
+  // calculate the angle defect of the tip angles
+  // 2π−∑θj
+  calculateAngleDefect():number {
+    return 2*Math.PI/this.sumUpTipAngles();
+  }
+
+  // https://computergraphics.stackexchange.com/questions/1718/what-is-the-simplest-way-to-compute-principal-curvature-for-a-mesh-triangle
+  // K=(2π−∑θj)/A
+  // weird, in the lecture this is refered to as just the angle defect ?
+  calculateGausianCurvature():number{
+    return this.calculateAngleDefect();
+  }
 }
