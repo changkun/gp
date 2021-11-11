@@ -195,6 +195,17 @@ export class Vertex {
     // 5. Kmax
     switch(method){
       case CurvatureMethod.Gaussian: return this.calculateGausianCurvature();
+      case CurvatureMethod.Mean:return this.calculateMeanCurvature();
+      case CurvatureMethod.Kmin:{
+        const k1=this.calculatePrincipalCurvature();
+        const k2=this.calculatePrincipalCurvature(false);
+        return Math.min(k1,k2);
+      }
+      case CurvatureMethod.Kmax:{
+        const k1=this.calculatePrincipalCurvature();
+        const k2=this.calculatePrincipalCurvature(false);
+        return Math.max(k1,k2);
+      }
     }
     return 1;
   }
@@ -219,7 +230,25 @@ export class Vertex {
   // https://computergraphics.stackexchange.com/questions/1718/what-is-the-simplest-way-to-compute-principal-curvature-for-a-mesh-triangle
   // K=(2π−∑θj)/A
   // weird, in the lecture this is refered to as just the angle defect ?
+  // Lecture: K = OMEGAi
   calculateGausianCurvature():number{
     return this.calculateAngleDefect();
   }
+
+  //Lecture: H= 1/2 * || (Δ f)i ||
+  calculateMeanCurvature():number{
+    return 0;
+  }
+
+  // Lecture: k1=H-sqrt(H^2−K) and k2==H+sqrt(H^2−K)
+  calculatePrincipalCurvature(k1=true):number{
+    const H=this.calculateMeanCurvature();
+    const K=this.calculateGausianCurvature();
+    if(k1){
+      return H-Math.sqrt(H*H-K);
+    }
+    return H+Math.sqrt(H*H-K);
+  }
+
+
 }
