@@ -100,7 +100,6 @@ export class HalfedgeMesh {
      const idx2vert = new Map()
      for (let i = 0; i < positions.length; i++) {
        const v = new Vertex(positions[i])
-       //v.position = positions[i]
        this.verts[i] = v
        idx2vert.set(i, v)
      }
@@ -235,8 +234,6 @@ export class HalfedgeMesh {
      index = 0
      this.halfedges.forEach(h => { h.idx = index++ })
      
-     console.log("Source:N vertices"+this.verts.length);
-     console.log("Source:N indices"+indices.length);
-     console.log("N faces:"+this.faces.length);
+     
   }
 }
