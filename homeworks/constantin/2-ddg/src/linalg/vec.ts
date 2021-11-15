@@ -155,4 +155,44 @@ export class Vector {
     return u;
   }
 
+  // Consti10: length squared
+  len2():number{
+    return this.len()*this.len();
+  }
+
+  // print to console
+  public debug(){
+    console.log("Vec3("+this.x+","+this.y+","+this.z+")");
+  }
+
+  // You can define a tringle by 3 points or 2 of its sides (2 directional Vectors)
+  // https://math.stackexchange.com/questions/128991/how-to-calculate-the-area-of-a-3d-triangle
+  // https://atozmath.com/example/Vectors.aspx?he=e&q=atri if you have 2 directional Vectors
+  public static calculateAreaTriangle(ab:Vector,ac:Vector):number{
+    return 0.5*ab.cross(ac).len();
+  }
+
+  // if triangle is defined by 3 points
+  public static calculateAreaTriangle2(a:Vector,b:Vector,c:Vector):number{
+    const ab=b.sub(a);
+    const ac=c.sub(a);
+    return this.calculateAreaTriangle(ab,ac);
+  }
+
+  // quadlteral formed by 2 triangles
+  public static calculateAreaQuadliteral(a:Vector,b:Vector,c:Vector,d:Vector){
+    return this.calculateAreaTriangle2(a,b,c)+this.calculateAreaTriangle2(a,c,d);
+  }
+
+  // calculate the angle between two Vectors
+  // from https://www.euclideanspace.com/maths/algebra/vectors/angleBetween/
+  // Step 1: normalize both vectors
+  // Step 2: angle = acos(v1*v2)
+  // Note: a normalized vector is also called the unit vector
+  public static calculateAngleBetween(vec1:Vector,vec2:Vector){
+    const vec1Norm=vec1.unit();
+    const vec2Norm=vec2.unit();
+    return Math.acos(vec1.dot(vec2));
+  }
+
 }

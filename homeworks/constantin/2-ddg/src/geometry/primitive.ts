@@ -6,6 +6,9 @@
 
 import {Vector} from '../linalg/vec';
 
+
+
+
 export class Halfedge {
   vert?: Vertex;
   edge?: Edge;
@@ -25,13 +28,9 @@ export class Halfedge {
   vector(): Vector {
     // TODO: compute the edge vector.
     // assuming that the vertex of each halfedge is the "starting vertex" of this halfedge
-    if(this.vert && this.next && this.next.vert){
-     const pos1=this.vert.position;
-     const pos2=this.next.vert.position;
-     return pos2.sub(pos1);
-    //return new Vector(pos2.x-pos1.x,pos2.y-pos1.y,pos2.z-pos1.z);
-    }  
-    return new Vector();
+    const pos1=this.vert!.position;
+    const pos2=this.next!.vert!.position;
+    return pos2.sub(pos1);
   }
   cotan(): number {
     // TODO: Compute the cotan formula at this edge, if an edge
@@ -41,20 +40,29 @@ export class Halfedge {
     // And from https://stackoverflow.com/questions/31159016/how-to-efficiently-calculate-cotangents-from-vectors
     // cot(a, b) = (a * b) / |a x b|, where a and b are vectors
     if(this.onBoundary)return 0;
-    const vecAdjacent=this.vector();
-    const vecOposite=this.next!.vector();
+    const vecAdjacent=this.prev!.vector();
+    const vecOposite=this.next!.vector().scale(-1);
     return vecAdjacent.dot(vecOposite)/vecAdjacent.cross(vecOposite).len();
   }
+
+  // Well, this is actually not the tip angle, but the adjacent angle
   angle(): number {
     // TODO: compute the tip angle at this edge.
     // from https://www.euclideanspace.com/maths/algebra/vectors/angleBetween/
     // Step 1: normalize both vectors
     // Step 2: angle = acos(v1*v2)
     // Note: a normalized vector is also called the unit vector
-    const vec1=this.vector().unit();
-    const vec2=this.next!.vector().unit();
-    return Math.acos(vec1.dot(vec2));
+    const vec1=this.prev!.vector().unit();
+    const vec2=this.next!.vector().scale(-1).unit();
+    // for numeric stability
+    return Math.acos(Math.max(-1, Math.min(1, vec1.dot(vec2))));
   }
+
+  // To calculate the tip angle, just use the "next halfedge" & angle() method
+  tipAngle():number{
+    return this.next!.angle();
+  }
+
 }
 
 export class Edge {
@@ -93,11 +101,47 @@ export class Face {
   }
   area(): number {
     // TODO: compute the area of this face.
-    // simple: https://atozmath.com/example/Vectors.aspx?he=e&q=atri
     const vec1=this.halfedge!.vector();
     const vec2=this.halfedge!.next!.vector();
-    return 0.5*vec1.cross(vec2).len();
+    return Vector.calculateAreaTriangle(vec1,vec2);
   }
+
+  // calculate the circumcenter of this face, aka the circumcenter
+  // of a triangle
+  // taken from https://gamedev.stackexchange.com/questions/60630/how-do-i-find-the-circumcenter-of-a-triangle-in-3d
+  circumcenter():Vector{
+    // the 3 points that form this face
+    const a=this.halfedge!.vert!.position;
+    const b=this.halfedge!.next!.vert!.position;
+    const c=this.halfedge!.next!.next!.vert!.position;
+    const ac=c.sub(a);
+    const ab=b.sub(a);
+    const abXac=ab.cross(ac);
+    // this is the vector from a TO the circumsphere center
+    const toCircumsphereCenter =(abXac.cross( ab ).scale(ac.len2()).add(ac.cross( abXac ).scale(ab.len2()))).scale(1.0/(2.0*abXac.len2()));
+    const circumsphereRadius = toCircumsphereCenter.len() ;
+    const ccs = a.add(toCircumsphereCenter); // now this is the actual 3space location
+    return ccs;
+  }
+
+
+  // What is blue in the lecture on the slide with Voronoi cell
+  // for one Face. To calculate the Full voronoi cell, just sum it up for all the Faces
+  partialVoronoiCellArea():number{
+    // basically 4 points that form a quadliteral
+    const he=this.halfedge!;
+    // first point who lies "half way" on the edge
+    const p1=he.vert!.position.add(he.vector().scale(0.5));
+    // in the image from thelecture, p2 would be the "center" aka i
+    const p2=he.next!.vert!.position;
+    const tmpHe=he.next!.next!;
+    // also "half way" on the edge
+    const p3=tmpHe.vert!.position.add(tmpHe.vector().scale(0.5));
+    // 4th point is the circumcenter
+    const p4=this.circumcenter();
+    return Vector.calculateAreaQuadliteral(p1,p2,p3,p4);
+  }
+
 }
 
 export enum NormalMethod {
@@ -194,8 +238,14 @@ export class Vertex {
     // 4. Kmin
     // 5. Kmax
     switch(method){
-      case CurvatureMethod.Gaussian: return this.calculateGausianCurvature();
-      case CurvatureMethod.Mean:return this.calculateMeanCurvature();
+      case CurvatureMethod.Gaussian:
+         return this.calculateGausianCurvature();
+      case CurvatureMethod.Mean:
+        // we don't want the mean curvature as just an absolute value, use k1,k2 instead
+        //return this.calculateMeanCurvature();
+        const k1=this.calculatePrincipalCurvature();
+        const k2=this.calculatePrincipalCurvature(false);
+        return (k1+k2)*0.5;
       case CurvatureMethod.Kmin:{
         const k1=this.calculatePrincipalCurvature();
         const k2=this.calculatePrincipalCurvature(false);
@@ -209,46 +259,75 @@ export class Vertex {
     }
     return 1;
   }
-  // NOTE: you can add more methods if needed
 
-  // Sum up all the "tip angles" for this vertex
-  // ∑θj
-  sumUpTipAngles():number {
+  // calculate the angle defect of the tip angles
+  // 2π−∑θj aka 2π - sum of all tip angles
+  calculateAngleDefect():number {
     var sum=0.0;
-    this.faces(f=>{ 
-      sum+=f.halfedge!.angle();
+    this.halfedges(h=>{ 
+      sum+=h!.tipAngle();
+    });
+    return 2*Math.PI-sum;
+  }
+
+  // the voronoi cell (around) this vertex is just the sum of all
+  // the partial voronoi cell areas
+  calculateVoronoiCell():number{
+    let sum=0.0;
+    this.faces(f => {
+      sum+=f.partialVoronoiCellArea();
     });
     return sum;
   }
 
-  // calculate the angle defect of the tip angles
-  // 2π−∑θj
-  calculateAngleDefect():number {
-    return 2*Math.PI/this.sumUpTipAngles();
+  // Sum(cot(aij)+cot(bij))*(fj-fi)
+  // not sure how to call that it is just a helper to make the code less complicated.
+  calculateSumCotangentsMultipliedByEdgeVector():Vector{
+    let sum=new Vector();
+    this.halfedges(h=>{
+      // if this halfedge or its twin is on a boundary we need to skip it
+     if (h.onBoundary || h.twin!.onBoundary) {
+       return;
+     }
+      const tmp=(h.cotan()+h.twin!.cotan());
+      sum=sum.add(h.vector().scale(tmp));
+    });
+    return sum;
   }
 
-  // https://computergraphics.stackexchange.com/questions/1718/what-is-the-simplest-way-to-compute-principal-curvature-for-a-mesh-triangle
+  // Lecture: (Δ f)i= 1/(2*Ai)*Sum(cot(aij)+cot(bij))*(fj-fi)
+  // cotan version of discretization of the Laplace Beltrami
+  calculateLaplaceBeltrami():Vector{
+   let sum=this.calculateSumCotangentsMultipliedByEdgeVector();
+   const A=this.calculateVoronoiCell();
+   const laplace=sum.scale(1/(2*A));
+   return laplace;
+  }
+
+   // https://computergraphics.stackexchange.com/questions/1718/what-is-the-simplest-way-to-compute-principal-curvature-for-a-mesh-triangle
   // K=(2π−∑θj)/A
-  // weird, in the lecture this is refered to as just the angle defect ?
+  // weird, in the lecture this is refered to as just the angle defect ? - yeah it is just the angle defect
   // Lecture: K = OMEGAi
   calculateGausianCurvature():number{
     return this.calculateAngleDefect();
   }
 
   //Lecture: H= 1/2 * || (Δ f)i ||
+  // well- this turned out to be wrong. should've been |H|=...
   calculateMeanCurvature():number{
-    return 0;
+    return this.calculateLaplaceBeltrami().len()*0.5;
   }
 
-  // Lecture: k1=H-sqrt(H^2−K) and k2==H+sqrt(H^2−K)
+  // Lecture: k1=H-sqrt(H^2−K) and k2=H+sqrt(H^2−K)
   calculatePrincipalCurvature(k1=true):number{
-    const H=this.calculateMeanCurvature();
+    const unknown=this.calculateLaplaceBeltrami();
     const K=this.calculateGausianCurvature();
+    // for the mean curvature we want both positive and negative values
+    const H=K>0 ? unknown.len() : -unknown.len();
     if(k1){
       return H-Math.sqrt(H*H-K);
     }
     return H+Math.sqrt(H*H-K);
   }
-
 
 }
