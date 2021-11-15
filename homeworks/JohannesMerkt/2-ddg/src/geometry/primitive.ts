@@ -314,18 +314,18 @@ export class Vertex {
   kMinCurvature() {
     const mean = this.meanCurvature();
     const gaussian = this.gaussianCurvature();
-    const powMean = Math.pow(mean, 2);
-    const k1 = mean - Math.sqrt(powMean - gaussian);
-    const k2 = mean + Math.sqrt(powMean - gaussian);
-    return k1 > k2 ? k2 : k1;
+    const H = gaussian > 0 ? mean*2 : -mean*2;
+    let d = H * H - gaussian;
+    d = d <= 0 ? 0 : Math.sqrt(d);
+    return (H - d) *0.1;
   }
 
   kMaxCurvature() {
     const mean = this.meanCurvature();
     const gaussian = this.gaussianCurvature();
-    const powMean = Math.pow(mean, 2);
-    const k1 = mean - Math.sqrt(powMean - gaussian);
-    const k2 = mean + Math.sqrt(powMean - gaussian);
-    return k1 > k2 ? k1 : k2;
+    const H = gaussian > 0 ? mean*2 : -mean*2;
+    let d = H * H - gaussian;
+    d = d <= 0 ? 0 : Math.sqrt(d);
+    return (H + d) *0.1;
   }
 }

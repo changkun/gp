@@ -249,7 +249,6 @@ export class HalfedgeMesh {
     }
     // now find neighbours
     while (noNextBoundaryHalfedge.size > 0) {
-      console.log(noNextBoundaryHalfedge.size);
       const values = noNextBoundaryHalfedge.entries().next().value;
       const key = values[0] as number;
       const he = values[1] as Halfedge;
@@ -260,7 +259,7 @@ export class HalfedgeMesh {
         nextHE.prev = he;
       }
       if (he.next && he.prev) {
-        console.log(boundaryHalfedges.delete(key));
+        boundaryHalfedges.delete(key);
       }
       noNextBoundaryHalfedge.delete(key);
     }
