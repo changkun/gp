@@ -6,8 +6,6 @@
 
 import {Vector} from '../linalg/vec';
 
-
-
 export class Halfedge {
   vert?: Vertex;
   edge?: Edge;
@@ -20,33 +18,22 @@ export class Halfedge {
   idx: number;
   onBoundary: boolean;
 
-  ctg(x: number): number { return 1 / Math.tan(x); }
-
   constructor() {
     this.idx = -1;
     this.onBoundary = false;
   }
   vector(): Vector {
-
     // TODO: compute the edge vector.
-    let vector = this.next!.vert!.position.sub(this.vert!.position);
-    return vector;
+    return new Vector();
   }
   cotan(): number {
     // TODO: Compute the cotan formula at this edge, if an edge
     // is on the boundary, then return zero.
-    if (this.onBoundary) return 0;
-
-    let a = this.twin!.prev!.angle();
-    let b = this.prev!.angle();
-
-    return this.ctg(a) + this.ctg(b);
+    return 0;
   }
   angle(): number {
     // TODO: compute the tip angle at this edge.
-    // calculates the corner angle at the halfedges vertex in the halfedges face
-    return Math.acos((this.vector().dot(this.prev!.twin!.vector()))/(this.vector().len() * this.prev!.twin!.vector().len()));
-    //return 0;
+    return 0;
   }
 }
 
@@ -78,21 +65,11 @@ export class Face {
 
   normal(): Vector {
     // TODO: compute the face normal of this face.
-    //return new Vector(1,1,1,1);
-    if (this.halfedge?.onBoundary) return new Vector();
-
-    let v1 = this.halfedge!.vector().scale(-1);
-    let v2 = this.halfedge!.prev!.twin!.vector();
-    return v1.cross(v2).unit();
-
-
+    return new Vector();
   }
   area(): number {
     // TODO: compute the area of this face.
-    let v1 = this.halfedge!.vector();
-    let v2 = this.halfedge!.prev!.twin!.vector();
-
-    return v1.cross(v2).len()/2;
+    return 0;
   }
 }
 
@@ -151,95 +128,19 @@ export class Vertex {
 
   normal(method = NormalMethod.EqualWeighted): Vector {
     // TODO: compute vertex normal given different method:
-    
-    let sum_vector = new Vector();
-
     // 1. EqualWeighted
-    if (method == NormalMethod.EqualWeighted){
-    this.faces((face, i) =>{
-      sum_vector = sum_vector.add(face.normal());
-      })
-    }
-
     // 2. AreaWeighted
-    if (method == NormalMethod.AreaWeighted){
-    this.faces((face, i) =>{
-      sum_vector = sum_vector.add(face.normal()).scale(face.area());
-      })
-    }
     // 3. AngleWeighted
-    if (method == NormalMethod.AngleWeighted){
-    this.halfedges((h, i) =>{
-      sum_vector = sum_vector.add(h.face!.normal()).scale(h.angle());
-      })
-    }
-      //
-
-/*     if (method == NormalMethod.AngleWeighted){
-      this.faces((face, i) =>{
-        sum_vector = sum_vector.add(face.normal()).scale(face.halfedge!.angle());
-        })
-      }
- */     
-
-    return sum_vector.scale(1/sum_vector.len());
+    return new Vector();
   }
   curvature(method = CurvatureMethod.Mean): number {
-    
     // TODO: compute curvature given different method:
     // 1. None
-    if (method == CurvatureMethod.None) return 1;
     // 2. Mean
-    if (method == CurvatureMethod.Mean) return this.meanCurv();
-    
     // 3. Gaussian
-    if (method == CurvatureMethod.Gaussian) return this.gausCurv();
-    
-    let h = this.meanCurv();
     // 4. Kmin
-    if (method == CurvatureMethod.Kmin) return h - Math.sqrt((h*h) -this.gausCurv());
     // 5. Kmax
-    if (method == CurvatureMethod.Kmax) return h + Math.sqrt((h*h) -this.gausCurv());
-
-    return 1;
-    
+    return 0;
   }
   // NOTE: you can add more methods if needed
-
-  //calculate Mean curvature using Laplace Beltrami
-  meanCurv(): number {
-    let sum_vector = new Vector();
-
-    //TODO: Calculate Area of voronoi cell
-    let a = 0;
-
-    this.halfedges((he,i) =>{
-      
-      if (he.onBoundary ||he.twin?.onBoundary) return;
-      sum_vector = sum_vector.add(he.vector().scale(he.cotan()));
-      a += he.face!.area();
-    })
-
-    //
-    let H =  (sum_vector.scale(1/(2*a)).len() /2);
-
-    return H;
-  }
-
-  //calculate Gauss Curvature
-  gausCurv(): number {
-
-    //Sum all tip angles at this vertex
-    let sum = 0;
-    this.halfedges((he: Halfedge, i: number) =>{
-      sum += he.angle();
-    })
-
-    //Calculate angle defect:
-    let K = 2 * Math.PI - sum;
-
-    return K;
-  }
-
-
 }
