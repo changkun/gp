@@ -6,6 +6,7 @@
 
 import {Vector} from '../linalg/vec';
 
+//triangle are update 0.5 lenght of crossproduct of two vectors of triangle from one vertex
 function triangleArea(a: number, b: number, c: number) {
   const semiperimeter = (a + b + c) / 2;
   return Math.sqrt(
@@ -70,7 +71,7 @@ export class Halfedge {
       throw new Error('halfedge has no twin assigned');
     }
     const faceAngle = Math.acos(
-      this.vector().unit().dot(this.prev!.twin!.vector().unit())
+      Math.max(-1, Math.min(1, this.vector().unit().dot(this.prev!.twin!.vector().unit())))
     );
     return faceAngle;
   }
@@ -277,6 +278,7 @@ export class Vertex {
     return 1;
   }
 
+  // (k1 + k2) *0.5
   meanCurvature() {
     let edgeCotanSum = new Vector();
     this.halfedges(halfedge => {
@@ -299,6 +301,7 @@ export class Vertex {
     return cotan.len() / 2;
   }
 
+  // k1 * k2 ?
   gaussianCurvature() {
     let angleSum = 0;
     this.halfedges(he => {
@@ -307,6 +310,7 @@ export class Vertex {
     return 2 * Math.PI - angleSum;
   }
 
+  // kmin min of k1 and k2 
   kMinCurvature() {
     const mean = this.meanCurvature();
     const gaussian = this.gaussianCurvature();
