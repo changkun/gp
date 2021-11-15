@@ -11,13 +11,18 @@
 Which code snippet (report in line numbers) in the `geometry/primitive.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+line 251-264: these lines are calculating the area of the voronoi cell, and the challenge was more about geometry than programming. I first tried doing that by finding the intersection of orthogonal vectors going inside the face from the vertex edges, which was very long and didn't work right. Then later i used the provided formula, which made it much easier ^^
 ```
 
 Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+It's not impressive, but rather stupid: In the cotan() function i wrote: 
+    "if (this.onBoundary = 0) return 0;"
+So it always returned zero.
+Fixing it was easy, i just rewrote it to:
+    "if (this.onBoundary) return 0;"
+
 ```
 
 ## Submission Instruction
