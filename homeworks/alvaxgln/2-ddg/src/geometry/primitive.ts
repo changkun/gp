@@ -4,6 +4,7 @@
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
 
+import { createGunzip } from 'zlib';
 import {Vector} from '../linalg/vec';
 
 
@@ -82,7 +83,7 @@ export class Face {
     if (this.halfedge?.onBoundary) return new Vector();
 
     let v1 = this.halfedge!.vector().scale(-1);
-    let v2 = this.halfedge!.prev!.twin!.vector();
+    let v2 = this.halfedge!.prev!.vector();
     return v1.cross(v2).unit();
 
 
@@ -185,21 +186,27 @@ export class Vertex {
     return sum_vector.scale(1/sum_vector.len());
   }
   curvature(method = CurvatureMethod.Mean): number {
-    
+
+    let h = this.gausCurv() > 0 ? this.meanCurv(): -this.meanCurv();
+    let k1 = h - Math.sqrt((h*h) -this.gausCurv());
+    let k2 = h + Math.sqrt((h*h) -this.gausCurv());
+
+
     // TODO: compute curvature given different method:
     // 1. None
     if (method == CurvatureMethod.None) return 1;
     // 2. Mean
-    if (method == CurvatureMethod.Mean) return this.meanCurv();
+    if (method == CurvatureMethod.Mean) return (k1 + k2) / 2;
     
     // 3. Gaussian
     if (method == CurvatureMethod.Gaussian) return this.gausCurv();
     
-    let h = this.meanCurv();
+
     // 4. Kmin
-    if (method == CurvatureMethod.Kmin) return h - Math.sqrt((h*h) -this.gausCurv());
+    if (method == CurvatureMethod.Kmin) return k1;
+
     // 5. Kmax
-    if (method == CurvatureMethod.Kmax) return h + Math.sqrt((h*h) -this.gausCurv());
+    if (method == CurvatureMethod.Kmax) return k2;
 
     return 1;
     
@@ -211,13 +218,13 @@ export class Vertex {
     let sum_vector = new Vector();
 
     //TODO: Calculate Area of voronoi cell
-    let a = 0;
+    let a = this.voronoi();
 
     this.halfedges((he,i) =>{
       
       if (he.onBoundary ||he.twin?.onBoundary) return;
       sum_vector = sum_vector.add(he.vector().scale(he.cotan()));
-      a += he.face!.area();
+      //a += he.face!.area();
     })
 
     //
@@ -239,6 +246,21 @@ export class Vertex {
     let K = 2 * Math.PI - sum;
 
     return K;
+  }
+
+  voronoi(): number {
+    let area = 0;
+    
+    this.halfedges((h,i) =>{
+      let v1 = h.vector().len();
+      let v2 = h.prev!.vector().len();
+      let a = h.next!.angle();
+      let b = h.prev!.angle();
+      
+      area += ((v1*v1*h.ctg(a)) + (v2*v2*h.ctg(b)))/8;
+
+    })
+    return area;
   }
 
 
