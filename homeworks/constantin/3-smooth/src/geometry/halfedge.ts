@@ -94,6 +94,12 @@ export class HalfedgeMesh {
     this.faces = [];
     this.halfedges = [];
     this.buildMesh(indices, positions);
+
+    let f=new Face();
+    f.vertices(f=>{
+
+    });
+
   }
 
   /**
