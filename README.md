@@ -50,7 +50,7 @@ During the rest of the semester, students should propose a project idea througho
 |25.10.2021 | Discrete Differential Geometry                   | [Link](https://changkun.de/s/gp/ws21/2-ddg) |
 |08.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
 |15.11.2021 | Parameterization                                 | [Link](https://changkun.de/s/gp/ws21/4-param) |
-|22.11.2021 | Remeshing                                        | TBA |
+|22.11.2021 | Remeshing                                        | [Link](https://changkun.de/s/gp/ws21/5-remesh) |
 |29.11.2021 | Deformation                                      | TBA |
 |06.12.2021 | Data-driven Approach I: Geometric Deep Learning  | TBA |
 |10.01.2021 | Data-driven Approach II: Differentiable Rendering| TBA |
@@ -70,13 +70,13 @@ Select 5 out of 7 given projects (5x10%), or feel free to finish them all (no bo
 
 | Proportion | Topic | Deadline |
 |:---:|:-------------------------------------------|:--------:|
-| 10% | [Implement the Halfedge Structure](./1-halfedge/) | <img src="./1-halfedge/assets/expect.png" width="200"/> </br>01.11.2021 00:00:00 |
+| 10% | [Implement the Halfedge Structure](./1-halfedge/) | <img src="./1-halfedge/assets/expect.png" width="200"/> </br>01.11.2021 23:59:59 |
 | 10% | [Implement discrete curvatures](./2-ddg/)  | <img src="./2-ddg/assets/teaser.png" width="200"/> </br>15.11.2021 23:59:59 |
 | 10% | [Implement Laplace smooth](./3-smooth/)    | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
-| 10% | TBA                                        | TBA |
-| 10% | TBA                                        | TBA |
-| 10% | TBA                                        | TBA |
-| 10% | TBA                                        | TBA |
+| 10% | TBA                                        | 13.12.2021 23:59:59 |
+| 10% | TBA                                        | 27.12.2021 23:59:59 |
+| 10% | TBA                                        | 10.01.2022 23:59:59 |
+| 10% | TBA                                        | 24.01.2022 23:59:59 |
 
 ### Individual Project
 
@@ -93,11 +93,11 @@ The timeline for individual projects are as follows:
 
 | Submission             | Deadline            |
 |:-----------------------|:-------------------:|
-| Proposal Submission    | 01.01.2022 00:00:00 |
-| Intermediate Submission| 15.01.2022 00:00:00 |
-| Video Submission       | 30.01.2022 00:00:00 |
-| Presentation           | 08.02.2022 00:00:00 |
-| Code Submission        | 08.02.2022 00:00:00 |
+| Proposal Submission    | 01.01.2022 23:59:59 |
+| Intermediate Submission| 15.01.2022 23:59:59 |
+| Video Submission       | 30.01.2022 23:59:59 |
+| Presentation           | 08.02.2022 23:59:59 |
+| Code Submission        | 08.02.2022 23:59:59 |
 
 Note that the individual project can be conducted in parallel with the coding projects,
 meaning the individual projects can be submitted anytime before the deadline; Individual
