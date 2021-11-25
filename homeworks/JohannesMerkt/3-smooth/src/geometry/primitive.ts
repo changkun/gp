@@ -148,6 +148,20 @@ export class Vertex {
     }
   }
 
+  halfedgeCount(): number {
+    let start = true;
+    let i = 0;
+    for (
+      let h = this.halfedge;
+      start || h !== this.halfedge;
+      h = h!.twin!.next
+    ) {
+      start = false;
+      i++;
+    }
+    return i;
+  }
+
   normal(method = NormalMethod.EqualWeighted): Vector {
     // Compute vertex normal given different method:
     // 1. EqualWeighted

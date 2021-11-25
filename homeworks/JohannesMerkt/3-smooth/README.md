@@ -18,19 +18,20 @@ where `t` is the time step and all reference results are performed for `1` smoot
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Implementing the mass matrix and the laplaceWeightMatrix was quite straight forward and didnt take much time, but solving the equation was really hard to understand and therefor took me the most time.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+When I updated the build mesh function to also create the original vert array i didnt pay attention and used the same position vector object for both the original and the vert. This caused weird behaviour in the preview looking like explosions of the mesh. Since when I modified the vert I also changed the original vert with it.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+A bottleneck could be generating the mass matrix since it has to calculate the voronoi cell for each vertex. Instead another alogrithm can be used like the uniform which is much faster.
+
 ```
 
 ## Submission Instruction
