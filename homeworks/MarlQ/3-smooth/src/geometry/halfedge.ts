@@ -104,13 +104,11 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
    buildMesh(indices: number[], positions: Vector[]) {
-    // TODO: build the halfedge connectivity.
-    //
     // We can assume the input mesh is a manifold mesh.
     
     // DEBUG
     // let duplicates = 0;
-    // indices = indices.slice(0, 120); 
+    //indices = indices.slice(0, 120); 
 
     positions.forEach((p, i) => {
       const vert = new Vertex(p);
@@ -118,76 +116,107 @@ export class HalfedgeMesh {
       this.verts.push(vert);
     });
 
-    for(let index = 2; index < indices.length; index+=3) {
+    for(let index = 0; index < indices.length; index+=3) {
       const face = new Face();
-      face.idx = Math.floor(index/3);
+      face.idx = Math.floor((index+3)/3);
       this.faces.push(face);
 
-      const halfedges: Halfedge[] = [];
+      const halfedges: Halfedge[] = []; // The current three halfedges around the face
 
       for(let edge_count = 0; edge_count < 3; edge_count++) {
         let edge: Edge;
 
         let halfedge: Halfedge;
 
-        let vertex_from = this.verts[indices[index - 2 + edge_count]];
-        let vertex_to = this.verts[indices[index - 2 + ((edge_count+1) % 3)]];
+        // Assign vertices
+        let vertex_from = this.verts[indices[index + edge_count]];
+        let vertex_to: Vertex;
+        if(edge_count === 2) vertex_to = this.verts[indices[index]];
+        else vertex_to = this.verts[indices[index + edge_count + 1]];
 
-        halfedge = new Halfedge();
-        halfedge.onBoundary = true;
-
-        
-        let existing_twin = this.halfedges.find( aV => aV.vert?.idx === vertex_to.idx && aV.next?.vert?.idx === vertex_from.idx);
-        if(existing_twin) { // Twin halfedge exists
-          //duplicates++ // DEBUG
+        let existing_halfedge = this.halfedges.find( he => he.twin!.vert!.idx === vertex_to.idx && he.vert!.idx === vertex_from.idx);
+        if(existing_halfedge) {
+          // Halfedge & Twin exists
+          halfedge = existing_halfedge;
 
           halfedge.onBoundary = false;
-          existing_twin.onBoundary = false;
+          //halfedge.twin!.onBoundary = false;
 
-          halfedge.twin = existing_twin;
-          existing_twin.twin = halfedge;
-
-          if(halfedge.twin.edge) edge = halfedge.twin.edge;
-          else {
-            console.log("ERROR: NO EDGE ON TWIN"); // Should never occur (thanks Typescript)
-            edge = new Edge();
-          }
+          edge = halfedge.twin!.edge!;
         }
-        else { // Create new edge
+        else {
+          // Create new Edge
+          halfedge = new Halfedge();
+          halfedge.onBoundary = false;
+
+          let twin: Halfedge = new Halfedge;
           edge = new Edge();
-          edge.idx = index-2+edge_count;
+          edge.idx = index + edge_count;
           this.edges.push(edge);
+
+          twin.onBoundary = true;
+          twin.edge = edge;
+          twin.vert = vertex_to;
+          
+          halfedge.twin = twin;
+          twin.twin = halfedge;
+
+          edge.halfedge = halfedge;
+          halfedge.edge = edge;
+          halfedge.vert = vertex_from;
+
+          this.halfedges.push(twin);
         }
 
+        // Assign prev and next
         if(edge_count > 0) {
           halfedge.prev = halfedges[edge_count-1];
           halfedges[edge_count-1].next = halfedge;
         }
-
         if(edge_count === 2) {
           halfedge.next = halfedges[0];
           halfedges[0].prev = halfedge;
-          vertex_to.halfedge = halfedge; // Last vertex points to last halfedge
         }
 
-        edge.halfedge = halfedge; // TODO: Is this correct? In theory it should not matter...
-        halfedge.edge = edge;
+        halfedge.face = face;
+        vertex_to.halfedge = halfedge; // Last vertex points to last halfedge
 
         if(edge_count === 0) face.halfedge = halfedge; // Face points to first halfedge
-        halfedge.face = face;
-        halfedge.vert = vertex_from;
 
         halfedges.push(halfedge);
         this.halfedges.push(halfedge);
-      }
     }
-
+  }
     let index = 0;
     this.halfedges.forEach(h => {
       h.idx = index++;
     });
+
+    // Assign next/prev for boundary edges
+    const boundaryEdges = this.halfedges.filter(h => h.onBoundary && !h.face);
+    boundaryEdges.forEach(h => {
+      if(!h.next) {
+        let next = boundaryEdges.find(oe => h.twin!.vert!.idx === oe.vert!.idx);
+        h.next = next;
+        next!.prev = h;
+      }
+    });
+
+    /* DEBUG CODE
+    this.halfedges.forEach(h => {
+      if(!h.edge || !h.next || !h.prev || !h.next || !h.twin || !h.vert) {
+        console.log(h)
+        this.halfedges.forEach(l => {
+          if(l !== h && l != h.twin && l.edge === h.edge) {
+            console.log("Should it be this one?")
+            console.log(l)
+          }
+        });
+      }
+    });
+    
+    console.log(boundaryEdges);
   
-  /* DEBUG CODE
     let should_be = this.edges.length+duplicates;
     let is = this.halfedges.length
     if(should_be !== is) console.log("ERROR: WRONG NUMBER OF HALFEDGES (should be: " + should_be + " , is: " + is + " )");
