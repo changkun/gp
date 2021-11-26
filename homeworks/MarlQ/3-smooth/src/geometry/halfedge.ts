@@ -111,9 +111,15 @@ export class HalfedgeMesh {
     //indices = indices.slice(0, 120); 
 
     positions.forEach((p, i) => {
-      const vert = new Vertex(p);
+      let vert = new Vertex(p);
       vert.idx = i;
       this.verts.push(vert);
+
+      // vertOrig has to be a deep copy
+      vert = new Vertex(p);
+      vert.idx = i;
+
+      this.vertsOrig.push(vert);
     });
 
     for(let index = 0; index < indices.length; index+=3) {
@@ -189,6 +195,7 @@ export class HalfedgeMesh {
   }
     let index = 0;
     this.halfedges.forEach(h => {
+      h.vertsOrig = this.vertsOrig;
       h.idx = index++;
     });
 
