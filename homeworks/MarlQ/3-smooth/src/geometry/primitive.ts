@@ -235,4 +235,13 @@ export class Vertex {
     });
     return a;
   }
+
+  getNeighbors(): Vertex[] {
+    const e0 = this.halfedge;
+    const neighbor_verts = [e0!.twin!.vert!];
+    for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+      neighbor_verts.push(e.vert!);
+    }
+    return neighbor_verts;
+  }
 }

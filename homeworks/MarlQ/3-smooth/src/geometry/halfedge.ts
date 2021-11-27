@@ -260,16 +260,17 @@ export class HalfedgeMesh {
    */
   smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
     // TODO: implmeent the Laplacian smoothing algorithm.
+
+    // Copy original vertices over
     this.vertsOrig.forEach((v, index) => {
       let vert = new Vertex(new Vector(v.position.x, v.position.y, v.position.z, 1));
       vert.idx = v.idx;
       vert.halfedge = this.verts[index].halfedge;
       this.verts[index] = vert;
     });
-    console.log(this.verts);
-    console.log(timeStep)
 
-    for(let t = 1; t < smoothStep; t++) {
+    for(let t = 1; t < timeStep; t++) {
+
       //   1. Build f(t)
       let f = DenseMatrix.zeros(this.verts.length, 3);
       for(let i = 0; i < this.verts.length; i++) {
@@ -283,12 +284,8 @@ export class HalfedgeMesh {
 
       for(let i = 0; i < this.verts.length; i++) {
         if(weightType === 'Uniform') {
-          const e0 = this.verts[i].halfedge;
-          let neighbor_verts = [e0!.twin!.vert];
-          for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
-            neighbor_verts.push(e.vert);
-          }
-          M.addEntry(neighbor_verts.length, i, i);
+          let neighbor_verts = this.verts[i].getNeighbors();
+          M.addEntry(1.0/neighbor_verts.length, i, i);
         }
       }
       const massMatrix = SparseMatrix.fromTriplet(M);
@@ -297,12 +294,14 @@ export class HalfedgeMesh {
       const weightMatrix = this.laplaceWeightMatrix(weightType);
       
       //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
-      let A = massMatrix.plus(weightMatrix.timesReal(-1.0));
-      let b = massMatrix.toDense().timesDense(f);
+      //let A = massMatrix.plus(weightMatrix.timesReal(-1.0 * smoothStep));
+      //let b = massMatrix.toDense().timesDense(f);
 
+      let L = massMatrix.timesSparse(weightMatrix);
+      let A = SparseMatrix.identity(this.verts.length, this.verts.length).plus(L.timesReal(-1.0 * smoothStep));
+      let b = f;
 
-      A = A.chol();
-      const f_new = A.solvePositiveDefinite(b);
+      const f_new = A.chol().solvePositiveDefinite(b);
       console.log(f_new)
 
       //   5. Update the position of mesh vertices based on the solution f'.
@@ -311,6 +310,17 @@ export class HalfedgeMesh {
         this.verts[i].position.y = f_new.get(i, 1);
         this.verts[i].position.z = f_new.get(i, 2);
       }
+
+      /* let y = weightMatrix.toDense();
+      let txt = '';
+      for(let a = 0; a < y.nRows(); a++ ) {
+        for(let b = 0; b < y.nCols(); b++ ) {
+          txt += y.get(a,b) + '  ';
+        }
+        console.log(txt)
+        txt = '';
+      } */
+
     }
     
   }
@@ -325,25 +335,21 @@ export class HalfedgeMesh {
     //
     // Hint: To avoid numeric issue when solving linear equation,
     // add 1e-8 to all elements.
-    //const weightMatrix = DenseMatrix.zeros(this.verts.length, this.verts.length);
+
     const W = new Triplet(this.verts.length, this.verts.length);   
 
     if(weightType === 'Uniform') {
       for(let i = 0; i < this.verts.length; i++) {
         // Calculate neighbor vertices for vertex i
-        const e0 = this.verts[i].halfedge;
-        let neighbor_verts = [e0!.twin!.vert];
-        for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
-          neighbor_verts.push(e.vert);
-        }
+        let neighbor_verts = this.verts[i].getNeighbors();
         
         // Set uniform neighbor weights
         neighbor_verts.forEach(v => {
-          W.addEntry(1 + 1e-8, this.verts[i].idx, v!.idx);
+          W.addEntry(1 + 1e-8, i, v!.idx);
         });
-
+        console.assert(i === this.verts[i].idx)
         // Set own weight
-        W.addEntry(-neighbor_verts.length + 1e-8, this.verts[i].idx, this.verts[i].idx);
+        W.addEntry( -neighbor_verts.length + 1e-8, i, i);
         
       }
     }
