@@ -170,7 +170,6 @@ export class HalfedgeMesh {
         he.prev = this.halfedges[i + ((j + 2) % 3)];
         he.onBoundary = false;
         hasTwin.set(he, false);
-        he.vertsOrig = this.vertsOrig;
 
         const v = idx2vert.get(a);
         he.vert = v;
@@ -276,6 +275,7 @@ export class HalfedgeMesh {
     index = 0;
     this.halfedges.forEach(h => {
       h.idx = index++;
+      h.vertsOrig = this.vertsOrig;
     });
   }
 
@@ -297,62 +297,65 @@ export class HalfedgeMesh {
       this.verts[index].position.z = v.position.z;
     });
 
-    for(let t = 1; t < timeStep; t++) {
 
-      //   1. Build f(t)
-      let f = DenseMatrix.zeros(this.verts.length, 3);
-      for(let i = 0; i < this.verts.length; i++) {
-        f.set(this.verts[i].position.x, i, 0);
-        f.set(this.verts[i].position.y, i, 1);
-        f.set(this.verts[i].position.z, i, 2);
-      }
-      
-      //   2. Build the mass matrix `M`
-      let M = new Triplet(this.verts.length, this.verts.length);          
-
-      for(let i = 0; i < this.verts.length; i++) {
-        if(weightType === 'Uniform') {
-          let neighbor_verts = this.verts[i].getNeighbors();
-          M.addEntry(1/neighbor_verts.length, i, i);
-        }
-        else if(weightType === 'Cotan') {
-          M.addEntry(1/this.verts[i].vertexArea(), i, i);
-        }
-      }
-      const massMatrix = SparseMatrix.fromTriplet(M); // actually M^-1
-
-      //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
-      const weightMatrix = this.laplaceWeightMatrix(weightType);
-      
-      //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
-      //let A = massMatrix.plus(weightMatrix.timesReal(-1.0 * smoothStep));
-      //let b = massMatrix.toDense().timesDense(f);
-
-      let L = massMatrix.timesSparse(weightMatrix); // L = DW
-      let A = SparseMatrix.identity(this.verts.length, this.verts.length).plus(L.timesReal(-1.0 * smoothStep)); // (I - lambda * L)
-      let b = f;
-
-      const f_new = A.chol().solvePositiveDefinite(b);
-      console.log(f_new)
-
-      //   5. Update the position of mesh vertices based on the solution f'.
-      for(let i = 0; i < this.verts.length; i++) {
-        this.verts[i].position.x = f_new.get(i, 0);
-        this.verts[i].position.y = f_new.get(i, 1);
-        this.verts[i].position.z = f_new.get(i, 2);
-      }
-
-      /* let y = weightMatrix.toDense();
-      let txt = '';
-      for(let a = 0; a < y.nRows(); a++ ) {
-        for(let b = 0; b < y.nCols(); b++ ) {
-          txt += y.get(a,b) + '  ';
-        }
-        console.log(txt)
-        txt = '';
-      } */
-
+    //   1. Build f(t)
+    let f = DenseMatrix.zeros(this.verts.length, 3);
+    for(let i = 0; i < this.verts.length; i++) {
+      f.set(this.verts[i].position.x, i, 0);
+      f.set(this.verts[i].position.y, i, 1);
+      f.set(this.verts[i].position.z, i, 2);
     }
+    
+    //   2. Build the mass matrix `M`
+    let M = new Triplet(this.verts.length, this.verts.length);          
+
+
+    if(weightType === 'Uniform') {
+    for(let i = 0; i < this.verts.length; i++) {
+        let neighbor_verts = this.verts[i].getNeighbors();
+        M.addEntry(neighbor_verts.length, i, i);
+      }
+    }
+    else if(weightType === 'Cotan') {
+      for(let i = 0; i < this.verts.length; i++) {
+        M.addEntry(this.verts[i].vertexArea(), i, i);
+      }
+    }
+
+    const massMatrix = SparseMatrix.fromTriplet(M); // actually M^-1
+
+    //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
+    const weightMatrix = this.laplaceWeightMatrix(weightType);
+    
+    //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
+    let A = massMatrix.plus(weightMatrix.timesReal(-1.0 * smoothStep * timeStep));
+    let b = massMatrix.toDense().timesDense(f);
+
+    //let L = massMatrix.timesSparse(weightMatrix); // L = DW
+    //let A = SparseMatrix.identity(this.verts.length, this.verts.length).plus(L.timesReal(-1.0 * smoothStep * timeStep)); // (I - lambda * h * L)
+    //let b = f;
+
+    const f_new = A.chol().solvePositiveDefinite(b);
+    console.log(f_new)
+
+    //   5. Update the position of mesh vertices based on the solution f'.
+    for(let i = 0; i < this.verts.length; i++) {
+      this.verts[i].position.x = f_new.get(i, 0);
+      this.verts[i].position.y = f_new.get(i, 1);
+      this.verts[i].position.z = f_new.get(i, 2);
+    }
+
+    /* let y = weightMatrix.toDense();
+    let txt = '';
+    for(let a = 0; a < y.nRows(); a++ ) {
+      for(let b = 0; b < y.nCols(); b++ ) {
+        txt += y.get(a,b) + '  ';
+      }
+      console.log(txt)
+      txt = '';
+    } */
+
+    
     
   }
 
@@ -393,10 +396,10 @@ export class HalfedgeMesh {
         neighbor_verts.forEach(v => {
           const cot = 0.5 * ( this.verts[i].halfedge!.cotan() + this.verts[i].halfedge!.twin!.cotan() );
           sum += cot;
-          W.addEntry( cot , i, v!.idx);
+          W.addEntry( cot + 1e-8, i, v!.idx);
         });
 
-        W.addEntry( -sum, i, i);
+        W.addEntry( -sum + 1e-8, i, i);
       }
     }
     const weightMatrix = SparseMatrix.fromTriplet(W);
