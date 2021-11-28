@@ -244,4 +244,13 @@ export class Vertex {
     }
     return neighbor_verts;
   }
+
+  vertexArea(): number {
+    const neighbors = this.getNeighbors();
+    let area = 0;
+    neighbors.forEach(n => {
+      area += n.halfedge!.face!.area();
+    });
+    return (1/3) * area;
+  }
 }
