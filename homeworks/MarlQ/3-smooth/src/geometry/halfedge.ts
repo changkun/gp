@@ -329,8 +329,9 @@ export class HalfedgeMesh {
     
     //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
     let A = massMatrix.plus(weightMatrix.timesReal(-1.0 * smoothStep * timeStep));
-    let b = massMatrix.toDense().timesDense(f);
+    let b = massMatrix.timesDense(f);
 
+    // Question: Why did this solution not work?
     //let L = massMatrix.timesSparse(weightMatrix); // L = DW
     //let A = SparseMatrix.identity(this.verts.length, this.verts.length).plus(L.timesReal(-1.0 * smoothStep * timeStep)); // (I - lambda * h * L)
     //let b = f;
@@ -391,15 +392,23 @@ export class HalfedgeMesh {
       // TODO
       for(let i = 0; i < this.verts.length; i++) {
         
+        // TODO: This code is unecessarily dumb
         let neighbor_verts = this.verts[i].getNeighbors();
         let sum = 0;
         neighbor_verts.forEach(v => {
-          const cot = 0.5 * ( this.verts[i].halfedge!.cotan() + this.verts[i].halfedge!.twin!.cotan() );
+
+          // Get the halfedge between vertices i and neighbor v
+          let halfedge = v.halfedge;
+          while(halfedge!.twin!.vert != this.verts[i]) {
+            halfedge = halfedge!.twin!.next;
+          }
+
+          const cot = 0.5 * ( halfedge!.cotan() + halfedge!.twin!.cotan() ); // 0.5 * cot alpha + cotan beta
           sum += cot;
           W.addEntry( cot + 1e-8, i, v!.idx);
         });
 
-        W.addEntry( -sum + 1e-8, i, i);
+        W.addEntry( -sum + 1e-8, i, i); // - sum ( weights )
       }
     }
     const weightMatrix = SparseMatrix.fromTriplet(W);
