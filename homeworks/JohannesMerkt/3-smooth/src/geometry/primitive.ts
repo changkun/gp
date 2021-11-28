@@ -7,7 +7,6 @@
 import {Vector} from '../linalg/vec';
 
 export class Halfedge {
-  vertsOrig?: Vertex[];
   vert?: Vertex;
   edge?: Edge;
   face?: Face;
@@ -25,8 +24,8 @@ export class Halfedge {
   }
   vector(): Vector {
     // HACK: using the original vertex
-    const a = this.vertsOrig![this.next!.vert!.idx];
-    const b = this.vertsOrig![this.vert!.idx];
+    const a = this.next!.vert!;
+    const b = this.vert!;
     return a.position.sub(b.position);
   }
   cotan(): number {
@@ -183,7 +182,9 @@ export class Vertex {
 
       case NormalMethod.AngleWeighted:
         this.halfedges(h => {
-          n = n.add(h.face!.normal().scale(h.next!.angle()));
+          if (h.face) {
+            n = n.add(h.face!.normal().scale(h.next!.angle()));
+          }
         });
         return n.unit();
     }

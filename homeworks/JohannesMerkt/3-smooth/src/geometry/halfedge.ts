@@ -46,6 +46,9 @@ export class HalfedgeMesh {
   // The following four fields are the key fields to represent half-edge based
   // meshes.
   vertsOrig: Vertex[]; // The original copy of all vertex positions
+  edgesOrig: Edge[];
+  facesOrig: Face[];
+  halfedgesOrig: Halfedge[];
   verts: Vertex[]; // The current vertex that are updated after smooth for actual rendering
   edges: Edge[]; // a list of edges
   faces: Face[]; // a list of faces
@@ -89,6 +92,9 @@ export class HalfedgeMesh {
     }
 
     this.vertsOrig = [];
+    this.edgesOrig = [];
+    this.facesOrig = [];
+    this.halfedgesOrig = [];
     this.verts = [];
     this.edges = [];
     this.faces = [];
@@ -104,13 +110,7 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
   buildMesh(indices: number[], positions: Vector[]) {
-    console.log(indices.length);
-    console.log(positions.length);
-    console.log('start');
-    // TODO: preinit arrays size for performance improvements
-    //this.faces = new Array(indices.length / 3);
     this.verts = new Array(positions.length);
-    this.vertsOrig = new Array(positions.length);
     this.faces = new Array(indices.length / 3);
 
     // create all vertices at once
@@ -118,9 +118,6 @@ export class HalfedgeMesh {
       const vert = new Vertex(positions[i].copy());
       vert.idx = i;
       this.verts[i] = vert;
-      const vertOriginal = new Vertex(positions[i].copy());
-      vertOriginal.idx = i;
-      this.vertsOrig[i] = vertOriginal;
     }
 
     const orderIds = (a: number, b: number) => {
@@ -187,30 +184,24 @@ export class HalfedgeMesh {
             const he1 = new Halfedge();
             he1.edge = e;
             he1.vert = this.verts[edge.vertA];
-            he1.vertsOrig = this.vertsOrig;
-            he1.face = f;
+            // he1.face = f; // incorrect -----------------------------------------------
             he1.onBoundary = true;
             const he1ID = nextEdgeID * 2;
             he1.idx = he1ID;
             const he2 = new Halfedge();
             he2.edge = e;
             he2.vert = this.verts[edge.vertB];
-            he2.vertsOrig = this.vertsOrig;
-            he2.face = f;
+            // he2.face = f; // incorrect -----------------------------------------------
             he2.onBoundary = true;
             const he2ID = nextEdgeID * 2 + 1;
             he2.idx = he2ID;
             he1.twin = he2;
             he2.twin = he1;
             this.verts[a].halfedge = he1;
-            this.vertsOrig[a].halfedge = he1;
             this.verts[b].halfedge = he2;
-            this.vertsOrig[b].halfedge = he2;
             if (a === edge.vertB) {
               this.verts[a].halfedge = he2;
-              this.vertsOrig[a].halfedge = he2;
               this.verts[b].halfedge = he1;
-              this.vertsOrig[b].halfedge = he1;
             }
             e.halfedge = he1;
             /* if (a === edge.a) {
@@ -310,6 +301,25 @@ export class HalfedgeMesh {
       noNextBoundaryHalfedge.delete(key);
     }
 
+    // TODO: create Virual faces then update copy Halfedge structure function
+    const copy = HalfedgeMesh.copyHalfedgeStructure(
+      this.verts,
+      this.edges,
+      this.faces,
+      this.halfedges
+    );
+    this.vertsOrig = copy.verts;
+    this.edgesOrig = copy.edges;
+    this.facesOrig = copy.faces;
+    this.halfedgesOrig = copy.halfedges;
+  }
+
+  static testHalfedgeImplementation(
+    verts: Vertex[],
+    edges: Edge[],
+    faces: Face[],
+    halfedges: Halfedge[]
+  ) {
     // test the halfedge implementation
     let noTwinCount = 0;
     let noNextCount = 0;
@@ -318,8 +328,8 @@ export class HalfedgeMesh {
     let noEdgeCount = 0;
     let noFaceCount = 0;
     let boundaryCount = 0;
-    for (let i = 0; i < this.halfedges.length; i++) {
-      const he = this.halfedges[i];
+    for (let i = 0; i < halfedges.length; i++) {
+      const he = halfedges[i];
       if (!he.vert) {
         noVertCount++;
       }
@@ -351,8 +361,8 @@ export class HalfedgeMesh {
     console.log('HE boundary count: ' + boundaryCount);
 
     let noHECount = 0;
-    for (let i = 0; i < this.verts.length; i++) {
-      const vert = this.verts[i];
+    for (let i = 0; i < verts.length; i++) {
+      const vert = verts[i];
       if (!vert.halfedge) {
         noHECount++;
       }
@@ -360,8 +370,8 @@ export class HalfedgeMesh {
     console.log('VERT no he count: ' + noHECount);
 
     noHECount = 0;
-    for (let i = 0; i < this.edges.length; i++) {
-      const edge = this.edges[i];
+    for (let i = 0; i < edges.length; i++) {
+      const edge = edges[i];
       if (!edge.halfedge) {
         noHECount++;
       }
@@ -369,13 +379,110 @@ export class HalfedgeMesh {
     console.log('EDGE no he count: ' + noHECount);
 
     noHECount = 0;
-    for (let i = 0; i < this.faces.length; i++) {
-      const face = this.faces[i];
+    for (let i = 0; i < faces.length; i++) {
+      const face = faces[i];
       if (!face.halfedge) {
         noHECount++;
       }
     }
     console.log('FACE no he count: ' + noHECount);
+  }
+
+  static copyHalfedgeStructure(
+    verts: Vertex[],
+    edges: Edge[],
+    faces: Face[],
+    halfedges: Halfedge[]
+  ) {
+    const newHalfedges: Halfedge[] = new Array(halfedges.length);
+    halfedges.forEach((halfedge, index) => {
+      const newHalfedge = new Halfedge();
+      newHalfedge.idx = halfedge.idx;
+      newHalfedge.onBoundary = halfedge.onBoundary;
+      newHalfedges[index] = newHalfedge;
+    });
+    const newVerts: Vertex[] = new Array(verts.length);
+    verts.forEach((vert, index) => {
+      const newVert = new Vertex(vert.position.copy());
+      newVert.idx = vert.idx;
+      if (!vert.halfedge) {
+        throw new Error(
+          'CopyHalfedgeStructure: Vert does not have a halfedge!'
+        );
+      }
+      newVert.halfedge = newHalfedges[vert.halfedge!.idx];
+      newVerts[index] = newVert;
+    });
+    const newFaces: Face[] = new Array(faces.length);
+    faces.forEach((face, index) => {
+      const newFace = new Face();
+      newFace.idx = face.idx;
+      if (!face.halfedge) {
+        throw new Error(
+          'CopyHalfedgeStructure: Face does not have a halfedge!'
+        );
+      }
+      newFace.halfedge = newHalfedges[face.halfedge!.idx];
+      newFaces[index] = newFace;
+    });
+    const newEdges: Edge[] = new Array(edges.length);
+    edges.forEach((edge, index) => {
+      const newEdge = new Edge();
+      newEdge.idx = edge.idx;
+      if (!edge.halfedge) {
+        throw new Error(
+          'CopyHalfedgeStructure: Edge does not have a halfedge!'
+        );
+      }
+      newEdge.halfedge = newHalfedges[edge.halfedge!.idx];
+      newEdges[index] = newEdge;
+    });
+    for (let i = 0; i < newHalfedges.length; i++) {
+      if (!halfedges[i].vert) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a vert!'
+        );
+      }
+      newHalfedges[i].vert = newVerts[halfedges[i].vert!.idx];
+      if (!halfedges[i].edge) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a edge!'
+        );
+      }
+      newHalfedges[i].edge = newEdges[halfedges[i].edge!.idx];
+      /*if (!halfedges[i].face) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a face!'
+        );
+      } */
+      if (halfedges[i].face) {
+        newHalfedges[i].face = newFaces[halfedges[i].face!.idx];
+      }
+      if (!halfedges[i].prev) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a prev!'
+        );
+      }
+      newHalfedges[i].prev = newHalfedges[halfedges[i].prev!.idx];
+      if (!halfedges[i].next) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a next!'
+        );
+      }
+      newHalfedges[i].next = newHalfedges[halfedges[i].next!.idx];
+      if (!halfedges[i].twin) {
+        throw new Error(
+          'CopyHalfedgeStructure: Halfedge does not have a twin!'
+        );
+      }
+      newHalfedges[i].twin = newHalfedges[halfedges[i].twin!.idx];
+    }
+    return {
+      verts: newVerts,
+      edges: newEdges,
+      faces: newFaces,
+      halfedges: newHalfedges,
+    };
   }
 
   /**
@@ -399,13 +506,13 @@ export class HalfedgeMesh {
       f.set(vert.position.z, vert.idx, 2);
     });
     //   2. Build the mass matrix `M`
-    const T = new Triplet(this.verts.length, this.verts.length);
+    const T = new Triplet(this.vertsOrig.length, this.vertsOrig.length);
     if (weightType === WeightType.Uniform) {
-      this.verts.forEach((vert, index) => {
+      this.vertsOrig.forEach((vert, index) => {
         T.addEntry(vert.halfedgeCount(), index, index);
       });
     } else {
-      this.verts.forEach((vert, index) => {
+      this.vertsOrig.forEach((vert, index) => {
         T.addEntry(100 * vert.voronoiCell(), index, index);
       });
     }
@@ -435,9 +542,9 @@ export class HalfedgeMesh {
     //
     // Hint: To avoid numeric issue when solving linear equation,
     // add 1e-8 to all elements.
-    const T = new Triplet(this.verts.length, this.verts.length);
+    const T = new Triplet(this.vertsOrig.length, this.vertsOrig.length);
     if (weightType === WeightType.Uniform) {
-      this.verts.forEach((vert, index) => {
+      this.vertsOrig.forEach((vert, index) => {
         let weight = 1e-8;
         vert.halfedges(halfedge => {
           weight += 1;
@@ -446,7 +553,7 @@ export class HalfedgeMesh {
         T.addEntry(weight, index, index);
       });
     } else {
-      this.verts.forEach((vert, index) => {
+      this.vertsOrig.forEach((vert, index) => {
         let weight = 1e-8;
         vert.halfedges(halfedge => {
           const cotan = (halfedge.cotan() + halfedge.twin!.cotan()) / 2;
@@ -460,30 +567,3 @@ export class HalfedgeMesh {
     return SparseMatrix.fromTriplet(T);
   }
 }
-
-// API Usage about @penrose/linear-algebra:
-//
-//   - There are two types of matrices: SparseMatrix and DenseMatrix
-//   - SparseMatrix.identity(n, n) gives you a identity matrix with
-//     n x n dimension
-//   - Triplet represents a small structure to hold non-zero entries in
-//     SparseMatrix, each entry is (x, i, j). To construct a SparseMatrix,
-//     here is an example:
-//
-//       let A = new Triplet(2, 2)          // Triplet for 2x2 SparseMatrix
-//       A.addEntry(1, 0, 0)                // A(0, 0) += 1
-//       A.addEntry(2, 1, 1)                // A(1, 1) += 2
-//       return SparseMatrix.fromTriplet(T) // Construct SparseMatrix
-//
-//   - A.timesSparse(B) returns A*B where A and B are SparseMatrix.
-//   - A.plus(B) returns A+B where A and B are SparseMatrix.
-//   - A.timesReal(s) returns sA where A is SparseMatrix and s is a real number.
-//   - A.chol() returns a sparse Cholesky decomposition.
-//   - A.solvePositiveDefinite(b) solves linear equation Ax=b where
-//     A is a Cholesky decomposition, and b is a DenseMatrix, and x is the solution.
-//   - For a DenseMatrix A, one can use A.set(x, i, j) for A(i,j)=x,
-//     and A.get(i, j) returns A(i,j).
-//
-// Further APIs regarding @penrose/linear-algebra can be found
-// in node_modules/@penrose/linear-algebra/docs/*.html, but the above
-// information are all the APIs you need for this project.
