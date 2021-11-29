@@ -318,11 +318,11 @@ export class HalfedgeMesh {
     }
     else if(weightType === 'Cotan') {
       for(let i = 0; i < this.verts.length; i++) {
-        M.addEntry(this.verts[i].vertexArea(), i, i);
+        M.addEntry( this.verts[i].vertexArea() * 100, i, i);
       }
     }
 
-    const massMatrix = SparseMatrix.fromTriplet(M); // actually M^-1
+    const massMatrix = SparseMatrix.fromTriplet(M);
 
     //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
     const weightMatrix = this.laplaceWeightMatrix(weightType);
@@ -331,7 +331,7 @@ export class HalfedgeMesh {
     let A = massMatrix.plus(weightMatrix.timesReal(-1.0 * smoothStep * timeStep));
     let b = massMatrix.timesDense(f);
 
-    // Question: Why did this solution not work?
+    // Question: Why did this solution not work? (With adjusting the mass matrix to be D = M^-1)
     //let L = massMatrix.timesSparse(weightMatrix); // L = DW
     //let A = SparseMatrix.identity(this.verts.length, this.verts.length).plus(L.timesReal(-1.0 * smoothStep * timeStep)); // (I - lambda * h * L)
     //let b = f;
