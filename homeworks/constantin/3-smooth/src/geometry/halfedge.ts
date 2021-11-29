@@ -30,9 +30,9 @@
 // Further APIs regarding @penrose/linear-algebra can be found
 // in node_modules/@penrose/linear-algebra/docs/*.html, but the above
 // information are all the APIs you need for this project.
-import {SparseMatrix, DenseMatrix, Triplet} from '@penrose/linear-algebra';
-import {Vertex, Edge, Face, Halfedge} from './primitive';
-import {Vector} from '../linalg/vec';
+import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
+import { Vertex, Edge, Face, Halfedge } from './primitive';
+import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
 
@@ -113,7 +113,7 @@ export class HalfedgeMesh {
     for (let i = 0; i < indices.length; i += 3) {
       for (let j = 0; j < 3; j++) { // check a face
         var a = indices[i + j]
-        var b = indices[i + (j+1)%3]
+        var b = indices[i + (j + 1) % 3]
 
         if (a > b) {
           const tmp = b
@@ -129,10 +129,10 @@ export class HalfedgeMesh {
       }
     }
 
-    this.verts   = new Array(positions.length)
-    this.edges      = new Array(edges.size)
-    this.faces      = new Array(indices.length / 3)
-    this.halfedges  = new Array(edges.size*2)
+    this.verts = new Array(positions.length)
+    this.edges = new Array(edges.size)
+    this.faces = new Array(indices.length / 3)
+    this.halfedges = new Array(edges.size * 2)
 
     const idx2vert = new Map()
     for (let i = 0; i < positions.length; i++) {
@@ -154,19 +154,19 @@ export class HalfedgeMesh {
       // construct halfedges of the face
       for (let j = 0; j < 3; j++) {
         const he = new Halfedge()
-        this.halfedges[i+j] = he
+        this.halfedges[i + j] = he
       }
 
       // construct connectivities of the new halfedges
       for (let j = 0; j < 3; j++) {
         // halfedge from vertex a to vertex b
         var a = indices[i + j]
-        var b = indices[i + (j+1)%3]
+        var b = indices[i + (j + 1) % 3]
 
         // halfedge properties
         const he = this.halfedges[i + j]
-        he.next = this.halfedges[i + (j+1)%3]
-        he.prev = this.halfedges[i + (j+2)%3]
+        he.next = this.halfedges[i + (j + 1) % 3]
+        he.prev = this.halfedges[i + (j + 2) % 3]
         he.onBoundary = false
         hasTwin.set(he, false)
 
@@ -249,13 +249,13 @@ export class HalfedgeMesh {
         current.twin = bhe
 
         current = next!;
-      } while(current != he)
+      } while (current != he)
 
       // link the cycle of boundary halfedges together
       const n = bcycle.length
       for (let j = 0; j < n; j++) {
-        bcycle[j].next = bcycle[(j+n-1)%n]
-        bcycle[j].prev = bcycle[(j+1)%n]
+        bcycle[j].next = bcycle[(j + n - 1) % n]
+        bcycle[j].prev = bcycle[(j + 1) % n]
         hasTwin.set(bcycle[j], true)
         hasTwin.set(bcycle[j].twin, true)
       }
@@ -273,58 +273,59 @@ export class HalfedgeMesh {
 
     // we need to populate the vertsOriginal, too
     this.vertsOrig = new Array(this.verts.length);
-    for(let i=0;i<this.verts.length;i++){
-      const v=this.verts[i];
-      let tmp=new Vertex(new Vector(v.position.x,v.position.y,v.position.z,v.position.w));
+    for (let i = 0; i < this.verts.length; i++) {
+      const v = this.verts[i];
+      let tmp = new Vertex(new Vector(v.position.x, v.position.y, v.position.z, v.position.w));
       tmp.halfedge = v.halfedge;
-      tmp.idx=v.idx;
-      this.vertsOrig[i]=tmp;
+      tmp.idx = v.idx;
+      this.vertsOrig[i] = tmp;
     }
     // aparently a pointer to vertsOriginal is stored in all the halfedges
     // yeah, this makes sense
-    this.halfedges.forEach(he=> {
-      he.vertsOrig=this.vertsOrig;
+    this.halfedges.forEach(he => {
+      he.vertsOrig = this.vertsOrig;
     });
   }
 
   // update the vertex positions from their original positions
-  resetFromOriginalPositions(){
+  resetFromOriginalPositions() {
     //assert(this.vertsOrig.length==this.verts.length);
-    for(let i=0;i<this.vertsOrig.length;i++){
-      let v=this.verts[i];
-      let orgV=this.vertsOrig[i];
-      v.position=new Vector(orgV.position.x,orgV.position.y,
-        orgV.position.z,orgV.position.w);
+    for (let i = 0; i < this.vertsOrig.length; i++) {
+      let v = this.verts[i];
+      let orgV = this.vertsOrig[i];
+      v.position = new Vector(orgV.position.x, orgV.position.y,
+        orgV.position.z, orgV.position.w);
     }
   }
 
   // create the mass matrix
-  // I think this is the same as https://en.wikipedia.org/wiki/Degree_matrix ?
-  massMatrix(weightType: WeightType){
-    const size=this.vertsOrig.length;
-    let triplet=new Triplet(size,size);
-    for(const vert of this.vertsOrig){
-      const idx=vert.idx;
-      let weightSum=0;
-      vert.halfedges(he =>{
-        switch(weightType){
+  // I think this is the same as https://en.wikipedia.org/wiki/Degree_matrix 
+  // unless method used is "Cotan"
+  massMatrix(weightType: WeightType) {
+    const size = this.vertsOrig.length;
+    let triplet = new Triplet(size, size);
+    for (const vert of this.vertsOrig) {
+      const idx = vert.idx;
+      let weightSum = 0;
+      vert.halfedges(he => {
+        switch (weightType) {
           case 'Uniform':
-            weightSum+=1;
+            weightSum += 1;
             break;
           case 'Cotan':
             // TODO ?!
-            weightSum+=1;
-            break;  
+            weightSum += 1;
+            break;
         }
       });
-      triplet.addEntry(weightSum,idx,idx);
+      triplet.addEntry(weightSum, idx, idx);
     }
     return SparseMatrix.fromTriplet(triplet);
   }
 
   // not sure yet how you call this
-  createLookupMatrix(){
-    let tmp = DenseMatrix.zeros(this.vertsOrig.length,3);
+  createLookupMatrix() {
+    let tmp = DenseMatrix.zeros(this.vertsOrig.length, 3);
     for (let v of this.verts) {
       tmp.set(v.position.x, v.idx, 0);
       tmp.set(v.position.y, v.idx, 1);
@@ -345,72 +346,71 @@ export class HalfedgeMesh {
     // add 1e-8 to all elements.
     //assert(this.vertsOrig.length==this.verts.length);
     console.log("Begin construction LPWM\n");
-     // we need to construct a sparse matrix of size len x len
-    const size=this.vertsOrig.length;
-    let triplet= new Triplet(size,size);
-     // add 1e-8 to all
-     const SMALL_ADD=1e-8;
+    // we need to construct a sparse matrix of size len x len
+    const size = this.vertsOrig.length;
+    let triplet = new Triplet(size, size);
+    // add 1e-8 to all
+    const SMALL_ADD = 1e-8;
     // loop through all vertices and add sum of their weights
     // to the triplet
-    for(const vert of this.vertsOrig){
-    //for(const vert of this.verts){  
-      const idx=vert.idx;
-      let weightSum=SMALL_ADD;
+    for (const vert of this.vertsOrig) {
+      //for(const vert of this.verts){  
+      const idx = vert.idx;
+      let weightSum = SMALL_ADD;
       // loop through all halfedges of this vertex and 
       // calculate the weight depending on the selected weight type
       vert.halfedges(he => {
-        let weight=0;
-        switch(weightType){
+        let weight = 0;
+        switch (weightType) {
           case 'Uniform':
-            weight = 1+SMALL_ADD;
+            weight = 1 + SMALL_ADD;
             break;
           case 'Cotan':
-             const cotanSum= he.cotan() + he.twin!.cotan();
+            const cotanSum = he.cotan() + he.twin!.cotan();
             // Does it even matter if we use 1/2 ?
-            const cotanSumHalf=cotanSum/2.0;
+            const cotanSumHalf = cotanSum / 2.0;
             //const cotanSumHalf=he.cotan() + he.twin!.cotan()/2;
             weight = cotanSumHalf + SMALL_ADD;
             break;
         }
         //triplet.addEntry(-weight,idx,he.twin!.vert!.idx);
-        triplet.addEntry(weight,idx,he.twin!.vert!.idx);
-        weightSum+=weight;
+        triplet.addEntry(weight, idx, he.twin!.vert!.idx);
+        weightSum += weight;
       });
-      triplet.addEntry(weightSum,idx,idx);
+      triplet.addEntry(weightSum, idx, idx);
     }
     console.log("END construction LPWM\n");
-    const tmp= SparseMatrix.fromTriplet(triplet);
-    console.log("N cols:"+tmp.nCols()+" N rows"+tmp.nRows()+
-    " mesh verts:"+this.vertsOrig.length);
+    const tmp = SparseMatrix.fromTriplet(triplet);
+    console.log("N cols:" + tmp.nCols() + " N rows" + tmp.nRows() +
+      " mesh verts:" + this.vertsOrig.length);
     //assert(this.verts.length==tmp.nCols());
     //assert(this.verts.length==tmp.nRows());
     return tmp;
   }
 
-   /**
-   * smooth performs the Laplacian smoothing algorithm.
-   * @param weightType indicates the type of the weight for
-   * constructing the Laplace matrix. Possible value could be: 'uniform',
-   * 'cotan'.
-   * @param timeStep the time step in Laplacian Smoothing algorithm
-   * @param smoothStep the smooth step in Laplacian Smoothing algorithm
-   */
-    smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
-      // TODO: implmeent the Laplacian smoothing algorithm.
-      //
-      // Hint:
-      //
-      //   1. Build f(t)
-      //   2. Build the mass matrix `M`
-      //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
-      //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
-      //   5. Update the position of mesh vertices based on the solution f'.
-      //
-      //for(let i=0;i<this.verts.length;i++){
-      //  this.verts[i].position.x*=1.1*timeStep;
-      //}
-      //this.smooth2(weightType,timeStep,smoothStep);
-      //this.smooth3(weightType,timeStep,smoothStep);
-    }
+  /**
+  * smooth performs the Laplacian smoothing algorithm.
+  * @param weightType indicates the type of the weight for
+  * constructing the Laplace matrix. Possible value could be: 'uniform',
+  * 'cotan'.
+  * @param timeStep the time step in Laplacian Smoothing algorithm
+  * @param smoothStep the smooth step in Laplacian Smoothing algorithm
+  */
+  smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
+    // TODO: implmeent the Laplacian smoothing algorithm.
+    //
+    // Hint:
+    //
+    //   1. Build f(t)
+    //   2. Build the mass matrix `M`
+    //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
+    //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
+    //   5. Update the position of mesh vertices based on the solution f'.
+    //
+    //for(let i=0;i<this.verts.length;i++){
+    //  this.verts[i].position.x*=1.1*timeStep;
+    //}
+  }
+
 
 }
