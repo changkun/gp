@@ -19,18 +19,26 @@ where `t` is the time step and all reference results are performed for `1` smoot
 
 ```
 TODO: your answer goes here
+Probably the laplaceWeightMatrix() function, simply because it was the largest part.
+The problem with time consumption with math-heavy tasks, is that most of the time is spent understanding the problem and not the actual programming.
+Here, I spent most of the time trying to figure out what the individual, non-documented variables meant (time step, smooth step, lambda, h).
+It also did not help that the matrices did not print to the console.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
 TODO: your answer goes here
+The first implementation produces a seriously disfigured, spiky bunny.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
 TODO: your answer goes here
+The neighbor vertices are computed twice.
+All vertices have to be reset to the original vertices.
+The vertices are iterated multiple times.
 ```
 
 ## Submission Instruction
