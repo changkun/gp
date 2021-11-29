@@ -333,33 +333,6 @@ export class HalfedgeMesh {
     return tmp;
   }
 
-
-  /**
-   * smooth performs the Laplacian smoothing algorithm.
-   * @param weightType indicates the type of the weight for
-   * constructing the Laplace matrix. Possible value could be: 'uniform',
-   * 'cotan'.
-   * @param timeStep the time step in Laplacian Smoothing algorithm
-   * @param smoothStep the smooth step in Laplacian Smoothing algorithm
-   */
-  smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
-    // TODO: implmeent the Laplacian smoothing algorithm.
-    //
-    // Hint:
-    //
-    //   1. Build f(t)
-    //   2. Build the mass matrix `M`
-    //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
-    //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
-    //   5. Update the position of mesh vertices based on the solution f'.
-    //
-    //for(let i=0;i<this.verts.length;i++){
-    //  this.verts[i].position.x*=1.1*timeStep;
-    //}
-    //this.smooth2(weightType,timeStep,smoothStep);
-    //this.smooth3(weightType,timeStep,smoothStep);
-  }
-
   /**
     * laplaceWeightMatrix returns the Laplace weight matrix for a given laplaceType
     * @param weightType indicates the type of the weight for
@@ -413,6 +386,31 @@ export class HalfedgeMesh {
     //assert(this.verts.length==tmp.nRows());
     return tmp;
   }
-}
+
+   /**
+   * smooth performs the Laplacian smoothing algorithm.
+   * @param weightType indicates the type of the weight for
+   * constructing the Laplace matrix. Possible value could be: 'uniform',
+   * 'cotan'.
+   * @param timeStep the time step in Laplacian Smoothing algorithm
+   * @param smoothStep the smooth step in Laplacian Smoothing algorithm
+   */
+    smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
+      // TODO: implmeent the Laplacian smoothing algorithm.
+      //
+      // Hint:
+      //
+      //   1. Build f(t)
+      //   2. Build the mass matrix `M`
+      //   3. Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
+      //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
+      //   5. Update the position of mesh vertices based on the solution f'.
+      //
+      //for(let i=0;i<this.verts.length;i++){
+      //  this.verts[i].position.x*=1.1*timeStep;
+      //}
+      //this.smooth2(weightType,timeStep,smoothStep);
+      //this.smooth3(weightType,timeStep,smoothStep);
+    }
 
 }
