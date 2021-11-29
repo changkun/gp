@@ -298,6 +298,41 @@ export class HalfedgeMesh {
     }
   }
 
+  // create the mass matrix
+  // I think this is the same as https://en.wikipedia.org/wiki/Degree_matrix ?
+  massMatrix(weightType: WeightType){
+    const size=this.vertsOrig.length;
+    let triplet=new Triplet(size,size);
+    for(const vert of this.vertsOrig){
+      const idx=vert.idx;
+      let weightSum=0;
+      vert.halfedges(he =>{
+        switch(weightType){
+          case 'Uniform':
+            weightSum+=1;
+            break;
+          case 'Cotan':
+            // TODO ?!
+            weightSum+=1;
+            break;  
+        }
+      });
+      triplet.addEntry(weightSum,idx,idx);
+    }
+    return SparseMatrix.fromTriplet(triplet);
+  }
+
+  // not sure yet how you call this
+  createLookupMatrix(){
+    let tmp = DenseMatrix.zeros(this.vertsOrig.length,3);
+    for (let v of this.verts) {
+      tmp.set(v.position.x, v.idx, 0);
+      tmp.set(v.position.y, v.idx, 1);
+      tmp.set(v.position.z, v.idx, 2);
+    }
+    return tmp;
+  }
+
 
   /**
    * smooth performs the Laplacian smoothing algorithm.
