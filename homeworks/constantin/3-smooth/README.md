@@ -18,19 +18,20 @@ where `t` is the time step and all reference results are performed for `1` smoot
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Calculating the laplacianWeight and mass matrix was much more straight forward than implementing the actual smoothing method. Chalanges I encountered were the lacking documentation for @penrose/linear algebra (at least VSCode as IDE did not import the documentation) and implementing the cholasky solver.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+Just 1 wrong line of code can have funny results: 
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+With the 'vertsOrg' hack both the laplacianWeightMatrix and the mass matrix do not change during each smoth step. Therefore, one could easily move this part out
+of the "smooth step loop" as well as creating the cholasky solver. This would probably make the biggest difference.
 ```
 
 ## Submission Instruction

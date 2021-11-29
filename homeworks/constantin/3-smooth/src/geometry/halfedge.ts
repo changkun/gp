@@ -325,7 +325,8 @@ export class HalfedgeMesh {
     return SparseMatrix.fromTriplet(triplet);
   }
 
-  // f
+  // f(t) - aka the current positions of the vertices
+  // NOTE: Obvoisly needs to use the non-original positions
   createVertexPosMatrix() {
     let tmp = DenseMatrix.zeros(this.vertsOrig.length, 3);
     for (let v of this.verts) {
@@ -380,7 +381,7 @@ export class HalfedgeMesh {
         triplet.addEntry(weight, idx, he.twin!.vert!.idx);
         weightSum += weight;
       });
-      triplet.addEntry(-weightSum, idx, idx);
+      triplet.addEntry(weightSum, idx, idx);
     }
     console.log("END construction LPWM\n");
     const tmp = SparseMatrix.fromTriplet(triplet);
@@ -415,14 +416,15 @@ export class HalfedgeMesh {
     const size = this.vertsOrig.length;
     // apply all the smooth steps, each of them moves the vertices a bit
     for (let sstep = 0; sstep < smoothStep; sstep++) {
+      // f(t)
       let lookup = this.createVertexPosMatrix();
       // Build the mass matrix `M`
       let massM = this.massMatrix(weightType);
       //  Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
       let laplaceWeightM = this.laplaceWeightMatrix(weightType);
-      // Build f(t)  Don't forget the "timeStep"
+      // Don't forget the "timeStep"
       let f = massM.minus(laplaceWeightM.timesReal(timeStep));
-      // cholasky solver.
+      // result = f(t+h) aka the positions after time step
       let result = f.chol().solvePositiveDefinite(massM.timesDense(lookup));
       // apply the change - NOTE: We need to NOT use vertsOrg here,
       // else the time steps obviosly won't work
