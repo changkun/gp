@@ -374,7 +374,6 @@ export class HalfedgeMesh {
             const cotanSum = he.cotan() + he.twin!.cotan();
             // Does it even matter if we use 1/2 ?
             const cotanSumHalf = cotanSum / 2.0;
-            //const cotanSumHalf=he.cotan() + he.twin!.cotan()/2;
             weight = cotanSumHalf;
             break;
         }
