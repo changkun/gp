@@ -301,6 +301,7 @@ export class HalfedgeMesh {
   // create the mass matrix
   // I think this is the same as https://en.wikipedia.org/wiki/Degree_matrix 
   // unless method used is "Cotan"
+  // aka just count the "neighbours" for uniform
   massMatrix(weightType: WeightType) {
     const size = this.vertsOrig.length;
     let triplet = new Triplet(size, size);
@@ -323,8 +324,8 @@ export class HalfedgeMesh {
     return SparseMatrix.fromTriplet(triplet);
   }
 
-  // not sure yet how you call this
-  createLookupMatrix() {
+  // not sure yet how to call this
+  createVertexMatrix() {
     let tmp = DenseMatrix.zeros(this.vertsOrig.length, 3);
     for (let v of this.verts) {
       tmp.set(v.position.x, v.idx, 0);
@@ -416,12 +417,12 @@ export class HalfedgeMesh {
     // apply all the smooth steps, each of them moves the vertices a bit
     for (let sstep = 0; sstep < smoothStep; sstep++) {
       // get everything we need
-      let laplaceM = this.laplaceWeightMatrix(weightType);
+      let laplaceWeightM = this.laplaceWeightMatrix(weightType);
       let massM = this.massMatrix(weightType);
 
-      let f = massM.minus(laplaceM.timesReal(timeStep));
+      let f = massM.minus(laplaceWeightM.timesReal(timeStep));
 
-      let lookup = this.createLookupMatrix();
+      let lookup = this. createVertexMatrix();
       // cholasky solver
       let result = f.chol().solvePositiveDefinite(massM.timesDense(lookup));
 
