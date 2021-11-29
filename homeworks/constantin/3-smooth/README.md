@@ -24,8 +24,7 @@ Calculating the laplacianWeight and mass matrix was much more straight forward t
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-Just 1 wrong line of code can have funny results:
-![funny](./assets/funny.JPG)
+Just 1 wrong line of code can have funny results (see below) though often I was stuck with try and error until things worked.
 ```
 
 ![funny](./assets/funny.JPG)
