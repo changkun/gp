@@ -24,8 +24,10 @@ Calculating the laplacianWeight and mass matrix was much more straight forward t
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-Just 1 wrong line of code can have funny results: ![funny](./assets/uniform-0.500.png)
+Just 1 wrong line of code can have funny results: ![funny](./assets/funny.JPG)
 ```
+
+![funny](./assets/funny.JPG)
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
