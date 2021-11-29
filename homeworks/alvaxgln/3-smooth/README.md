@@ -18,19 +18,27 @@ where `t` is the time step and all reference results are performed for `1` smoot
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+I think it was lines 376, and 379 which are calculating the new positions with the cholesky solver.
+
+At first i didn't really know how to translte the formula to code, and how the f(t), and f(t+h) Matrix should be stored and used in the calculations, and with the cholesky solver.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+Again i don't think it's an impressive bug ^^
+The time slider was not working backwards, and the mesh used to get smoothed infinitely.
+
+The problem was at fisrt not using the original Vertex Positions, when constructing the matricies, but it didnt go away after i fixed that.
+The problem then was that i constructed the original vertices with the verts[i].position which meant they updated with the current vertex position.
+The Solution was creating a new Vector Object for the original vertices.
+
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+I'm not sure, i think returning the matrices directly instead of the Triplet might use more memory then needed, but im not sure, since they are sparse Matrices, and i can't really tell how much that would hinder performance in general.
 ```
 
 ## Submission Instruction
