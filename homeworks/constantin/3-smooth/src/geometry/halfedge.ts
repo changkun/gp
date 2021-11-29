@@ -270,6 +270,21 @@ export class HalfedgeMesh {
     this.faces.forEach(f => { f.idx = index++ })
     index = 0
     this.halfedges.forEach(h => { h.idx = index++ })
+
+    // we need to populate the vertsOriginal, too
+    this.vertsOrig = new Array(this.verts.length);
+    for(let i=0;i<this.verts.length;i++){
+      const v=this.verts[i];
+      let tmp=new Vertex(new Vector(v.position.x,v.position.y,v.position.z,v.position.w));
+      tmp.halfedge = v.halfedge;
+      tmp.idx=v.idx;
+      this.vertsOrig[i]=tmp;
+    }
+    // aparently a pointer to vertsOriginal is stored in all the halfedges
+    // yeah, this makes sense
+    this.halfedges.forEach(he=> {
+      he.vertsOrig=this.vertsOrig;
+    });
   }
 
 
