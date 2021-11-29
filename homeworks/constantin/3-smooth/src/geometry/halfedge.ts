@@ -33,6 +33,8 @@
 import {SparseMatrix, DenseMatrix, Triplet} from '@penrose/linear-algebra';
 import {Vertex, Edge, Face, Halfedge} from './primitive';
 import {Vector} from '../linalg/vec';
+import { smoothstep } from 'three/src/math/MathUtils';
+import { assert } from 'console';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -270,6 +272,7 @@ export class HalfedgeMesh {
     this.halfedges.forEach(h => { h.idx = index++ })
   }
 
+
   /**
    * smooth performs the Laplacian smoothing algorithm.
    * @param weightType indicates the type of the weight for
@@ -289,21 +292,25 @@ export class HalfedgeMesh {
     //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
     //   5. Update the position of mesh vertices based on the solution f'.
     //
-
-
-
+    //for(let i=0;i<this.verts.length;i++){
+    //  this.verts[i].position.x*=1.1*timeStep;
+    //}
+    //this.smooth2(weightType,timeStep,smoothStep);
+    //this.smooth3(weightType,timeStep,smoothStep);
   }
 
   /**
-   * laplaceWeightMatrix returns the Laplace weight matrix for a given laplaceType
-   * @param weightType indicates the type of the weight for
-   * constructing the Laplace matrix.
-   */
+    * laplaceWeightMatrix returns the Laplace weight matrix for a given laplaceType
+    * @param weightType indicates the type of the weight for
+    * constructing the Laplace matrix.
+    */
   laplaceWeightMatrix(weightType: WeightType) {
     // TODO: implement laplacian matrix for a given weight type.
     //
     // Hint: To avoid numeric issue when solving linear equation,
     // add 1e-8 to all elements.
-    
+
   }
+}
+
 }
