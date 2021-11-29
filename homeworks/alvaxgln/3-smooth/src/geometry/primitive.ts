@@ -25,9 +25,13 @@ export class Halfedge {
   }
   vector(): Vector {
     // HACK: using the original vertex
-    const a = this.vertsOrig![this.next!.vert!.idx];
+     const a = this.vertsOrig![this.next!.vert!.idx];
     const b = this.vertsOrig![this.vert!.idx];
     return a.position.sub(b.position);
+  
+
+  //return this.next!.vert!.position.sub(this.vert!.position);
+
   }
   cotan(): number {
     // Compute the cotan formula at this edge, if an edge
