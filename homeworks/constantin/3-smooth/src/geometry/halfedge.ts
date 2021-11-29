@@ -381,7 +381,7 @@ export class HalfedgeMesh {
         triplet.addEntry(weight, idx, he.twin!.vert!.idx);
         weightSum += weight;
       });
-      triplet.addEntry(weightSum, idx, idx);
+      triplet.addEntry(-weightSum, idx, idx);
     }
     console.log("END construction LPWM\n");
     const tmp = SparseMatrix.fromTriplet(triplet);
