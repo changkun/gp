@@ -325,7 +325,7 @@ export class HalfedgeMesh {
     return SparseMatrix.fromTriplet(triplet);
   }
 
-  // f(t)
+  // f
   createVertexPosMatrix() {
     let tmp = DenseMatrix.zeros(this.vertsOrig.length, 3);
     for (let v of this.verts) {
