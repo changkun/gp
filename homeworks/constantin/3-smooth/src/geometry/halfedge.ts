@@ -410,6 +410,30 @@ export class HalfedgeMesh {
     //for(let i=0;i<this.verts.length;i++){
     //  this.verts[i].position.x*=1.1*timeStep;
     //}
+    console.log("Smoothing begin with weightType:" + weightType + " timeStep:" + timeStep + " smoothStep:" + smoothStep);
+    this.resetFromOriginalPositions();
+    const size = this.vertsOrig.length;
+    // apply all the smooth steps, each of them moves the vertices a bit
+    for (let sstep = 0; sstep < smoothStep; sstep++) {
+      // get everything we need
+      let laplaceM = this.laplaceWeightMatrix(weightType);
+      let massM = this.massMatrix(weightType);
+
+      let f = massM.minus(laplaceM.timesReal(timeStep));
+
+      let lookup = this.createLookupMatrix();
+      // cholasky solver
+      let result = f.chol().solvePositiveDefinite(massM.timesDense(lookup));
+
+      // apply the change - NOTE: We need to NOT use vertsOrg here,
+      // else the time steps won't work
+      for (let i = 0; i < size; i++) {
+        let pos = this.verts[i].position;
+        pos.x = result.get(i, 0);
+        pos.y = result.get(i, 1);
+        pos.z = result.get(i, 2);
+      }
+    }
   }
 
 
