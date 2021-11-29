@@ -287,6 +287,17 @@ export class HalfedgeMesh {
     });
   }
 
+  // update the vertex positions from their original positions
+  resetFromOriginalPositions(){
+    //assert(this.vertsOrig.length==this.verts.length);
+    for(let i=0;i<this.vertsOrig.length;i++){
+      let v=this.verts[i];
+      let orgV=this.vertsOrig[i];
+      v.position=new Vector(orgV.position.x,orgV.position.y,
+        orgV.position.z,orgV.position.w);
+    }
+  }
+
 
   /**
    * smooth performs the Laplacian smoothing algorithm.
