@@ -18,27 +18,31 @@ where `t` is the time step and all reference results are performed for `1` smoot
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
 Probably the laplaceWeightMatrix() function, simply because it was the largest part.
-The problem with time consumption with math-heavy tasks, is that most of the time is spent understanding the problem and not the actual programming.
-Here, I spent most of the time trying to figure out what the individual, non-documented variables meant (time step, smooth step, lambda, h).
-It also did not help that the matrices did not print to the console.
+The problem math-heavy tasks, however, is that most of the time is spent understanding the problem and not the actual programming.
+Here, I spent most of the time trying to figure out what the individual variables meant (time step, smooth step, lambda, h, ...) and how various things are calculated.
+Unfortunately, very small mistakes lead to very large problems.
+It also did not help that debugging was relatively hard in this case.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
-The first implementation produces a seriously disfigured, spiky bunny.
+The first implementation produced a seriously disfigured, spiky bunny.
+That bug was mainly caused by using timeStep incorrectly (using it as iteration, rather than multiplying it).
+Another bug was caused by very small/large entries in the mass matrix for cotan smoothing.
+Other than that, everything went pretty 'smooth' (sorry for the joke).
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
-The neighbor vertices are computed twice.
-All vertices have to be reset to the original vertices.
-The vertices are iterated multiple times.
+The neighbor vertices are computed and iterated multiple times during the mass and weight matrix calculations.
+Also, the function calls create additional overhead.
+Everything could probably collapsed into a single loop.
+
+Also, every time the smoothing is applied, all vertices are first reset, because the vertex area (for cotan) is calculated on the verts and not vertsOrig.
+- Ok, I 'fixed' that by using the voronoi cell, which works with the original vertices. The results are more or less the same, but this should be a bit faster. The code resetting the vertices has been commented out, and the matrix f is now initialised with vertsOrig.
 ```
 
 ## Submission Instruction

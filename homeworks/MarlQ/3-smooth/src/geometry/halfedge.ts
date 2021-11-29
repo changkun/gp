@@ -288,22 +288,21 @@ export class HalfedgeMesh {
    * @param smoothStep the smooth step in Laplacian Smoothing algorithm
    */
   smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
-    // TODO: implmeent the Laplacian smoothing algorithm.
 
     // Reset vertices to original positions
-    this.vertsOrig.forEach((v, index) => {
+    /* this.vertsOrig.forEach((v, index) => {
       this.verts[index].position.x = v.position.x;
       this.verts[index].position.y = v.position.y;
       this.verts[index].position.z = v.position.z;
-    });
+    }); */
 
 
     //   1. Build f(t)
     let f = DenseMatrix.zeros(this.verts.length, 3);
     for(let i = 0; i < this.verts.length; i++) {
-      f.set(this.verts[i].position.x, i, 0);
-      f.set(this.verts[i].position.y, i, 1);
-      f.set(this.verts[i].position.z, i, 2);
+      f.set(this.vertsOrig[i].position.x, i, 0);
+      f.set(this.vertsOrig[i].position.y, i, 1);
+      f.set(this.vertsOrig[i].position.z, i, 2);
     }
     
     //   2. Build the mass matrix `M`
@@ -318,7 +317,7 @@ export class HalfedgeMesh {
     }
     else if(weightType === 'Cotan') {
       for(let i = 0; i < this.verts.length; i++) {
-        M.addEntry( this.verts[i].vertexArea() * 100, i, i);
+        M.addEntry( this.verts[i].voronoiCell() * 100, i, i); // Alternatively: this.verts[i].vertexArea() produces very similar results
       }
     }
 
@@ -366,7 +365,6 @@ export class HalfedgeMesh {
    * constructing the Laplace matrix.
    */
   laplaceWeightMatrix(weightType: WeightType) {
-    // TODO: implement laplacian matrix for a given weight type.
     //
     // Hint: To avoid numeric issue when solving linear equation,
     // add 1e-8 to all elements.
@@ -382,17 +380,16 @@ export class HalfedgeMesh {
         neighbor_verts.forEach(v => {
           W.addEntry(1 + 1e-8, i, v!.idx);
         });
-        console.assert(i === this.verts[i].idx)
+        //console.assert(i === this.verts[i].idx)
         // Set own weight
         W.addEntry( -neighbor_verts.length + 1e-8, i, i);
         
       }
     }
     else if(weightType === 'Cotan') {
-      // TODO
       for(let i = 0; i < this.verts.length; i++) {
         
-        // TODO: This code is unecessarily dumb
+        // TODO: This code is a bit lazily done
         let neighbor_verts = this.verts[i].getNeighbors();
         let sum = 0;
         neighbor_verts.forEach(v => {
