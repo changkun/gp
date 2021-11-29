@@ -335,7 +335,48 @@ export class HalfedgeMesh {
     //
     // Hint: To avoid numeric issue when solving linear equation,
     // add 1e-8 to all elements.
-
+    //assert(this.vertsOrig.length==this.verts.length);
+    console.log("Begin construction LPWM\n");
+     // we need to construct a sparse matrix of size len x len
+    const size=this.vertsOrig.length;
+    let triplet= new Triplet(size,size);
+     // add 1e-8 to all
+     const SMALL_ADD=1e-8;
+    // loop through all vertices and add sum of their weights
+    // to the triplet
+    for(const vert of this.vertsOrig){
+    //for(const vert of this.verts){  
+      const idx=vert.idx;
+      let weightSum=SMALL_ADD;
+      // loop through all halfedges of this vertex and 
+      // calculate the weight depending on the selected weight type
+      vert.halfedges(he => {
+        let weight=0;
+        switch(weightType){
+          case 'Uniform':
+            weight = 1+SMALL_ADD;
+            break;
+          case 'Cotan':
+             const cotanSum= he.cotan() + he.twin!.cotan();
+            // Does it even matter if we use 1/2 ?
+            const cotanSumHalf=cotanSum/2.0;
+            //const cotanSumHalf=he.cotan() + he.twin!.cotan()/2;
+            weight = cotanSumHalf + SMALL_ADD;
+            break;
+        }
+        //triplet.addEntry(-weight,idx,he.twin!.vert!.idx);
+        triplet.addEntry(weight,idx,he.twin!.vert!.idx);
+        weightSum+=weight;
+      });
+      triplet.addEntry(weightSum,idx,idx);
+    }
+    console.log("END construction LPWM\n");
+    const tmp= SparseMatrix.fromTriplet(triplet);
+    console.log("N cols:"+tmp.nCols()+" N rows"+tmp.nRows()+
+    " mesh verts:"+this.vertsOrig.length);
+    //assert(this.verts.length==tmp.nCols());
+    //assert(this.verts.length==tmp.nRows());
+    return tmp;
   }
 }
 
