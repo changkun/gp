@@ -307,19 +307,20 @@ export class HalfedgeMesh {
     let triplet = new Triplet(size, size);
     for (const vert of this.vertsOrig) {
       const idx = vert.idx;
-      let weightSum = 0;
-      vert.halfedges(he => {
-        switch (weightType) {
-          case 'Uniform':
-            weightSum += 1;
-            break;
-          case 'Cotan':
-            // TODO ?!
-            weightSum += 1;
-            break;
-        }
-      });
-      triplet.addEntry(weightSum, idx, idx);
+      let weight=0;
+      switch(weightType){
+        case 'Uniform':
+          // the number of edges attached to this vertex
+          let count=0;
+          vert.halfedges(he => {count++});
+          weight=count;
+          break;
+        case 'Cotan':
+          // the area is most likely too small, ad some arbitrary factor (lecture)
+          weight=vert.voronoiCell()*10;
+          break;
+      }
+      triplet.addEntry(weight, idx, idx);
     }
     return SparseMatrix.fromTriplet(triplet);
   }
@@ -364,21 +365,22 @@ export class HalfedgeMesh {
         let weight = 0;
         switch (weightType) {
           case 'Uniform':
-            weight = 1 + SMALL_ADD;
+            // NOTE - we don't need to add anything except to the total sum 
+            weight = 1;
             break;
           case 'Cotan':
             const cotanSum = he.cotan() + he.twin!.cotan();
             // Does it even matter if we use 1/2 ?
             const cotanSumHalf = cotanSum / 2.0;
             //const cotanSumHalf=he.cotan() + he.twin!.cotan()/2;
-            weight = cotanSumHalf + SMALL_ADD;
+            weight = cotanSumHalf;
             break;
         }
         //triplet.addEntry(-weight,idx,he.twin!.vert!.idx);
         triplet.addEntry(weight, idx, he.twin!.vert!.idx);
         weightSum += weight;
       });
-      triplet.addEntry(weightSum, idx, idx);
+      triplet.addEntry(-weightSum, idx, idx);
     }
     console.log("END construction LPWM\n");
     const tmp = SparseMatrix.fromTriplet(triplet);
