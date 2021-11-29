@@ -325,8 +325,8 @@ export class HalfedgeMesh {
     return SparseMatrix.fromTriplet(triplet);
   }
 
-  // not sure yet how to call this
-  createVertexMatrix() {
+  // f(t)
+  createVertexPosMatrix() {
     let tmp = DenseMatrix.zeros(this.vertsOrig.length, 3);
     for (let v of this.verts) {
       tmp.set(v.position.x, v.idx, 0);
@@ -354,7 +354,7 @@ export class HalfedgeMesh {
     // add 1e-8 to all
     const SMALL_ADD = 1e-8;
     // loop through all vertices and add sum of their weights
-    // to the triplet
+    // to the triplet.
     for (const vert of this.vertsOrig) {
       //for(const vert of this.verts){  
       const idx = vert.idx;
@@ -362,13 +362,14 @@ export class HalfedgeMesh {
       // loop through all halfedges of this vertex and 
       // calculate the weight depending on the selected weight type
       vert.halfedges(he => {
+        // NOTE - we don't need to add 1e-8 to the weight, only the weightSum (could be 0)
         let weight = 0;
         switch (weightType) {
           case 'Uniform':
-            // NOTE - we don't need to add anything except to the total sum 
             weight = 1;
             break;
           case 'Cotan':
+            // lecture: 1/2*(cotan(alpha)+cotan(beta))
             const cotanSum = he.cotan() + he.twin!.cotan();
             // Does it even matter if we use 1/2 ?
             const cotanSumHalf = cotanSum / 2.0;
@@ -376,7 +377,6 @@ export class HalfedgeMesh {
             weight = cotanSumHalf;
             break;
         }
-        //triplet.addEntry(-weight,idx,he.twin!.vert!.idx);
         triplet.addEntry(weight, idx, he.twin!.vert!.idx);
         weightSum += weight;
       });
@@ -410,26 +410,22 @@ export class HalfedgeMesh {
     //   4. Solve linear system (M - tλW)f' = Mf using a Cholesky solver.
     //   5. Update the position of mesh vertices based on the solution f'.
     //
-    //for(let i=0;i<this.verts.length;i++){
-    //  this.verts[i].position.x*=1.1*timeStep;
-    //}
     console.log("Smoothing begin with weightType:" + weightType + " timeStep:" + timeStep + " smoothStep:" + smoothStep);
     this.resetFromOriginalPositions();
     const size = this.vertsOrig.length;
     // apply all the smooth steps, each of them moves the vertices a bit
     for (let sstep = 0; sstep < smoothStep; sstep++) {
-      // get everything we need
-      let laplaceWeightM = this.laplaceWeightMatrix(weightType);
+      let lookup = this.createVertexPosMatrix();
+      // Build the mass matrix `M`
       let massM = this.massMatrix(weightType);
-
+      //  Build the Laplace weight matrix `W` for the given `weightType` in laplaceWeightMatrix
+      let laplaceWeightM = this.laplaceWeightMatrix(weightType);
+      // Build f(t)  Don't forget the "timeStep"
       let f = massM.minus(laplaceWeightM.timesReal(timeStep));
-
-      let lookup = this. createVertexMatrix();
-      // cholasky solver
+      // cholasky solver.
       let result = f.chol().solvePositiveDefinite(massM.timesDense(lookup));
-
       // apply the change - NOTE: We need to NOT use vertsOrg here,
-      // else the time steps won't work
+      // else the time steps obviosly won't work
       for (let i = 0; i < size; i++) {
         let pos = this.verts[i].position;
         pos.x = result.get(i, 0);
