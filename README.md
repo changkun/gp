@@ -51,10 +51,10 @@ During the rest of the semester, students should propose a project idea througho
 |08.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
 |15.11.2021 | Parameterization                                 | [Link](https://changkun.de/s/gp/ws21/4-param) |
 |22.11.2021 | Remeshing                                        | [Link](https://changkun.de/s/gp/ws21/5-remesh) |
-|29.11.2021 | Deformation                                      | TBA |
-|06.12.2021 | Data-driven Approach I: Geometric Deep Learning  | TBA |
-|10.01.2021 | Data-driven Approach II: Differentiable Rendering| TBA |
-|27.01.2022 | Project Idea-Pitch                               | Presentation |
+|29.11.2021 | Deformation                                      | [Link](https://changkun.de/s/gp/ws21/6-deform) |
+|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
+|10.01.2021 | Geometric Deep Learning                          | TBA |
+|27.01.2022 | Differentiable Rendering & Project Idea-Pitch    | TBA |
 |07.02.2022 | Project Intermediate                             | Presentation |
 |14.02.2022 | Project Final                                    | Presentation |
 
