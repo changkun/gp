@@ -31,6 +31,7 @@
 // in node_modules/@penrose/linear-algebra/docs/*.html, but the above
 // information are all the APIs you need for this project.
 import {DenseMatrix, SparseMatrix, Triplet} from '@penrose/linear-algebra';
+import { assert } from 'console';
 import {Vector} from '../linalg/vec';
 import {HalfedgeMesh} from './halfedge_mesh';
 
@@ -68,8 +69,15 @@ export class ParameterizedMesh extends HalfedgeMesh {
     // Implementation procedure:
     //
     //    1. check if the mesh contains at least a boundary. Otherwise, throw an error.
+    if(!(this.boundaries.length>0)){
+      //assert("We need at least one boundary");
+      console.log("We need at least one boundary");
+      throw new Error("We need at least one boundary");
+    }
     //    2. compute boundary uv coordinates depending on the boundary type.
+    const UV=this.computeBoundaryMatrices(boundaryType);
     //    3. compute matrix depending on the laplacian weight type.
+    const interior=this.computeInteriorMatrix(UV[0],UV[1],laplaceWeight);
     //    4. solve linear equation and assing computed uv to corresponding vertex uv.
     //
   }
