@@ -121,6 +121,11 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //
     // Note that the interior matrix is essentially the Laplace matrix, but
     // the elements that corresponding to the boundary vertices are zerored out.
-    return SparseMatrix.fromTriplet(T);
+    //return SparseMatrix.fromTriplet(T);
+    const size = this.verts.length;
+    let triplet = new Triplet(size, size);
+    //TODO
+    const tmp = SparseMatrix.fromTriplet(triplet);
+    return tmp;
   }
 }
