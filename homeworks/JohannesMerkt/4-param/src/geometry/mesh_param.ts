@@ -33,6 +33,7 @@
 import {DenseMatrix, SparseMatrix, Triplet} from '@penrose/linear-algebra';
 import {Vector} from '../linalg/vec';
 import {HalfedgeMesh} from './halfedge_mesh';
+import {Halfedge} from './primitive';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -63,15 +64,27 @@ export class ParameterizedMesh extends HalfedgeMesh {
    * @param {WeightType} laplaceWeight 'uniform', or 'cotan'
    */
   flatten(boundaryType: BoundaryType, laplaceWeight: WeightType) {
-    // TODO: Implement Tutte's barycentric embedding
-    //
-    // Implementation procedure:
-    //
     //    1. check if the mesh contains at least a boundary. Otherwise, throw an error.
+    if (!(this.boundaries.length > 0)) {
+      throw new Error('HalfedgeMesh has no boundary: cannot flatten');
+    }
     //    2. compute boundary uv coordinates depending on the boundary type.
+    const [U, V] = this.computeBoundaryMatrices(boundaryType);
     //    3. compute matrix depending on the laplacian weight type.
-    //    4. solve linear equation and assing computed uv to corresponding vertex uv.
-    //
+    const L = this.computeInteriorMatrix(U, V, laplaceWeight);
+    //    4. solve linear equation.
+    // solve L*U' = U and L*V' = V
+    const lowerUpperFactorization = L.lu();
+    const Utick = lowerUpperFactorization.solveSquare(U);
+    const Vtick = lowerUpperFactorization.solveSquare(V);
+    //    5. assign computed uv to corresponding vertex uv.
+    this.verts.forEach(vert => {
+      vert.uv = new Vector(
+        0.5 + Utick.get(vert.idx),
+        0.5 + Vtick.get(vert.idx),
+        0
+      );
+    });
   }
 
   /**
@@ -83,14 +96,41 @@ export class ParameterizedMesh extends HalfedgeMesh {
   computeBoundaryMatrices(
     boundaryType: BoundaryType
   ): [typeof DenseMatrix, typeof DenseMatrix] {
-    const U = DenseMatrix.zeros(this.verts.length);
+    const U = DenseMatrix.zeros(this.verts.length); // ommitted second argument is 1 by default so a vector
     const V = DenseMatrix.zeros(this.verts.length);
-
-    // TODO: compute the right hand side of the linear parameterization system
-    // for boundary vertices depending on the type of the boundary.
-    //
-    // Note that the coordinates of boundary vertices is derived from the
-    // property of "convex in order".
+    const boundaryHalfedges: Halfedge[] = [];
+    this.boundaries[0].halfedges(halfedge => boundaryHalfedges.push(halfedge));
+    if (boundaryType === BoundaryType.Disk) {
+      boundaryHalfedges.forEach((halfedge, index) => {
+        const rotation = index / boundaryHalfedges.length;
+        U.set(0.5 * Math.cos(2 * Math.PI * rotation), halfedge.vert!.idx);
+        V.set(0.5 * Math.sin(2 * Math.PI * rotation), halfedge.vert!.idx);
+      });
+    } else {
+      boundaryHalfedges.forEach((halfedge, index) => {
+        const boundaryPosition = (index / boundaryHalfedges.length) * 4;
+        let sideOffset = boundaryPosition;
+        let x = sideOffset;
+        let y = 0;
+        if (boundaryPosition > 1 && boundaryPosition <= 2) {
+          sideOffset = boundaryPosition - 1;
+          y = sideOffset;
+          x = 1;
+        }
+        if (boundaryPosition > 2 && boundaryPosition <= 3) {
+          sideOffset = boundaryPosition - 2;
+          x = 1 - sideOffset;
+          y = 1;
+        }
+        if (boundaryPosition > 3 && boundaryPosition <= 4) {
+          sideOffset = boundaryPosition - 3;
+          y = 1 - sideOffset;
+          x = 0;
+        }
+        U.set(x - 0.5, halfedge.vert!.idx);
+        V.set(y - 0.5, halfedge.vert!.idx);
+      });
+    }
     return [U, V];
   }
 
@@ -107,12 +147,34 @@ export class ParameterizedMesh extends HalfedgeMesh {
     laplaceWeight: WeightType
   ): typeof SparseMatrix {
     const T = new Triplet(this.verts.length, this.verts.length);
-
-    // TODO: compute the left hand side of the linear parameterization system
-    // for interior vertices that we want to compute their parameterization.
-    //
-    // Note that the interior matrix is essentially the Laplace matrix, but
-    // the elements that corresponding to the boundary vertices are zerored out.
+    if (laplaceWeight === WeightType.Uniform) {
+      this.verts.forEach(vert => {
+        if (U.get(vert.idx) !== 0 || V.get(vert.idx) !== 0) {
+          T.addEntry(1, vert.idx, vert.idx);
+        } else {
+          let weight = 0;
+          vert.halfedges(halfedge => {
+            weight += 1;
+            T.addEntry(1, vert.idx, halfedge.twin!.vert!.idx);
+          });
+          T.addEntry(-weight, vert.idx, vert.idx);
+        }
+      });
+    } else {
+      this.verts.forEach(vert => {
+        if (U.get(vert.idx) !== 0 || V.get(vert.idx) !== 0) {
+          T.addEntry(1, vert.idx, vert.idx);
+        } else {
+          let weight = 0;
+          vert.halfedges(halfedge => {
+            const cotan = (halfedge.cotan() + halfedge.twin!.cotan()) / 2;
+            weight += cotan;
+            T.addEntry(cotan, vert.idx, halfedge.twin!.vert!.idx);
+          });
+          T.addEntry(-weight, vert.idx, vert.idx);
+        }
+      });
+    }
     return SparseMatrix.fromTriplet(T);
   }
 }
