@@ -20,19 +20,19 @@ _*Note that a mesh must contain at least one boundary._
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/mesh_param.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Solving the linear equation in line 77 together with the correct weights in the computeinteriormatrix so that a good result comes out. I ran into issues when trying to solve the equation with the cholesky solver. So I changed the weights multiple times until I figured out that the cholesky solver cant solve an equation with a left hand side matrix that has negative values. So I switched to the lower upper solver and it worked
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+When trying to solve the linear equation with the cholesky solver I had multiple weird uv coordinates. Some with jagged edges which made me believe my formular for the boundary vertices matrix was calculated incorrectly. Later on I figured out it was due to the cholesky solver not being able to deal with negative values.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+The lower upper Factorization solver could be a bottleneck. If there is a way to solve this equation with the cholesky solver it could be solved quicker.
 ```
 
 ## Submission Instruction
