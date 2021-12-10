@@ -51,10 +51,10 @@ During the rest of the semester, students should propose a project idea througho
 |08.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
 |15.11.2021 | Parameterization                                 | [Link](https://changkun.de/s/gp/ws21/4-param) |
 |22.11.2021 | Remeshing                                        | [Link](https://changkun.de/s/gp/ws21/5-remesh) |
-|29.11.2021 | Deformation                                      | TBA |
-|06.12.2021 | Data-driven Approach I: Geometric Deep Learning  | TBA |
-|10.01.2021 | Data-driven Approach II: Differentiable Rendering| TBA |
-|27.01.2022 | Project Idea-Pitch                               | Presentation |
+|29.11.2021 | Deformation                                      | [Link](https://changkun.de/s/gp/ws21/6-deform) |
+|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
+|10.01.2021 | Geometric Deep Learning                          | TBA |
+|27.01.2022 | Differentiable Rendering & Project Idea-Pitch    | TBA |
 |07.02.2022 | Project Intermediate                             | Presentation |
 |14.02.2022 | Project Final                                    | Presentation |
 
@@ -73,7 +73,7 @@ Select 5 out of 7 given projects (5x10%), or feel free to finish them all (no bo
 | 10% | [Implement the Halfedge Structure](./1-halfedge/) | <img src="./1-halfedge/assets/expect.png" width="200"/> </br>01.11.2021 23:59:59 |
 | 10% | [Implement discrete curvatures](./2-ddg/)  | <img src="./2-ddg/assets/teaser.png" width="200"/> </br>15.11.2021 23:59:59 |
 | 10% | [Implement Laplace smooth](./3-smooth/)    | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
-| 10% | TBA                                        | 13.12.2021 23:59:59 |
+| 10% | [Implement Tutte's Embedding](./4-param/)  | <img src="./4-param/assets/teaser.png" width="200"/> </br>13.12.2021 23:59:59 |
 | 10% | TBA                                        | 27.12.2021 23:59:59 |
 | 10% | TBA                                        | 10.01.2022 23:59:59 |
 | 10% | TBA                                        | 24.01.2022 23:59:59 |
