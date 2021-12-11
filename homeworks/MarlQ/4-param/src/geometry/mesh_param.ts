@@ -33,6 +33,7 @@
 import {DenseMatrix, SparseMatrix, Triplet} from '@penrose/linear-algebra';
 import {Vector} from '../linalg/vec';
 import {HalfedgeMesh} from './halfedge_mesh';
+import { Vertex } from './primitive';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -68,10 +69,27 @@ export class ParameterizedMesh extends HalfedgeMesh {
     // Implementation procedure:
     //
     //    1. check if the mesh contains at least a boundary. Otherwise, throw an error.
+    console.log(this.boundaries)
+    if(this.boundaries.length === 0) {
+      // TODO: Error
+      return;
+    }
+
     //    2. compute boundary uv coordinates depending on the boundary type.
+    let UV = this.computeBoundaryMatrices(boundaryType);
+
     //    3. compute matrix depending on the laplacian weight type.
+    let L = this.computeInteriorMatrix(UV[0], UV[1], laplaceWeight);
+
     //    4. solve linear equation and assing computed uv to corresponding vertex uv.
-    //
+    let chol = L.chol();
+		UV[0] = chol.solvePositiveDefinite(UV[0]);
+		UV[1] = chol.solvePositiveDefinite(UV[1]);
+
+    this.verts.forEach(vert => {
+      vert.uv!.x = UV[0].get(vert.idx);
+      vert.uv!.y = UV[1].get(vert.idx);
+    });
   }
 
   /**
@@ -91,6 +109,40 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //
     // Note that the coordinates of boundary vertices is derived from the
     // property of "convex in order".
+    // TODO: Compute longest boundary
+    let boundary_verts: Vertex[] = [];
+    let start = true;
+    for (let h = this.boundaries[0].halfedge; start || h !== this.boundaries[0].halfedge; h = h!.next) {
+      boundary_verts.push(h!.vert!)
+      start = false;
+    }
+
+    if(boundaryType === 'disk') {
+      let index = 0;
+      let angle_base = 2 * Math.PI / (boundary_verts.length+1);
+      boundary_verts.forEach(vert => {
+        let angle = angle_base * index;
+        vert.uv!.x = 0.5 - 0.5 * Math.cos(angle);
+        vert.uv!.y = 0.5 - 0.5 * Math.sin(angle);
+        U.set(vert.uv!.x, vert.idx);
+        V.set(vert.uv!.y, vert.idx);
+        index++;
+      });
+    }
+    else if(boundaryType === 'rect') {
+      let index = 0;
+      let angle_base = 2 * Math.PI / (boundary_verts.length+1);
+      boundary_verts.forEach(vert => {
+        let angle = angle_base * index;
+        vert.uv!.x = 0.5 - 0.5 * Math.cos(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
+        vert.uv!.y = 0.5 - 0.5 * Math.sin(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
+        U.set(vert.uv!.x, vert.idx);
+        V.set(vert.uv!.y, vert.idx);
+        index++;
+      });
+
+    }
+
     return [U, V]
   }
 
@@ -113,6 +165,27 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //
     // Note that the interior matrix is essentially the Laplace matrix, but
     // the elements that corresponding to the boundary vertices are zerored out.
+
+    this.verts.forEach(vert => {
+      if(U.get(vert.idx) != 0 || V.get(vert.idx) != 0) {
+        T.addEntry(1, vert.idx, vert.idx); // Boundary vertex
+      }
+      else {
+        let n = 0;
+        const e0 = vert.halfedge;
+        const neighbor_verts = [e0!.twin!.vert!];
+        for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+          neighbor_verts.push(e.vert!);
+        }
+
+        neighbor_verts.forEach(neighbor => {
+          T.addEntry(1, vert.idx, neighbor.idx);
+          n++;
+        });
+        T.addEntry(-n, vert.idx, vert.idx);
+      }
+    });
+
     return SparseMatrix.fromTriplet(T);
   }
 }
