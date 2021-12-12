@@ -78,8 +78,18 @@ export class ParameterizedMesh extends HalfedgeMesh {
     const UV=this.computeBoundaryMatrices(boundaryType);
     //    3. compute matrix depending on the laplacian weight type.
     const interior=this.computeInteriorMatrix(UV[0],UV[1],laplaceWeight);
-    //    4. solve linear equation and assing computed uv to corresponding vertex uv.
+    //    4. solve linear equation
     //
+    console.log("solving Begin");
+    const lu=interior.lu();
+    const u1=lu.solveSquare(UV[0]);
+    const v1=lu.solveSquare(UV[1]);
+    // assing computed uv to corresponding vertex uv.
+    for(let vert of this.verts){
+      vert.uv!.x=u1.get(vert.idx);
+      vert.uv!.y=v1.get(vert.idx);
+    }
+    console.log("solving End");
   }
 
   /**
@@ -91,14 +101,25 @@ export class ParameterizedMesh extends HalfedgeMesh {
   computeBoundaryMatrices(
     boundaryType: BoundaryType
   ): [typeof DenseMatrix, typeof DenseMatrix] {
+    console.log(" computeBoundaryMatrices Begin");
     const U = DenseMatrix.zeros(this.verts.length);
     const V = DenseMatrix.zeros(this.verts.length);
 
+    const nHalfedges=this.halfedges.length;
+    //if(boundaryType=='disk'){
+      this.halfedges.forEach((he,idx)=>{
+        let degree=idx/nHalfedges;
+        // TODO do it properly
+        U.set(0.0,he.idx);
+        V.set(0.0,he.idx);
+      });
+    //}
     // TODO: compute the right hand side of the linear parameterization system
     // for boundary vertices depending on the type of the boundary.
     //
     // Note that the coordinates of boundary vertices is derived from the
     // property of "convex in order".
+    console.log(" computeBoundaryMatrices End");
     return [U, V]
   }
 
@@ -114,7 +135,8 @@ export class ParameterizedMesh extends HalfedgeMesh {
     V: typeof DenseMatrix,
     laplaceWeight: WeightType
   ): typeof SparseMatrix {
-    const T = new Triplet(this.verts.length, this.verts.length);
+    console.log("computeInteriorMatrix Begin");
+    //const T = new Triplet(this.verts.length, this.verts.length);
 
     // TODO: compute the left hand side of the linear parameterization system
     // for interior vertices that we want to compute their parameterization.
@@ -125,7 +147,31 @@ export class ParameterizedMesh extends HalfedgeMesh {
     const size = this.verts.length;
     let triplet = new Triplet(size, size);
     //TODO
+    // copy paste from previous homework
+    for (const vert of this.verts) {
+      const idx = vert.idx;
+      let weightSum = 0;
+      vert.halfedges(he => {
+        let weight = 0;
+        switch (laplaceWeight) {
+          case 'Uniform':
+            weight = 1;
+            break;
+          case 'Cotan':
+            // lecture: 1/2*(cotan(alpha)+cotan(beta))
+            const cotanSum = he.cotan() + he.twin!.cotan();
+            const cotanSumHalf = cotanSum / 2.0;
+            weight = cotanSumHalf;
+            break;
+        }
+        triplet.addEntry(weight, idx, he.twin!.vert!.idx);
+        weightSum += weight;
+      });
+      triplet.addEntry(-weightSum, idx, idx);
+    }
+    // xxx
     const tmp = SparseMatrix.fromTriplet(triplet);
+    console.log("computeInteriorMatrix End");
     return tmp;
   }
 }
