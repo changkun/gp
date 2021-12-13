@@ -64,7 +64,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
    * @param {WeightType} laplaceWeight 'uniform', or 'cotan'
    */
   flatten(boundaryType: BoundaryType, laplaceWeight: WeightType) {
-    // TODO: Implement Tutte's barycentric embedding
+    // Implement Tutte's barycentric embedding
     //
     // Implementation procedure:
     //
@@ -87,8 +87,8 @@ export class ParameterizedMesh extends HalfedgeMesh {
 		UV[1] = chol.solveSquare(UV[1]);
 
     this.verts.forEach(vert => {
-      vert.uv!.x = 0.5 - UV[0].get(vert.idx);
-      vert.uv!.y = 0.5 - UV[1].get(vert.idx);
+      vert.uv!.x = UV[0].get(vert.idx);
+      vert.uv!.y = UV[1].get(vert.idx);
     });
   }
 
@@ -104,7 +104,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
     const U = DenseMatrix.zeros(this.verts.length);
     const V = DenseMatrix.zeros(this.verts.length);
 
-    // TODO: compute the right hand side of the linear parameterization system
+    // compute the right hand side of the linear parameterization system
     // for boundary vertices depending on the type of the boundary.
     //
     // Note that the coordinates of boundary vertices is derived from the
@@ -122,23 +122,46 @@ export class ParameterizedMesh extends HalfedgeMesh {
       let angle_base = 2 * Math.PI / (boundary_verts.length+1);
       boundary_verts.forEach(vert => {
         let angle = angle_base * index;
-        vert.uv!.x = 0.5*Math.cos(angle);
-        vert.uv!.y = 0.5*Math.sin(angle);
+        vert.uv!.x = 0.5 - 0.5*Math.cos(angle);
+        vert.uv!.y = 0.5 - 0.5*Math.sin(angle);
         U.set(vert.uv!.x, vert.idx);
         V.set(vert.uv!.y, vert.idx);
         index++;
       });
     }
-    else if(boundaryType === 'rect') { // TODO: Rectangle isn't very good, and it's rotated
+    else if(boundaryType === 'rect') {
       let index = 0;
-      let angle_base = 2 * Math.PI / (boundary_verts.length+1);
+      let quarter = Math.floor(boundary_verts.length/4);
+      let dist = 1/quarter;
+
+      for(let i = 0; i < quarter; i++) {
+        boundary_verts[index].uv!.x = i * dist + 0.000000000001; // For some reason, the vertex at 0,0 is not displayed.
+        boundary_verts[index].uv!.y = 0;
+        index++;
+      }
+      for(let i = 0; i < quarter; i++) {
+        boundary_verts[index].uv!.x = 1;
+        boundary_verts[index].uv!.y = i * dist;
+        index++;
+      }
+
+      for(let i = 0; i < quarter; i++) {
+        boundary_verts[index].uv!.x = 1 - i * dist;
+        boundary_verts[index].uv!.y = 1;
+        index++;
+      }
+    
+      quarter = boundary_verts.length - index;
+      dist = 1/quarter;
+      for(let i = 0; i < quarter; i++) {
+        boundary_verts[index].uv!.x = 0;
+        boundary_verts[index].uv!.y = 1 - i * dist;
+        index++;
+      } 
+      
       boundary_verts.forEach(vert => {
-        let angle = angle_base * index;
-        vert.uv!.x = Math.cos(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
-        vert.uv!.y = Math.sin(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
         U.set(vert.uv!.x, vert.idx);
         V.set(vert.uv!.y, vert.idx);
-        index++;
       });
     }
 
@@ -159,7 +182,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
   ): typeof SparseMatrix {
     const T = new Triplet(this.verts.length, this.verts.length);
 
-    // TODO: compute the left hand side of the linear parameterization system
+    // compute the left hand side of the linear parameterization system
     // for interior vertices that we want to compute their parameterization.
     //
     // Note that the interior matrix is essentially the Laplace matrix, but
