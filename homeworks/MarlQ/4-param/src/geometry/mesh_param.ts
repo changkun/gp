@@ -71,8 +71,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //    1. check if the mesh contains at least a boundary. Otherwise, throw an error.
     console.log(this.boundaries)
     if(this.boundaries.length === 0) {
-      // TODO: Error
-      return;
+      throw 'No boundary found!';
     }
 
     //    2. compute boundary uv coordinates depending on the boundary type.
