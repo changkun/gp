@@ -176,51 +176,6 @@ export class ParameterizedMesh extends HalfedgeMesh {
           count++;
         }
       }
-      // 4 sides of a square
-      /*let bla=0;
-      for(let i=0;i<stepsPerSide;i++){
-        let u=i*stepsDelta;
-        let v=0.0;
-         // manually fix the lower left missing corner
-         if(bla==0){
-          // set it to something really small but not zero
-          v=0.0000000000001;
-        }
-        let he=halfedges[bla];
-        U.set(u,he.vert!.idx);
-        V.set(v,he.vert!.idx);
-        bla++;
-      }
-      for(let i=0;i<stepsPerSide;i++){
-        let u=1.0;
-        let v=i*stepsDelta;
-        let he=halfedges[bla];
-        U.set(u,he.vert!.idx);
-        V.set(v,he.vert!.idx);
-        bla++;
-      }
-      for(let i=0;i<stepsPerSide;i++){
-        let u=1.0-i*stepsDelta;
-        let v=1.0;
-        let he=halfedges[bla];
-        U.set(u,he.vert!.idx);
-        V.set(v,he.vert!.idx);
-        bla++;
-      }
-      for(let i=0;i<stepsPerSide;i++){
-        let u=0.0;
-        let v=1.0-i*stepsDelta;
-        // manually fix the lower left missing corner
-        if(bla==nHalfedges-1){
-          // set it to something really small but not zero
-          v=0.0000000000001;
-        }
-        let he=halfedges[bla];
-        U.set(u,he.vert!.idx);
-        V.set(v,he.vert!.idx);
-        bla++;
-        console.log("u:"+u+"v:"+v);
-      }*/
     }
     console.log(" computeBoundaryMatrices End");
     return [U, V];
