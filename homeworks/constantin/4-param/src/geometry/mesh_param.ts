@@ -131,7 +131,26 @@ export class ParameterizedMesh extends HalfedgeMesh {
         V.set(v,he.vert!.idx);
       });
     }else{
-      //TODO
+      let rows=Math.round(Math.sqrt(nHalfedges));
+      let columns=Math.ceil(nHalfedges/rows);
+      console.log("N halfedges:"+nHalfedges+"rows:"+rows+" cols:"+columns);
+      const rowStep=1.0/rows;
+      const colStep=1.0/columns;
+      /*let rows=nHalfedges;
+      let columns=nHalfedges;
+      const rowStep=1.0/rows;
+      const colStep=1.0/columns;*/
+      let i=0;
+      boundaryFace.halfedges((he,idx)=>{
+        let row=i % rows;
+        let col= i / columns;
+        col=Math.floor(col);
+    
+        V.set(row*rowStep,he.vert!.idx);
+        U.set(col*colStep,he.vert!.idx);
+        console.log("Row:"+row+"Col"+col);
+        i++;
+      });
     }
     console.log(" computeBoundaryMatrices End");
     return [U, V];
