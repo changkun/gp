@@ -20,19 +20,23 @@ _*Note that a mesh must contain at least one boundary._
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/mesh_param.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+The implementation for this homework was actually quite straight forward, and i think all the steps were pretty similar in terms of the time it took me to write them. Most time consuming was probably the calculation of boundary coordinates for the rectangle. (lines 265-313)
+
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+I didn't check for both U and V entries of a vertex in the computeInteriorMatrix() function, which led to a completely messed up result.
+So i fixed it by checking, wheather the entry for a vertex in either U or V was non-zero, inwhich case the entries in the Laplace Matrix get skipped.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+The computation of the boundary rectangle coordinates uses a lot of if() conditionals.
+Maybe it could be improved, but i don't think that it's a bottleneck since it only loops over boundary vertices.
+If the calculations that loop over all vertices could be made more efficient it would probably improve runtime further.
 ```
 
 ## Submission Instruction
