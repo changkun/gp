@@ -79,6 +79,8 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //    3. compute matrix depending on the laplacian weight type.
     const interior=this.computeInteriorMatrix(UV[0],UV[1],laplaceWeight);
     //    4. solve linear equation
+    //    solve the linear system Ax = b, where A is a square sparse matrix
+    //    for us, A is the interior matrix and b is the (U,V==Boundary) matrix
     //
     console.log("solving Begin");
     const lu=interior.lu();
@@ -102,27 +104,37 @@ export class ParameterizedMesh extends HalfedgeMesh {
     boundaryType: BoundaryType
   ): [typeof DenseMatrix, typeof DenseMatrix] {
     console.log(" computeBoundaryMatrices Begin");
-    const U = DenseMatrix.zeros(this.verts.length);
-    const V = DenseMatrix.zeros(this.verts.length);
-
-    const nHalfedges=this.halfedges.length;
-    //if(boundaryType=='disk'){
-      this.halfedges.forEach((he,idx)=>{
-        // how much we move for this halfedge
-        let delta=idx/nHalfedges;
-        let u=Math.cos(2*Math.PI*delta);
-        let v=Math.sin(2*Math.PI*delta);
-        U.set(u,he.idx);
-        V.set(v,he.idx);
-      });
-    //}
     // TODO: compute the right hand side of the linear parameterization system
     // for boundary vertices depending on the type of the boundary.
     //
     // Note that the coordinates of boundary vertices is derived from the
     // property of "convex in order".
+    const U = DenseMatrix.zeros(this.verts.length);
+    const V = DenseMatrix.zeros(this.verts.length);
+    //const nHalfedges=this.halfedges.length;
+    //const nHalfedgesTest=0;
+    // we need at least one boundary - just take the first boundary
+    // (existence is checked in flatten method)
+    const boundaryFace=this.boundaries[0];
+    // how many halfedges the boundary face has
+    // let nHalfedges=boundaryFace.halfedges.length;
+    let nHalfedges=0;
+    console.log("n b he:"+nHalfedges);
+    boundaryFace.halfedges(()=>{nHalfedges++;});
+    if(boundaryType=='disk'){
+      boundaryFace.halfedges((he,idx)=>{
+        // we need to fit all the halfedges onto the disk
+        let delta=idx/nHalfedges;
+        let u=0.5+0.5*Math.cos(2*Math.PI*delta);
+        let v=0.5+0.5*Math.sin(2*Math.PI*delta);
+        U.set(u,he.vert!.idx);
+        V.set(v,he.vert!.idx);
+      });
+    }else{
+      //TODO
+    }
     console.log(" computeBoundaryMatrices End");
-    return [U, V]
+    return [U, V];
   }
 
   /**
@@ -145,34 +157,29 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //
     // Note that the interior matrix is essentially the Laplace matrix, but
     // the elements that corresponding to the boundary vertices are zerored out.
-    //return SparseMatrix.fromTriplet(T);
     const size = this.verts.length;
-    let triplet = new Triplet(size, size);
-    //TODO
-    // copy paste from previous homework
-    for (const vert of this.verts) {
-      const idx = vert.idx;
-      let weightSum = 0;
-      vert.halfedges(he => {
-        let weight = 0;
-        switch (laplaceWeight) {
-          case 'Uniform':
-            weight = 1;
+    let T=new Triplet(size,size);
+    for(const vert of this.verts){
+      const idx=vert.idx;
+      if(U.get(idx)!=0 || V.get(idx)!=0){
+        T.addEntry(1,idx,idx);
+      }else{
+        switch(laplaceWeight){
+          case "Uniform":
             break;
-          case 'Cotan':
-            // lecture: 1/2*(cotan(alpha)+cotan(beta))
-            const cotanSum = he.cotan() + he.twin!.cotan();
-            const cotanSumHalf = cotanSum / 2.0;
-            weight = cotanSumHalf;
-            break;
+          default:
+            // TODO
+            break;  
         }
-        triplet.addEntry(weight, idx, he.twin!.vert!.idx);
-        weightSum += weight;
-      });
-      triplet.addEntry(-weightSum, idx, idx);
+        let count=0;
+        vert.vertices((v,i)=>{
+          T.addEntry(1,idx,v.idx);
+          count++;
+        });
+        T.addEntry(-count,idx,idx);
+      }
     }
-    // xxx
-    const tmp = SparseMatrix.fromTriplet(triplet);
+    const tmp = SparseMatrix.fromTriplet(T);
     console.log("computeInteriorMatrix End");
     return tmp;
   }
