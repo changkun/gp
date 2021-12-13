@@ -108,10 +108,12 @@ export class ParameterizedMesh extends HalfedgeMesh {
     const nHalfedges=this.halfedges.length;
     //if(boundaryType=='disk'){
       this.halfedges.forEach((he,idx)=>{
-        let degree=idx/nHalfedges;
-        // TODO do it properly
-        U.set(0.0,he.idx);
-        V.set(0.0,he.idx);
+        // how much we move for this halfedge
+        let delta=idx/nHalfedges;
+        let u=Math.cos(2*Math.PI*delta);
+        let v=Math.sin(2*Math.PI*delta);
+        U.set(u,he.idx);
+        V.set(v,he.idx);
       });
     //}
     // TODO: compute the right hand side of the linear parameterization system
