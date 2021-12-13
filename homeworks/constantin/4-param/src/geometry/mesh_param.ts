@@ -131,6 +131,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
         V.set(v,he.vert!.idx);
       });
     }else{
+      // I find it easier to operate with for loops instead of using the lambda(s)
       let halfedges = new Array(nHalfedges);
       boundaryFace.halfedges((he,idx)=>{
         halfedges[idx]=he;
@@ -162,11 +163,7 @@ export class ParameterizedMesh extends HalfedgeMesh {
               break;
           }
           // manually fix the lower left missing corner
-          if (count == 0) {
-            // set it to something really small but not zero
-            v = 0.0000000000001;
-          }
-          if (count == nHalfedges - 1) {
+          if (count == 0 || count==nHalfedges-1) {
             // set it to something really small but not zero
             v = 0.0000000000001;
           }
