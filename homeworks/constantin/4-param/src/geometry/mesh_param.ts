@@ -111,15 +111,13 @@ export class ParameterizedMesh extends HalfedgeMesh {
     // property of "convex in order".
     const U = DenseMatrix.zeros(this.verts.length);
     const V = DenseMatrix.zeros(this.verts.length);
-    //const nHalfedges=this.halfedges.length;
-    //const nHalfedgesTest=0;
     // we need at least one boundary - just take the first boundary
     // (existence is checked in flatten method)
     const boundaryFace=this.boundaries[0];
     // how many halfedges the boundary face has
     // let nHalfedges=boundaryFace.halfedges.length;
     let nHalfedges=0;
-    console.log("n b he:"+nHalfedges);
+    //console.log("n b he:"+nHalfedges);
     boundaryFace.halfedges(()=>{nHalfedges++;});
     if(boundaryType=='disk'){
       boundaryFace.halfedges((he,idx)=>{
