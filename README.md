@@ -74,7 +74,7 @@ Select 5 out of 7 given projects (5x10%), or feel free to finish them all (no bo
 | 10% | [Discrete Curvature](./2-ddg/)          | <img src="./2-ddg/assets/teaser.png" width="200"/> </br>15.11.2021 23:59:59 |
 | 10% | [Laplace Smooth](./3-smooth/)           | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
 | 10% | [Tutte's Embedding](./4-param/)         | <img src="./4-param/assets/teaser.png" width="200"/> </br>13.12.2021 23:59:59 |
-| 10% | [Quadric Error Metric Simplification](./4-param/)  | 01.01.2021 23:59:59 |
+| 10% | [Quadric Error Metric Simplification](./4-param/)  | 01.01.2022 23:59:59 |
 | 10% | TBA                                                | 14.01.2022 23:59:59 |
 | 10% | TBA                                                | 28.01.2022 23:59:59 |
 
