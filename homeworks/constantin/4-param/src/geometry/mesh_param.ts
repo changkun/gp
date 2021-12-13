@@ -131,26 +131,46 @@ export class ParameterizedMesh extends HalfedgeMesh {
         V.set(v,he.vert!.idx);
       });
     }else{
-      let rows=Math.round(Math.sqrt(nHalfedges));
-      let columns=Math.ceil(nHalfedges/rows);
-      console.log("N halfedges:"+nHalfedges+"rows:"+rows+" cols:"+columns);
-      const rowStep=1.0/rows;
-      const colStep=1.0/columns;
-      /*let rows=nHalfedges;
-      let columns=nHalfedges;
-      const rowStep=1.0/rows;
-      const colStep=1.0/columns;*/
-      let i=0;
+      let halfedges = new Array(nHalfedges);
       boundaryFace.halfedges((he,idx)=>{
-        let row=i % rows;
-        let col= i / columns;
-        col=Math.floor(col);
-    
-        V.set(row*rowStep,he.vert!.idx);
-        U.set(col*colStep,he.vert!.idx);
-        console.log("Row:"+row+"Col"+col);
-        i++;
+        halfedges[idx]=he;
       });
+      const steps=nHalfedges/4;
+      const stepsDelta=1.0/steps;
+      // 4 sides of a square
+      let bla=0;
+      for(let i=0;i<steps;i++){
+        let u=i*stepsDelta;
+        let v=0.0;
+        let he=halfedges[bla];
+        U.set(u,he.vert!.idx);
+        V.set(v,he.vert!.idx);
+        bla++;
+      }
+      for(let i=0;i<steps;i++){
+        let u=1.0;
+        let v=i*stepsDelta;
+        let he=halfedges[bla];
+        U.set(u,he.vert!.idx);
+        V.set(v,he.vert!.idx);
+        bla++;
+      }
+      for(let i=0;i<steps;i++){
+        let u=1.0-i*stepsDelta;
+        let v=1.0;
+        let he=halfedges[bla];
+        U.set(u,he.vert!.idx);
+        V.set(v,he.vert!.idx);
+        bla++;
+      }
+      for(let i=0;i<steps;i++){
+        let u=0.0;
+        let v=1.0-i*stepsDelta;
+        let he=halfedges[bla];
+        U.set(u,he.vert!.idx);
+        V.set(v,he.vert!.idx);
+        bla++;
+      }
     }
     console.log(" computeBoundaryMatrices End");
     return [U, V];
@@ -169,8 +189,6 @@ export class ParameterizedMesh extends HalfedgeMesh {
     laplaceWeight: WeightType
   ): typeof SparseMatrix {
     console.log("computeInteriorMatrix Begin");
-    //const T = new Triplet(this.verts.length, this.verts.length);
-
     // TODO: compute the left hand side of the linear parameterization system
     // for interior vertices that we want to compute their parameterization.
     //
