@@ -82,13 +82,13 @@ export class ParameterizedMesh extends HalfedgeMesh {
     let L = this.computeInteriorMatrix(UV[0], UV[1], laplaceWeight);
 
     //    4. solve linear equation and assing computed uv to corresponding vertex uv.
-    let chol = L.chol();
-		UV[0] = chol.solvePositiveDefinite(UV[0]);
-		UV[1] = chol.solvePositiveDefinite(UV[1]);
+    let chol = L.lu();
+		UV[0] = chol.solveSquare(UV[0]);
+		UV[1] = chol.solveSquare(UV[1]);
 
     this.verts.forEach(vert => {
-      vert.uv!.x = UV[0].get(vert.idx);
-      vert.uv!.y = UV[1].get(vert.idx);
+      vert.uv!.x = 0.5 - UV[0].get(vert.idx);
+      vert.uv!.y = 0.5 - UV[1].get(vert.idx);
     });
   }
 
@@ -122,25 +122,24 @@ export class ParameterizedMesh extends HalfedgeMesh {
       let angle_base = 2 * Math.PI / (boundary_verts.length+1);
       boundary_verts.forEach(vert => {
         let angle = angle_base * index;
-        vert.uv!.x = 0.5 - 0.5 * Math.cos(angle);
-        vert.uv!.y = 0.5 - 0.5 * Math.sin(angle);
+        vert.uv!.x = 0.5*Math.cos(angle);
+        vert.uv!.y = 0.5*Math.sin(angle);
         U.set(vert.uv!.x, vert.idx);
         V.set(vert.uv!.y, vert.idx);
         index++;
       });
     }
-    else if(boundaryType === 'rect') {
+    else if(boundaryType === 'rect') { // TODO: Rectangle isn't very good, and it's rotated
       let index = 0;
       let angle_base = 2 * Math.PI / (boundary_verts.length+1);
       boundary_verts.forEach(vert => {
         let angle = angle_base * index;
-        vert.uv!.x = 0.5 - 0.5 * Math.cos(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
-        vert.uv!.y = 0.5 - 0.5 * Math.sin(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
+        vert.uv!.x = Math.cos(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
+        vert.uv!.y = Math.sin(angle) / ( Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
         U.set(vert.uv!.x, vert.idx);
         V.set(vert.uv!.y, vert.idx);
         index++;
       });
-
     }
 
     return [U, V]
@@ -166,25 +165,54 @@ export class ParameterizedMesh extends HalfedgeMesh {
     // Note that the interior matrix is essentially the Laplace matrix, but
     // the elements that corresponding to the boundary vertices are zerored out.
 
-    this.verts.forEach(vert => {
-      if(U.get(vert.idx) != 0 || V.get(vert.idx) != 0) {
-        T.addEntry(1, vert.idx, vert.idx); // Boundary vertex
-      }
-      else {
-        let n = 0;
-        const e0 = vert.halfedge;
-        const neighbor_verts = [e0!.twin!.vert!];
-        for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
-          neighbor_verts.push(e.vert!);
+    if(laplaceWeight === "Uniform") {
+      this.verts.forEach(vert => {
+        if(U.get(vert.idx) != 0 || V.get(vert.idx) != 0) {
+          T.addEntry(1, vert.idx, vert.idx); // Boundary vertex
         }
-
-        neighbor_verts.forEach(neighbor => {
-          T.addEntry(1, vert.idx, neighbor.idx);
-          n++;
-        });
-        T.addEntry(-n, vert.idx, vert.idx);
-      }
-    });
+        else {
+          let sum = 0;
+          const e0 = vert.halfedge;
+          const neighbor_verts = [e0!.twin!.vert!];
+          for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+            neighbor_verts.push(e.vert!);
+          }
+  
+          neighbor_verts.forEach(neighbor => {
+            T.addEntry(1, vert.idx, neighbor.idx);
+            sum++;
+          });
+          T.addEntry(-sum, vert.idx, vert.idx);
+        }
+      });
+    }
+    else if(laplaceWeight === "Cotan") {
+      this.verts.forEach(vert => {
+        if(U.get(vert.idx) != 0 || V.get(vert.idx) != 0) {
+          T.addEntry(1, vert.idx, vert.idx); // Boundary vertex
+        }
+        else {
+          let sum = 0;
+          const e0 = vert.halfedge;
+          const neighbor_verts = [e0!.twin!.vert!];
+          for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+            neighbor_verts.push(e.vert!);
+          }
+  
+          neighbor_verts.forEach(neighbor => {
+            let halfedge = neighbor.halfedge;
+            while(halfedge!.twin!.vert != this.verts[vert.idx]) {
+              halfedge = halfedge!.twin!.next;
+            }
+            const cot = 0.5 * ( halfedge!.cotan() + halfedge!.twin!.cotan() ); // 0.5 * cot alpha + cotan beta
+            sum += cot;
+            T.addEntry(cot, vert.idx, neighbor.idx);
+          });
+          T.addEntry(-sum, vert.idx, vert.idx);
+        }
+      });
+    }
+    
 
     return SparseMatrix.fromTriplet(T);
   }
