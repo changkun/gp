@@ -183,19 +183,23 @@ export class ParameterizedMesh extends HalfedgeMesh {
       if(U.get(idx)!=0 || V.get(idx)!=0){
         T.addEntry(1,idx,idx);
       }else{
-        switch(laplaceWeight){
-          case "Uniform":
-            break;
-          default:
-            // TODO
-            break;  
-        }
-        let count=0;
-        vert.vertices((v,i)=>{
-          T.addEntry(1,idx,v.idx);
-          count++;
+        let weightSum=0;
+        vert.halfedges((he)=>{
+          let weight=1;
+          switch(laplaceWeight){
+            case "Uniform":
+              weight=1;
+              break;
+            case 'Cotan':
+              const cotanSum = he.cotan() + he.twin!.cotan();
+              const cotanSumHalf = cotanSum / 2.0;
+              weight=cotanSumHalf;
+              break;
+          }
+          T.addEntry(weight,idx,he.twin!.vert!.idx);
+          weightSum+=weight;
         });
-        T.addEntry(-count,idx,idx);
+        T.addEntry(-weightSum,idx,idx);
       }
     }
     const tmp = SparseMatrix.fromTriplet(T);
