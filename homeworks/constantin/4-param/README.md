@@ -20,19 +20,20 @@ _*Note that a mesh must contain at least one boundary._
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/mesh_param.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Since the steps that need to be done were laid out quite well in this assignment, it was not hard to implement. However,implementing the "computeInteriorMatrix" method took some time since I forgot to "zero out" the boundary vertices.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+For some reason, the renderer requires the v coordinate in the lower left corner to be close but not equal to 0. (see computeBoundaryMatrices & BoundaryType==rect) Line 164 in mesh_param.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+Since the mesh does not change during this assignment, one could probably cache commonly used methods. 
+For example, the cotan() method might be called multiple times on a halfedge - one could just compute this once at startup for later use.
 ```
 
 ## Submission Instruction

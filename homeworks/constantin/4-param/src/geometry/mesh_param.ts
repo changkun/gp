@@ -162,8 +162,9 @@ export class ParameterizedMesh extends HalfedgeMesh {
           }
           // manually fix the lower left missing corner
           if (count == 0 || count==nHalfedges-1) {
+            console.log("count:"+count+"original v:"+v);
             // set it to something really small but not zero
-            v = 0.0000000000001;
+            v = 1e-8;
           }
           let he=halfedges[count];
           U.set(u,he.vert!.idx);
