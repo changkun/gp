@@ -77,7 +77,9 @@ export class Edge {
     const quadric = this.quadric();
 
     let a = quadric.mul(pos);
+    console.log(a)
     if(a instanceof Vector) {
+      console.log(pos)
       this.err = a.dot(pos); 
     }
     console.log("Error: " + this.err);
