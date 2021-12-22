@@ -286,8 +286,14 @@ export class HalfedgeMesh {
 
   // Deletes the face, without reassigning any vertices or edges.
   deleteFace(face: Face) {
-    console.log("Removing face")
+    console.log("Removing face " + face!.idx)
+    console.log("Removing halfedge " + face.halfedge!.idx)
+    console.log("Removing halfedge " + face.halfedge!.next!.idx)
+    console.log("Removing halfedge " + face.halfedge!.next!.next!.idx)
     console.log(face)
+    this.halfedges[face.halfedge!.idx] = null;
+    this.halfedges[face.halfedge!.next!.idx] = null;
+    this.halfedges[face.halfedge!.next!.next!.idx] = null;
     this.faces[face!.idx] = null;
     //this.edges[face.halfedge!.edge!.idx] = null;
     //this.halfedges[face.halfedge!.idx] = null;
@@ -296,24 +302,20 @@ export class HalfedgeMesh {
   // Reassigns the vertex v_old of the face to v_new.
   // The old vertex is not removed from anywhere.
   reassignVertex(face: Face, v_old: Vertex, v_new: Vertex) {
-    console.assert	= function(cond, text){
-      if( cond )	return;
-      console.log(text)
-      throw new Error("Assertion failed!");
-    };
+    
     console.log("Reassign Vertex")
     console.log("Face",face)
     console.log("v_old",v_old)
     console.log("v_new",v_new)
     let edges = [face.halfedge!, face.halfedge!.next!, face.halfedge!.next!.next!];
-    let index = edges.findIndex(edge => edge!.vert === v_old);
+    let index = edges.findIndex(edge => edge!.vert!.idx === v_old!.idx);
     console.log("edges",edges)
     console.assert(index > -1, {index: index, vert: v_old, errorMsg: "The vertex is not part of the face"}); // v_old has to be part of the face
 
     console.assert(edges.findIndex(edge => edge!.vert!.idx === v_new!.idx) < 0, {vert: v_new, errorMsg: "The vertex should not be part of the face"}); // v_new should not be part of the face
     
     edges[index].vert = v_new;
-    v_new.halfedge = edges[index];
+    v_new.halfedge = edges[index]; // TODO: Is this correct?
     //edges[index].twin!.next!.vert = v_new;
   }
 
@@ -332,11 +334,11 @@ export class HalfedgeMesh {
     const e0 = edge.halfedge;
     const neighbor_verts = [e0!.twin!.vert!]; 
     const neighbor_faces = [e0!.twin!.face];
-    const neighbor_edges = [e0!.twin];
+    const neighbor_edges = [];
     for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
       neighbor_verts.push(e.vert!);
       neighbor_faces.push(e.face);
-      neighbor_edges.push(e)
+      neighbor_edges.push(e.edge)
 
       if(e.onBoundary ||e.twin!.onBoundary) {
         console.log("BOUNDARY");
@@ -359,13 +361,23 @@ export class HalfedgeMesh {
       }
       else {
         this.reassignVertex(face!, vert_remove, vert_keep);
-        this.verts[vert_remove!.idx] = null;
       }
     });
+    console.log("Removing vert " + vert_remove.idx)
+    console.log("Removing edge " + edge.idx)
+    this.verts[vert_remove.idx] = null;
+    this.edges[edge.idx] = null;
     if(c !== 2) {
       throw new Error("NOT ENOUGH FACES DELETEDF");
       
     }
+    this.resetIndices();
+
+    // Re-calculate neighbor error
+    neighbor_edges.forEach(e => {
+      e!.err = -1;
+    });
+
     // TODO: Handle possibility of v_new pointing to the deleted edge
     //if(!this.halfedges[vert_keep.halfedge!.idx]) vert_keep.halfedge =
 
@@ -387,37 +399,43 @@ export class HalfedgeMesh {
     //
     // Additional Task:
     //    - Be able to handle meshes with boundary (need preserve the boundary)
+    console.assert	= function(cond, text){
+      if( cond )	return;
+      console.log(text)
+      throw new Error("Assertion failed!");
+    };
     let quadrics = [];
     let edgeQueue = new EdgeQueue((a: Edge, b: Edge) => a.error > b.error);
 
-
-
-    if(!this.edges) return;
-    for(let edge in this.edges) {
-      if(!edge) return;
-    }
-
-    let edges : Edge[] = [];
+    /* let edges : Edge[] = [];
     for(let edge of this.edges) {
       if(edge) edges.push(edge);
-    }
+    } */
 
-    edgeQueue.push(...edges);
+    this.edges.forEach(edge => {
+      if(edge) edgeQueue.push(edge);
+    });
+
+    //edgeQueue.push(...edges);
 
     console.log("Edge Queue")
     console.log(edgeQueue);
 
     // Number of faces that should be removed.
     const reducedFaces = Math.floor(this.faces.length * reduceRatio);
+    let targetFaces = this.faces.length-reducedFaces;
 
-    while(this.faces.length > this.faces.length-reducedFaces) {
+    console.log("Collapsing " + this.faces.length + " faces to " + targetFaces + " faces.")
+    while(this.faces.length > targetFaces) {
+      console.log("Amount of faces: " + this.faces.length)
       let edge = edgeQueue.pop();
 
       // Edge 
 
       // Edge Collapse
       this.collapse(edge);
-      this.resetIndices();
+      
+     
 
       /* this.verts[vert.idx] = null;
       this.faces[edge.halfedge!.face!.idx] = null;
