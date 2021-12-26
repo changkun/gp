@@ -16,12 +16,14 @@ export class Halfedge {
   next?: Halfedge;
   twin?: Halfedge;
 
+  removed: boolean;
   idx: number;
   onBoundary: boolean;
 
   constructor() {
     this.idx = -1;
     this.onBoundary = false;
+    this.removed = false;
   }
   vector(): Vector {
     const a = this.next!.vert!;
@@ -72,8 +74,8 @@ export class Edge {
     if(this.halfedge!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
-
-    const pos = this.halfedge!.vert!.pos;
+    this.err = 1;
+    /* const pos = this.halfedge!.vert!.pos;
     const quadric = this.quadric();
 
     let a = quadric.mul(pos);
@@ -81,7 +83,7 @@ export class Edge {
     if(a instanceof Vector) {
       console.log(pos)
       this.err = a.dot(pos); 
-    }
+    } */
     console.log("Error: " + this.err);
     return this.err;
   }
@@ -276,5 +278,14 @@ export class Vertex {
       normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
       nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
       );
+  }
+
+  getNeighbors(): Vertex[] {
+    const e0 = this.halfedge;
+    const neighbor_verts = [e0!.twin!.vert!];
+    for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+      neighbor_verts.push(e.vert!);
+    }
+    return neighbor_verts;
   }
 }
