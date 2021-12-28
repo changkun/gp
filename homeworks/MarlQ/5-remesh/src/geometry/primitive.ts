@@ -74,16 +74,21 @@ export class Edge {
     if(this.halfedge!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
-    this.err = 1;
-    /* const pos = this.halfedge!.vert!.pos;
+    this.err = -555; // FIXME:
+
+    const pos =this.halfedge!.vert!.pos;
+    pos.w = 1; // TODO: Is this necessary?
     const quadric = this.quadric();
 
     let a = quadric.mul(pos);
-    console.log(a)
+    console.log("quadric", quadric)
+    console.log("a", a)
+    
     if(a instanceof Vector) {
-      console.log(pos)
+      console.log("pos", pos)
+      
       this.err = a.dot(pos); 
-    } */
+    }
     console.log("Error: " + this.err);
     return this.err;
   }
@@ -278,6 +283,16 @@ export class Vertex {
       normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
       nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
       );
+
+    /* const normal = this.normal();
+
+    const nx = normal.dot(this.pos);
+    return new Matrix(normal.x*normal.x, normal.x*normal.y, normal.x*normal.z, normal.x*nx,
+      normal.y*normal.x, normal.y*normal.y, normal.y*normal.z, normal.y*nx,
+      normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
+      nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
+      );  */
+
   }
 
   getNeighbors(): Vertex[] {
