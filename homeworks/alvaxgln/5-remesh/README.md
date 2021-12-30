@@ -33,7 +33,7 @@ There is A LOT to improve here:
 
 1.
 The Priority Queue didn't really work with my implementation for the edge collapse, so as a workaround the edge-queue gets newly built every simplification round (which kind of defeats the purpose of the queue, but since it was hell to debug this i didn't want to touch it anymore, once it was finally working... ^^)
-The reason for this is, that i a retaining all the halfedge connectivity, that does not get deleted during the edge collapse, which sounds like it would benefit performace, but probably causes issues, since i think the position in the EdgeQueue doesn't automatically update, when the Edge Objects, stay the same
+The reason for this is, that i am retaining all the halfedge connectivity, that does not get deleted during the edge collapse, which sounds like it would benefit performace, but probably causes issues, since i think the position in the EdgeQueue doesn't automatically update, when the Edge Objects, stay the same
 
 2.
 The position of the best vertex for each edge is already determined, when the error is calculated, so it could be saved as an attribute for the edge, rather then calling bestVertex() again, when simplifying it
