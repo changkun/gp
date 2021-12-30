@@ -6,6 +6,7 @@
 
 import {Vector} from '../linalg/vec';
 import {Matrix} from '../linalg/mat';
+import { Vector3 } from 'three';
 
 export class Halfedge {
   vert?: Vertex;
@@ -69,8 +70,40 @@ export class Edge {
     //    This is preferred. Boundary of a mesh are considered as features,
     //    except the faulty noisy meshes. If that happens, we need clean up
     //    the mesh first.
+
+    if (this.halfedge == undefined){
+      console.log("No Halfedge at edge")
+      return -1;
+    }
+
+    if (this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
+      this.err = Number.POSITIVE_INFINITY;
+    }
+
+
+
+
+    //Compute quadric error using formula: _x^T * Q * _x
+    const q = this.quadric();
+    const x = this.bestVertex();
+
+    this.err = this.calcError(q,x);
+
     return this.err;
   }
+
+  //Use subfunction to test different values:
+  //Computes quadric error using formula: _x^T * Q * _x
+  calcError(q: Matrix, x: Vector){
+    return (
+      x.x*q.x00*x.x + x.y*q.x10*x.x + x.z*q.x20*x.x + q.x30*x.x +
+      x.x*q.x01*x.y + x.y*q.x11*x.y + x.z*q.x21*x.y + q.x31*x.y +
+      x.x*q.x02*x.z + x.y*q.x12*x.z + x.z*q.x22*x.z + q.x32*x.z +
+      x.x*q.x03     + x.y*q.x13     + x.z*q.x23     + q.x33
+    );
+  }
+
+
   /**
    * bestVertex returns the optimal vertex that can replaces the connecting vertices
    * of the given edge.
@@ -79,18 +112,73 @@ export class Edge {
     // TODO: estimate the best replacing vertex by computing
     // the quadric error.
     //
+    //      determine Position by solving _x^T * Q * _x
+    //      From quadrics paper: _v = ...
+
+    const q = this.quadric();
+    const d = Math.abs(q.det());
+
+    //Matrix is invertable if determinant > 0
+    if (d>0){
+    const q2 = new Matrix(
+      q.x00, q.x01, q.x02, q.x03,
+      q.x10, q.x11, q.x12, q.x13,
+      q.x20, q.x21, q.x22, q.x23,
+      0,      0,      0,      1
+    ).inv();
+    
+    //position for new x
+    const x = new Vector(q2.x03, q2.x13,q2.x23,1);
+    
+    // check if Numbers are valid
+    if (x.x != Number.NaN && x.y != Number.NaN && x.z != Number.NaN )
+    return x;
+    }
+
+    //find better vertex
+    const he = this.halfedge!;
+    const vert = this.halfedge!.vert!;
+
     // Hint:
     //      If a quadric is ill-posed, search a best vertex on the current edge
     //      The search process should sample a position iteratively from one
     //      to the other. Use the one with least quadric error.
-    return new Vector(0, 0, 0, 1);
+    //
+    //  	  save best position and error:
+    let v = new Vector();
+    let err = -1;
+
+    //number of positions on edge to check
+    const n = 8;
+
+    for (let i = 0; i<n; i++){
+      let pos = vert.pos.add(he.vector().scale(i/n));
+      let temp_e = this.calcError(q, pos);
+
+      //if no error computed yet, or error is smaller then current minimum overwrite
+      if (err < 0 || temp_e < err){
+        err = temp_e;
+        v = pos;
+      }
+
+    }
+
+    return v;
   }
+
   /**
    * quadric computes and returns the quadric matrix of the given edge
    */
   quadric(): Matrix {
-    // TODO: Compute Edge Quadric Matrix
-    return new Matrix();
+
+    // Edge Quadric Matrix = Q1+Q2 with Q1 and Q2 being the vertex quadrics of the edges vertices
+    let v1 = this.halfedge!.vert!;
+    let v2 = this.halfedge!.next!.vert!;
+
+    const q1 = v1.quadric();
+    const q2 = v2.quadric();
+
+    return q1.add(q2);
   }
 }
 
@@ -230,6 +318,33 @@ export class Vertex {
    */
   quadric(): Matrix {
     // TODO: compute vertex quadric
-    return new Matrix();
+    // Sum over face quadrics of the vertexes neighbouring faces
+    let q = new Matrix();
+
+    this.faces((f,i)=>{
+
+      const n = f.normal();
+      const x = n.x;
+      const y = n.y;
+      const z = n.z;
+      const v_x = this.pos.x;
+      const v_y = this.pos.y;
+      const v_z = this.pos.z;
+
+      //4th dimension coordinate for face quadric
+      const d = -(x * v_x) -(y * v_y) -(z * v_z);
+
+      //f_q is face quadric
+      const f_q = new Matrix(
+        x*x, x*y, x*z, x*d,
+        x*y, y*y, y*z, y*d,
+        x*z, z*y, z*z, z*d,
+        x*d, y*d, z*d, d*d
+      )
+      q = q.add(f_q)
+
+    })
+
+    return q;
   }
 }

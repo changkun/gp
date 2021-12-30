@@ -7,6 +7,7 @@
 import {Vertex, Edge, Face, Halfedge} from './primitive';
 import {Vector} from '../linalg/vec';
 import {EdgeQueue} from './pq';
+import { Vector3 } from 'three';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -300,5 +301,204 @@ export class HalfedgeMesh {
 
     // Number of faces that should be removed.
     const reducedFaces = Math.floor(this.faces.length * reduceRatio);
+
+    //create edgequeue
+    let equeue = new EdgeQueue( (edge, edge2)=>{
+      return edge.error() < edge2.error();
+    })
+
+    //enqueue edges
+    this.edges.forEach(e=>{
+      if (e!=null){
+        equeue.push(e);
+      }
+    })
+
+
+    //console.log("Test 1")
+
+    //to test
+    //const num_faces = this.faces.length -22000;
+
+    //Amount of faces remaining after reduction
+    const num_faces = this.faces.length-reducedFaces;
+
+
+     while(this.faces.length > num_faces){
+
+      equeue = new EdgeQueue( (edge, edge2)=>{
+        return edge.error() < edge2.error();
+      })
+
+      //enqueue edges
+      this.edges.forEach(e=>{
+        if (e!=null){
+          equeue.push(e);
+        }
+      })
+      
+      //console.log("in while loop");
+
+      //Pop Edge from Queue:
+      let e = equeue.pop();
+
+      //check if edge is already collapsed, and proceed with next, if so
+      if (e.removed){
+        console.log("edge discarded (already removed)");
+        continue
+      }
+
+      //also use a different edge if v3 is the same as v4
+      if (e.halfedge!.prev!.vert!.idx == e.halfedge!.twin!.prev!.vert!.idx){
+        e.err = Number.POSITIVE_INFINITY;
+        console.log("edge discarded (v3 = v4)");
+        continue
+      }
+
+      if ((this.faces.length-num_faces) %4000 == 0){
+      console.log("Number of faces to reduce:"+ (this.faces.length-num_faces));
+      console.log("edge to be collapsed:");
+      console.log(e);
+      }
+      //collapse e at best Position
+      this.edgeCollapse(e.halfedge!,e.bestVertex());
+
+    }
+ 
+
+
+  }
+
+  /**
+   * collapses an edge at specified position
+   * @param h: the halfedge to be collapsed
+   * @param x: position vector of the new vertex
+   * idea: "glue" together h.prev and h.next, as well as h.twin.prev and h.twin.next
+   */
+  edgeCollapse(h: Halfedge, x: Vector){
+
+    //TODO: Check if a Vertex of edge is part of boundary and then stop
+    //TODO: Check if v3 == v4;
+    //TODO: Check for unsafe Collapse, and skip edge if collapse is unsafe
+
+    const v1 = h.vert!;
+    const v2 = h.next!.vert!;
+    const v3 = h.prev!.vert!;
+    const v4 = h.twin!.prev!.vert!;
+
+    const h1 = h.twin!;
+    const h2 = h.next!;
+    const h3 = h.prev!;
+    const h4 = h.twin!.next!;
+    const h5 = h.twin!.prev!;
+
+    const h2t = h2.twin!;
+    const h3t = h3.twin!;
+    const h4t = h4.twin!;
+    const h5t = h5.twin!;
+
+    const f1 = h.face;
+    const f2 = h.twin!.face;
+
+    //new Vertex
+    let v_x = new Vertex(x);
+
+    //set position of new vertex
+    v_x.pos = x;
+
+    //reassign halfedges to new vertex
+    v1.halfedges((v)=>{
+      v.vert = v_x;
+    });
+
+    v2.halfedges((v)=>{
+      v.vert = v_x;
+    })
+
+    
+    //set safe halfedge for new vertex
+    v_x.halfedge = h3t;
+
+    // set new twins for face outer halfedges
+    h3t.twin = h2t;
+    h2t.twin = h3t;
+
+    h4t.twin = h5t;
+    h5t.twin = h4t;
+
+    //reassign halfedge of edges
+    h3t.edge!.halfedge = h3t;
+    h2t.edge! = h3t.edge!;
+
+    h4t.edge!.halfedge = h4t;
+    h5t.edge! = h4t.edge!;
+
+    //assign new halfedges to v3, and v4
+    v3.halfedge = h2t;
+    v4.halfedge = h4t;
+
+    
+    //halfedges to be deleted:
+    let h_del = [h.idx, h1.idx, h2.idx, h3.idx, h4.idx, h5.idx];
+
+    /*
+    let h_del = new Array();
+    h_del.push(h.idx);
+    h_del.push(h2.idx);
+    h_del.push(h3.idx);
+
+    h_del.push(h1.idx);
+    h_del.push(h5.idx);
+    h_del.push(h4.idx);
+    */
+
+    //edges to be deleted:
+    let e_del = [h.edge!.idx, h2.edge!.idx, h5.edge!.idx];
+
+    // faces to be deleted
+    let f_del = [f1!.idx, f2!.idx];
+
+    //console.log("Built arrays for idxs of unused geometry");
+
+    //delete unused geometry
+    for (let i of h_del){
+      this.halfedges[i] = null;
+    }
+
+    for (let i of e_del){
+      //mark edges as removed
+      this.edges[i]!.removed = true;
+      this.edges[i] = null;
+    }
+    
+
+
+    for (let i of f_del){
+      this.faces[i] = null;
+    }
+
+    this.verts[v2.idx] = null;
+    this.verts[v1.idx] = null;
+
+    //console.log("deleted old geometry");
+
+    this.verts[v1.idx] = v_x;
+
+    //reset error for modified edges
+    v_x.halfedges((h,i)=>{
+      
+       /*  console.log("Now in Halfedges of vert:");
+        console.log(h);
+        console.log(h.twin?.next); */
+    
+      h.edge!.err = -1;
+    })
+
+
+    this.resetIndices();
+    //console.log("indices reset");
+    
+    
   }
 }
+
