@@ -113,7 +113,7 @@ export class Edge {
     // the quadric error.
     //
     //      determine Position by solving _x^T * Q * _x
-    //      From quadrics paper: _v = ...
+    //      From quadrics paper (https://www.cs.cmu.edu/~garland/Papers/quadrics.pdf), page 3: _v = ...
 
     const q = this.quadric();
     const d = Math.abs(q.det());
@@ -129,13 +129,13 @@ export class Edge {
     
     //position for new x
     const x = new Vector(q2.x03, q2.x13,q2.x23,1);
-    
+
     // check if Numbers are valid
     if (x.x != Number.NaN && x.y != Number.NaN && x.z != Number.NaN )
     return x;
     }
 
-    //find better vertex
+    //else: find better vertex
     const he = this.halfedge!;
     const vert = this.halfedge!.vert!;
 
