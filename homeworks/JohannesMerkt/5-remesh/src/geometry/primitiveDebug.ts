@@ -25,6 +25,12 @@ export class Halfedge {
   }
 
   vector(): Vector {
+    if (!this.next) {
+      throw new Error('Halfedge has no next');
+    }
+    if (!this.vert || !this.next!.vert) {
+      throw new Error('Halfedge has no vert');
+    }
     const a = this.next!.vert!;
     const b = this.vert!;
     return a.pos.sub(b.pos);
@@ -34,12 +40,24 @@ export class Halfedge {
     if (this.onBoundary) {
       return 0;
     }
+    if (!this.prev) {
+      throw new Error('Halfedge has no prev');
+    }
+    if (!this.next) {
+      throw new Error('Halfedge has no next');
+    }
     const u = this.prev!.vector();
     const v = this.next!.vector().scale(-1);
     return u.dot(v) / u.cross(v).len();
   }
 
   angle(): number {
+    if (!this.prev) {
+      throw new Error('Halfedge has no prev');
+    }
+    if (!this.next) {
+      throw new Error('Halfedge has no next');
+    }
     const u = this.prev!.vector().unit();
     const v = this.next!.vector().scale(-1).unit();
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))));
@@ -58,6 +76,18 @@ export class Edge {
     this.err = -1; // an error is guaranteed to be positive, hence initialize it as negative values.
   }
   error(): number {
+    // If the error is cached, then return immediately.
+    /*if (this.err > -1) {
+      return this.err;
+    } */
+
+    if (!this.halfedge) {
+      throw new Error('Edge has no halfedge assigned');
+    }
+    if (!this.halfedge!.twin) {
+      throw new Error('Halfedge has no twin assigned');
+    }
+
     if (this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
       return Infinity;
     }
@@ -88,6 +118,16 @@ export class Edge {
       }
     }
 
+    if (!this.halfedge) {
+      throw new Error('edge has no halfedge assigned');
+    }
+    if (!this.halfedge!.next) {
+      throw new Error('halfedge has no next assigned');
+    }
+    if (!this.halfedge!.vert || !this.halfedge!.next!.vert) {
+      throw new Error('halfedge has no vert assigned');
+    }
+
     const steps = 16;
     const vertA = this.halfedge!.vert!.pos;
     const vertB = this.halfedge!.next!.vert!.pos;
@@ -108,6 +148,15 @@ export class Edge {
    * quadric computes and returns the quadric matrix of the given edge
    */
   quadric(): Matrix {
+    if (!this.halfedge) {
+      throw new Error('edge has no halfedge assigned');
+    }
+    if (!this.halfedge.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    if (!this.halfedge.vert || !this.halfedge.twin!.vert) {
+      throw new Error('halfedge has no vert assigned');
+    }
     return this.halfedge!.vert!.quadric().add(
       this.halfedge!.twin!.vert!.quadric()
     );
@@ -135,10 +184,25 @@ export class Edge {
   }
 
   connectedToVert(vert: Vertex) {
-    return this.halfedge!.vert === vert || this.halfedge!.twin!.vert === vert;
+    if (!this.halfedge) {
+      throw new Error('edge has no halfedge assigned');
+    }
+    if (!this.halfedge.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    return this.halfedge.vert === vert || this.halfedge.twin!.vert === vert;
   }
 
   faces(): [Face, Face] {
+    if (!this.halfedge) {
+      throw new Error('edge has no halfedge assigned');
+    }
+    if (!this.halfedge.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
+    if (!this.halfedge.face || !this.halfedge.twin!.face) {
+      throw new Error('halfedge has no face assigned');
+    }
     return [this.halfedge!.face!, this.halfedge!.twin!.face!];
   }
 
@@ -178,6 +242,12 @@ export class Edge {
   }
 
   onBoundary() {
+    if (!this.halfedge) {
+      throw new Error('edge has no halfedge assigned');
+    }
+    if (!this.halfedge.twin) {
+      throw new Error('halfedge has no twin assigned');
+    }
     return this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary;
   }
 }
@@ -195,7 +265,10 @@ export class Face {
     let start = true;
     let i = 0;
     for (let h = this.halfedge; start || h !== this.halfedge; h = h!.next) {
-      fn(h!.vert!, i);
+      if (!h) {
+        throw new Error('face halfedge or halfedge next is undefined');
+      }
+      fn(h.vert!, i);
       start = false;
       i++;
     }
@@ -204,27 +277,51 @@ export class Face {
     let start = true;
     let i = 0;
     for (let h = this.halfedge; start || h !== this.halfedge; h = h!.next) {
-      fn(h!, i);
+      if (!h) {
+        throw new Error('face halfedge or halfedge next is undefined');
+      }
+      fn(h, i);
       start = false;
       i++;
     }
   }
   normal(): Vector {
+    if (!this.halfedge) {
+      throw new Error('Face has no halfedge');
+    }
+    if (this.halfedge.onBoundary) {
+      return new Vector(0, 0, 0, 0);
+    }
+    if (!this.halfedge.prev) {
+      throw new Error('Halfedge has no prev');
+    }
+    if (!this.halfedge.vert || !this.halfedge.prev.vert) {
+      throw new Error('Halfedge has no vert');
+    }
     // normals should based on the current position rather than
     // original position.
     const h = this.halfedge;
-    const a = h!.vert!.pos.sub(h!.next!.vert!.pos);
-    const b = h!.prev!.vert!.pos.sub(h!.vert!.pos).scale(-1);
+    const a = h.vert!.pos.sub(h.next!.vert!.pos);
+    const b = h.prev!.vert!.pos.sub(h.vert!.pos).scale(-1);
     return a.cross(b).unit();
   }
   area(): number {
+    if (!this.halfedge) {
+      throw new Error('Face has no halfedge');
+    }
     // Compute the area of this face.
     const h = this.halfedge;
-    if (h!.onBoundary) {
+    if (h.onBoundary) {
       return 0;
     }
-    const a = h!.vert!.pos.sub(h!.next!.vert!.pos);
-    const b = h!.prev!.vert!.pos.sub(h!.vert!.pos).scale(-1);
+    if (!this.halfedge.prev) {
+      throw new Error('Halfedge has no prev');
+    }
+    if (!this.halfedge.vert || !this.halfedge.prev.vert) {
+      throw new Error('Halfedge has no vert');
+    }
+    const a = h.vert!.pos.sub(h.next!.vert!.pos);
+    const b = h.prev!.vert!.pos.sub(h.vert!.pos).scale(-1);
     return a.cross(b).len() * 0.5;
   }
   /**
@@ -232,6 +329,12 @@ export class Face {
    * @returns {Matrix}
    */
   quadric(): Matrix {
+    if (!this.halfedge) {
+      throw new Error('face is missing a halfedge');
+    }
+    if (!this.halfedge!.vert) {
+      throw new Error('halfedge is missing a vert');
+    }
     const position = this.halfedge!.vert!.pos;
     const normal = this.normal();
     const normPos =
@@ -288,6 +391,14 @@ export class Vertex {
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
+      if (!h) {
+        throw new Error('Vert halfedge or halfedge twin next is undefined');
+      }
+      if (h.edge!.removed) {
+        console.log('broken halfedgeid ' + h.idx);
+        console.log('removed edgeId ' + h.edge!.idx);
+        throw new Error('Halfedge shouldnt point to removed edge');
+      }
       if (h!.onBoundary) {
         continue;
       }
@@ -304,6 +415,14 @@ export class Vertex {
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
+      if (!h) {
+        throw new Error('Vert halfedge or halfedge twin next is undefined');
+      }
+      if (h.edge!.removed) {
+        console.log('broken halfedgeid ' + h.idx);
+        console.log('removed edgeId ' + h.edge!.idx);
+        throw new Error('Halfedge shouldnt point to removed edge');
+      }
       fn(h!, i);
       start = false;
       i++;

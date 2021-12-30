@@ -154,6 +154,27 @@ export class Matrix {
         break;
     }
   }
+
+  copy(): Matrix {
+    return new Matrix(
+      this.x00,
+      this.x01,
+      this.x02,
+      this.x03,
+      this.x10,
+      this.x11,
+      this.x12,
+      this.x13,
+      this.x20,
+      this.x21,
+      this.x22,
+      this.x23,
+      this.x30,
+      this.x31,
+      this.x32,
+      this.x33
+    );
+  }
   /**
    * eq checks whether the given two matrices are equal or not.
    *

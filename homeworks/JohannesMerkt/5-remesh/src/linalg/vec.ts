@@ -49,6 +49,13 @@ export class Vector {
     this.w = w || 0;
   }
   /**
+   * returns the same vector as a new and independent vector
+   * @returns copied vector
+   */
+  copy(): Vector {
+    return new Vector(this.x, this.y, this.z, this.w);
+  }
+  /**
    * eq checks whether two vectors are equal.
    * @param v is a Vector
    * @returns true if two given vectors are equal, otherwise false.

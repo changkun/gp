@@ -6,6 +6,7 @@
 
 import Renderer from './renderer';
 import {HalfedgeMesh} from './geometry/halfedge';
+import {HalfedgeDebugMesh} from './geometry/halfedgeDebug';
 import {NormalMethod} from './geometry/primitive';
 import {GUI} from 'dat.gui';
 import {
@@ -148,11 +149,34 @@ export default class Main extends Renderer {
     const mod = this.gui.addFolder('Reduce Ratio');
     mod
       .add(this.params, 'qSim', 0.0, 1.0, 0.001)
-      .name('Left (QEM)')
+      .name('Left (QEM Performant)')
       .onChange(v => {
         this.internal.mesh = new HalfedgeMesh(this.internal.raw!);
         const was = this.internal.mesh.faces.length;
+        const t0 = performance.now();
         this.internal.mesh.simplify(v);
+        const t1 = performance.now();
+        console.log('QEM calculation time: ' + (t1 - t0));
+        console.log(
+          `QEM: reduced from ${was / 2} to ${
+            this.internal.mesh.faces.length / 2
+          }.`
+        );
+
+        this.prepareBuf();
+        this.renderMeshLeft();
+      });
+
+    mod
+      .add(this.params, 'qSim', 0.0, 1.0, 0.001)
+      .name('Left (QEM Debug)')
+      .onChange(v => {
+        this.internal.mesh = new HalfedgeDebugMesh(this.internal.raw!);
+        const was = this.internal.mesh.faces.length;
+        const t0 = performance.now();
+        this.internal.mesh.simplify(v);
+        const t1 = performance.now();
+        console.log('QEM calculation time: ' + (t1 - t0));
         console.log(
           `QEM: reduced from ${was / 2} to ${
             this.internal.mesh.faces.length / 2
@@ -171,9 +195,12 @@ export default class Main extends Renderer {
         let g = this.internal.mesh3jsRightOrig!.geometry;
         const prevc = g.attributes.position.count;
         const count = Math.floor(g.attributes.position.count * v);
+        const t0 = performance.now();
         g = simplifier.modify(g, count);
         g.computeVertexNormals();
         const nv = g.getAttribute('position').array.length;
+        const t1 = performance.now();
+        console.log('melaxSim calculation time: ' + (t1 - t0));
         console.log(`melaxSim: reduced from ${prevc} to ${nv / 3}.`);
 
         // The following is ugly, and this is unfortunate. Because

@@ -4,7 +4,7 @@
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
 
-import {Vertex, Edge, Face, Halfedge} from './primitive';
+import {Vertex, Edge, Face, Halfedge} from './primitiveDebug';
 import {Vector} from '../linalg/vec';
 
 export enum WeightType {
@@ -12,7 +12,7 @@ export enum WeightType {
   Cotan = 'Cotan',
 }
 
-export class HalfedgeMesh {
+export class HalfedgeDebugMesh {
   color: Vector;
   wireframe: Vector;
 
@@ -312,26 +312,86 @@ export class HalfedgeMesh {
       if (edge.onBoundary()) {
         continue;
       }
+      if (!edge.halfedge) {
+        throw new Error('Edge has no halfedge assigned');
+      }
       const h12 = edge.halfedge!;
+      if (!h12.face) {
+        throw new Error('Halfedge h12 has no face assigned');
+      }
       const f1 = h12.face!;
       const e12 = edge;
+      if (!h12.vert) {
+        throw new Error('Halfedge h12 has no vert assigned');
+      }
       const v1 = h12.vert!;
+      if (!h12.twin) {
+        throw new Error('Halfedge h12 has no twin assigned');
+      }
       const h21 = h12.twin!;
+      if (!h21.face) {
+        throw new Error('Halfedge h21 has no face assigned');
+      }
       const f2 = h21.face!;
+      if (!h21.vert) {
+        throw new Error('Halfedge h21 has no vert assigned');
+      }
       const v2 = h21.vert!;
+      if (!h12.next) {
+        throw new Error('Halfedge h12 has no next assigned');
+      }
       const h24 = h12.next!;
+      if (!h24.edge) {
+        throw new Error('Halfedge h24 has no edge assigned');
+      }
       const e24 = h24.edge!;
+      if (!h24.twin) {
+        throw new Error('Halfedge h24 has no twin assigned');
+      }
       const h42 = h24.twin!;
+      if (!h24.next) {
+        throw new Error('Halfedge h24 has no next assigned');
+      }
       const h41 = h24.next!;
+      if (!h41.edge) {
+        throw new Error('Halfedge h41 has no edge assigned');
+      }
       const e14 = h41.edge!;
+      if (!h41.twin) {
+        throw new Error('Halfedge h41 has no twin assigned');
+      }
       const h14 = h41.twin!;
+      if (!h41.vert) {
+        throw new Error('Halfedge h41 has no vert assigned');
+      }
       const v4 = h41.vert!;
+      if (!h21.next) {
+        throw new Error('Halfedge h21 has no next assigned');
+      }
       const h13 = h21.next!;
+      if (!h13.edge) {
+        throw new Error('Halfedge h13 has no edge assigned');
+      }
       const e13 = h13.edge!;
+      if (!h13.twin) {
+        throw new Error('Halfedge h13 has no twin assigned');
+      }
       const h31 = h13.twin!;
+      if (!h13.next) {
+        throw new Error('Halfedge h13 has no next assigned');
+      }
       const h32 = h13.next!;
+      if (!h32.vert) {
+        throw new Error('Halfedge h32 has no vert assigned');
+      }
       const v3 = h32.vert!;
+      if (!h32.edge) {
+        throw new Error('Halfedge h32 has no edge assigned');
+      }
       const e23 = h32.edge!;
+      if (!h32.twin) {
+        throw new Error('Halfedge h32 has no twin assigned');
+      }
       const h23 = h32.twin!;
       // validation
       if (
@@ -348,6 +408,38 @@ export class HalfedgeMesh {
         console.log('Verts are being used twice');
         continue;
         // throw new Error('Verts are being used twice');
+      }
+      if (
+        e12 === e13 ||
+        e12 === e14 ||
+        e12 === e23 ||
+        e12 === e24 ||
+        e14 === e13 ||
+        e14 === e24 ||
+        e14 === e23 ||
+        e13 === e24 ||
+        e13 === e23 ||
+        e24 === e23
+      ) {
+        throw new Error('Edges are being used twice');
+      }
+      if (f1 === f2) {
+        throw new Error('Faces are being used twice');
+      }
+      if (h41.next !== h12 || h32.next !== h21) {
+        throw new Error('Halfedges do not form a loop');
+      }
+      if (
+        e12.removed ||
+        e14.removed ||
+        e13.removed ||
+        e24.removed ||
+        e23.removed
+      ) {
+        throw new Error('An edge is already removed');
+      }
+      if (f1.removed || f2.removed) {
+        throw new Error('An face is already removed');
       }
       if (
         e12.onBoundary() ||
@@ -369,6 +461,12 @@ export class HalfedgeMesh {
       v1.halfedges(halfedge => {
         if (halfedge.edge) {
           edges2Update.set(halfedge.edge.idx, halfedge.edge);
+          if (!halfedge.twin) {
+            throw new Error('Halfedge has no twin assigned');
+          }
+          if (!halfedge.twin.vert) {
+            throw new Error('Halfedge has no vert assigned');
+          }
           halfedge.twin!.vert!.halfedges(he => {
             if (he.edge) {
               edges2Update.set(he.edge.idx, he.edge);
@@ -379,6 +477,12 @@ export class HalfedgeMesh {
       v2.halfedges(halfedge => {
         if (halfedge.edge) {
           edges2Update.set(halfedge.edge.idx, halfedge.edge);
+          if (!halfedge.twin) {
+            throw new Error('Halfedge has no twin assigned');
+          }
+          if (!halfedge.twin.vert) {
+            throw new Error('Halfedge has no vert assigned');
+          }
           halfedge.twin!.vert!.halfedges(he => {
             if (he.edge) {
               edges2Update.set(he.edge.idx, he.edge);
@@ -389,6 +493,12 @@ export class HalfedgeMesh {
       v3.halfedges(halfedge => {
         if (halfedge.edge) {
           edges2Update.set(halfedge.edge.idx, halfedge.edge);
+          if (!halfedge.twin) {
+            throw new Error('Halfedge has no twin assigned');
+          }
+          if (!halfedge.twin.vert) {
+            throw new Error('Halfedge has no vert assigned');
+          }
           halfedge.twin!.vert!.halfedges(he => {
             if (he.edge) {
               edges2Update.set(he.edge.idx, he.edge);
@@ -399,6 +509,12 @@ export class HalfedgeMesh {
       v4.halfedges(halfedge => {
         if (halfedge.edge) {
           edges2Update.set(halfedge.edge.idx, halfedge.edge);
+          if (!halfedge.twin) {
+            throw new Error('Halfedge has no twin assigned');
+          }
+          if (!halfedge.twin.vert) {
+            throw new Error('Halfedge has no vert assigned');
+          }
           halfedge.twin!.vert!.halfedges(he => {
             if (he.edge) {
               edges2Update.set(he.edge.idx, he.edge);

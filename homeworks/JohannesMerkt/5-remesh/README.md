@@ -17,19 +17,19 @@ Here are example outputs:
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+The section in the simplifiy method where an edge is collapsed was the most time consuming to implement. This is due its complexity and the difficulty to debug errors. The code got stuck in an infinite loop and to find out the actual reason why I had to write alot of conditional tests and console logs all over the code to catch unexpected behaviour.
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+I had alot of trouble making the code put out an result. It often got stuck in an infinite loop and never completed. I found a bug where two verts that are part of the faces of the collapsed edge where actually the same vert. I never expected this two happen and I still dont know why I occurs. Now I am checking for this case and skipping over these. Also when I improved the order of collapsing edges this got less common.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+The sorting of the edges to collapse next can be a big bottleneck. It involves calulating the edge error which changes after each edge collapse and then comparing it to all other edges to find the order. To improve this I opted to update the error of edges only on those verts that where actualy affected by an edge collapse. To make the array holding the order more performant it only points to an entry of a map. And instead of pushing items into the array I set the fixed size in the begining and only remove items from the array.
 ```
 
 ## Submission Instruction
