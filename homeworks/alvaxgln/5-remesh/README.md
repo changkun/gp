@@ -17,19 +17,29 @@ Here are example outputs:
 **Implementation complexity**: Which code snippet (report in line numbers) in the `geometry/primitive.ts` or `geometry/halfedge.ts` is the most time consuming for you to implement? Explain your coding experience and encountered challenges briefly.
 
 ```
-TODO: your answer goes here
+Most time consuming was the edge collapse (basically all of it) since i missed some stuff, when i thought it through, and then it was very very time consuming to debug it
 ```
 
 **Debugging complexity**: Describe an impressive bug that you wrote while implementing this project, and briefly explain how you fixed it.
 
 ```
-TODO: your answer goes here
+When doing the edge collapse, i didn't reassign halfedges for the vertices of the deleted faces, which then resulted in an infinite loop in the Vertex.halfedges() function
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
 
 ```
-TODO: your answer goes here
+There is A LOT to improve here:
+
+1.
+The Priority Queue didn't really work with my implementation for the edge collapse, so as a workaround the edge-queue gets newly built every simplification round (which kind of defeats the purpose of the queue, but since it was hell to debug this i didn't want to touch it anymore, once it was finally working... ^^)
+The reason for this is, that i a retaining all the halfedge connectivity, that does not get deleted during the edge collapse, which sounds like it would benefit performace, but probably causes issues, since i think the position in the EdgeQueue doesn't automatically update, when the Edge Objects, stay the same
+
+2.
+The position of the best vertex for each edge is already determined, when the error is calculated, so it could be saved as an attribute for the edge, rather then calling bestVertex() again, when simplifying it
+
+3.
+Resetindices is called after every edge collapse. That is probably not necessary
 ```
 
 ## Submission Instruction
