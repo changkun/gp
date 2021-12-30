@@ -152,6 +152,8 @@ export default class Main extends Renderer {
       .onChange(v => {
         this.internal.mesh = new HalfedgeMesh(this.internal.raw!);
         const was = this.internal.mesh.faces.length;
+        //to measure time
+        const t0 = performance.now();
         this.internal.mesh.simplify(v);
         console.log(
           `QEM: reduced from ${was / 2} to ${
@@ -160,7 +162,11 @@ export default class Main extends Renderer {
         );
 
         this.prepareBuf();
+        console.log("Buffer Prepared")
         this.renderMeshLeft();
+        console.log("Mesh Rendered")
+        const t1 = performance.now();
+        console.log("Time to simplify: " + (t1-t0)/1000 + "seconds");
       });
 
     const simplifier = new SimplifyModifier();
@@ -168,13 +174,17 @@ export default class Main extends Renderer {
       .add(this.params, 'melaxSim', 0.0, 1.0, 0.001)
       .name('Right (three.js)')
       .onChange(v => {
+        const t0 = performance.now();
         let g = this.internal.mesh3jsRightOrig!.geometry;
         const prevc = g.attributes.position.count;
         const count = Math.floor(g.attributes.position.count * v);
         g = simplifier.modify(g, count);
         g.computeVertexNormals();
         const nv = g.getAttribute('position').array.length;
+        const t1 = performance.now();
         console.log(`melaxSim: reduced from ${prevc} to ${nv / 3}.`);
+        console.log("Time to simplify: " + (t1-t0)/1000 + "seconds");
+
 
         // The following is ugly, and this is unfortunate. Because
         // the three.js's simplify modifier does not preserve color, tex info.
@@ -259,6 +269,9 @@ export default class Main extends Renderer {
     this.internal.meshLeftNormalHelper!.update();
   }
   prepareBuf() {
+    //debugging
+    //console.log("inside of PrepareBuf");
+
     // prepare threejs buffer data
     const v = this.internal.mesh!.verts!.length;
     this.bufpos = new Float32Array(v * 3);
@@ -268,6 +281,10 @@ export default class Main extends Renderer {
     const min = new Vector();
     const max = new Vector();
     this.internal.mesh!.verts!.forEach(v => {
+
+/*       //debugging
+      if (v!.idx == this.internal.mesh!.verts.length -1) console.log("inside of PrepareBuf0.5");
+ */
       min.x = Math.min(min.x, v!.pos.x);
       min.y = Math.min(min.y, v!.pos.y);
       min.z = Math.min(min.z, v!.pos.z);
@@ -275,25 +292,51 @@ export default class Main extends Renderer {
       max.y = Math.max(max.y, v!.pos.y);
       max.z = Math.max(max.z, v!.pos.z);
     });
+
     const center = min.add(max).scale(1 / 2);
     const radius = max.sub(min).len() / 2;
+
+    //debugging
+    //console.log("inside of PrepareBuf2");
+    //console.log("Number of verts:" + this.internal.mesh!.verts.length);
+
+
     this.internal.mesh!.verts.forEach(v => {
+      
+      //console.log("inside of PrepareBuf2.1");
+
       const i = v!.idx;
       // use AABB and rescale to viewport center
+
+      //debugging
+      //console.log("inside of PrepareBuf2.25 \n i is: " + i);
+
+
       const p = v!.pos.sub(center).scale(1 / radius);
       this.bufpos[3 * i + 0] = p.x;
       this.bufpos[3 * i + 1] = p.y;
       this.bufpos[3 * i + 2] = p.z;
+
 
       // default GP blue color
       this.bufcolors[3 * i + 0] = 0;
       this.bufcolors[3 * i + 1] = 0.5;
       this.bufcolors[3 * i + 2] = 1;
 
+      //console.log("inside of PrepareBuf2.75");
+
+
       const n = v!.normal(this.params.normalMethod);
+      
+      //console.log("inside of PrepareBuf2.8");
+
+
+
       this.bufnormals[3 * i + 0] = n.x;
       this.bufnormals[3 * i + 1] = n.y;
       this.bufnormals[3 * i + 2] = n.z;
+
+
     });
   }
   renderMeshLeft() {
