@@ -500,6 +500,8 @@ export class HalfedgeMesh {
       // Edge Collapse
       this.collapse(edge);
 
+      // TODO: Update vertex position
+
       faces = this.faces.filter((e: any) => (e === null ? false : true));
       
       console.log("----Summary----")

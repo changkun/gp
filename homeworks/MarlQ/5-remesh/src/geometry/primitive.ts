@@ -76,18 +76,22 @@ export class Edge {
     }
     this.err = -555; // FIXME:
 
-    const pos =this.halfedge!.vert!.pos;
-    pos.w = 1; // TODO: Is this necessary?
+    const pos = this.bestVertex();
+    
     const quadric = this.quadric();
 
     let a = quadric.mul(pos);
     console.log("quadric", quadric)
     console.log("a", a)
+    pos.w = 0; // FIXME: Is this necessary?
+    if(a instanceof Vector) a.w = 0; // FIXME: Is this necessary?
     
     if(a instanceof Vector) {
       console.log("pos", pos)
       
       this.err = a.dot(pos); 
+      // Add missing entries by hand, as dot product does not support w = 1 TODO: Is this actually correct?
+      this.err += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
     }
     console.log("Error: " + this.err);
     return this.err;
@@ -134,8 +138,6 @@ export class Edge {
    * quadric computes and returns the quadric matrix of the given edge
    */
   quadric(): Matrix {
-    // TODO: Compute Edge Quadric Matrix
-    
     return this.halfedge!.vert!.quadric().add(this.halfedge!.twin!.vert!.quadric());
   }
 }
@@ -193,9 +195,16 @@ export class Face {
    * @returns {Matrix}
    */
   quadric(): Matrix {
-    // TODO: Compute Face Quadric
-    return new Matrix();
-  }
+    const normal = this.normal();
+    const pos = this.halfedge!.vert!.pos; // TODO: Is this the correct vert?
+    const nx = -normal.x * pos.x - normal.y * pos.y - normal.z * pos.z;
+    // FIXME: Performance, the Matrix is symmetric (less computations needed)
+    return new Matrix(normal.x*normal.x, normal.x*normal.y, normal.x*normal.z, normal.x*nx,
+      normal.y*normal.x, normal.y*normal.y, normal.y*normal.z, normal.y*nx,
+      normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
+      nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
+      );
+    }
 }
 
 export enum NormalMethod {
@@ -275,24 +284,19 @@ export class Vertex {
    * quadric computes and returns the quadric matrix of the given vertex
    */
   quadric(): Matrix {
-    // TODO: compute vertex quadric
-    const normal = this.normal();
-    const nx = -normal.x*this.pos.x-normal.y*this.pos.y-normal.z*this.pos.z;
-    return new Matrix(normal.x*normal.x, normal.x*normal.y, normal.x*normal.z, normal.x*nx,
-      normal.y*normal.x, normal.y*normal.y, normal.y*normal.z, normal.y*nx,
-      normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
-      nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
-      );
+    // FIXME: Performance, no need to iterate through faces twice
+    const e0 = this.halfedge;
+    const neighbor_faces = [e0!.face!];
+    let sum = new Matrix();
+    // Sum of neighbor face quadrics
+    for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
+      neighbor_faces.push(e.face!);
+    }
 
-    /* const normal = this.normal();
-
-    const nx = normal.dot(this.pos);
-    return new Matrix(normal.x*normal.x, normal.x*normal.y, normal.x*normal.z, normal.x*nx,
-      normal.y*normal.x, normal.y*normal.y, normal.y*normal.z, normal.y*nx,
-      normal.z*normal.x, normal.z*normal.y, normal.z*normal.z, normal.z*nx,
-      nx*normal.x, nx*normal.y, nx*normal.z, nx*nx
-      );  */
-
+    neighbor_faces.forEach(face => {
+      sum = sum.add(face.quadric());
+    });
+    return sum;
   }
 
   getNeighbors(): Vertex[] {
