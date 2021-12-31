@@ -6,14 +6,14 @@ Jakob Schmid
 
 ## Abstract
 
-The project aims to write an algorithm, that regularizes an input mesh into a more regular mesh, by local operations on the vertices.
+The project aims to write an algorithm, that regularizes an input mesh into a more regular mesh, by using local operations on the vertices.
 The implementation will be based on a section of the provided paper.
 
 ## Motivation
 
 The process is related to the paper: "Explicit Surface Remeshing" by Surazhsky and Gotsman, that uses a complex algorithm for remeshing, and as the last step performs Connectivity Regularization.
 Since i think the remeshing algorithm is too difficult and complex as a project for this course i thought i could implement only the last step.
-What's interesting about the approach proposed is that, since it is using local operations, and is an elegant and efficient way to improve regularity of a mesh, while leaving the vertex positions largely the same.
+What's interesting about the approach proposed is that, since it is using local operations,which makes it an elegant and efficient way to improve regularity of a mesh, while leaving the vertex positions largely the same.
 The features are more closely described in the proposal section.
 
 ## Proposal
@@ -28,18 +28,19 @@ The process is only part of a complex remeshing algorithm, and i didn't find any
 I plan on implementing the project in typescript, like the homework assignments.
 
 Milestones could be:
--Implementing basic edge operations, such as edge-flip, edge collapse, edge split
--Implementing angle based smoothing
--Algorithm for basic edge swaps
--Algorithm for advanced edge classification and handling
+* Implementing basic edge operations, such as edge-flip, edge collapse, edge split
+* Implementing angle based smoothing
+* Algorithm for basic edge swaps
+* Algorithm for advanced edge classification and handling
 
 Problems could arise with the angle based smoothing, since that might be difficult to implement, and also changes Vertex positions.
-I hope theose won't be too problematic, since the smoothing is only applied locally
+I hope theose won't be too problematic, since the smoothing is only applied locally.
 
 A different idea i could use as a backup plan is to regularize a mesh, by using:
--First a simplification (e.g the qslim we implemented as homework)
--Then Use edge flips to regularize Vertices
--Use regular subdivision to get a high regular mesh
+* First a simplification (e.g the qslim we implemented as homework)
+* Then Use edge flips to regularize Vertices
+* Use regular subdivision to get a high regular mesh
+
 (A Problem of that approach would be loss of details during simplification)
 
 ## References
