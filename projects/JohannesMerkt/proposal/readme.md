@@ -1,50 +1,30 @@
-# Proposal: [Project Title]
+# Proposal: Draw Geometry with Code
 
-[NameOrGitHubUsername]
+Johannes Merkt
 
-[Date]
+31.12.2021
 
 ## Abstract
 
-A short abstract that summarizes the proposal. Maximum 200 words.
+Shaders can be used to draw images with code. At shadertoy.com you can find many astonishing examples. This project wants to move this concept to the 3d world with geometry, allowing a user to write a shader to draw 3d geometry.
 
 ## Motivation
 
-In this section, we should write a good introduction to the background of an
-individual project. The following questions should be answered as an introduction:
+This project will take in a shader that describes a 3D volume with code and turns this into a geometry by analizing the density of the volume. It might also be possible to describe this volume with color too and turn this color information into vertex color of the geometry. In order to make this possible I would have to write a meshing algorithm that takes in the shader and generates a geometry as fast as possible.
 
-1. What are the problems or features included in the project?
-2. Why is it interesting to *you*, or what motivates you to work on it?
-3. Why it is interesting to *others*, or what attracts people to admire the work?
+Drawing with shaders is very powerful, it allows for high performant art that updates in real time, is procedural and can also be interactive. I find that fascinating. But what if I could write shaders that describe 3d Geometry? Then you could create complex geometry in a completly new way which is also interesting for others. I hope I will be able to make this proposed system performant enough to draw geometry in real time. If not it is still useful but has to be rendered or cached first for real time viewing.
+
 
 ## Proposal
 
-This section should discuss the core idea of a proposal, and also
-addresses these question:
-
-1. What are the planned features to implement? Explain with decent details.
-2. Is the proposal related to a research paper(s)? List all of them.
-3. Why this is a geometry processing related topic/project?
-4. What are the existing implementations/solutions? Or if not, please indicate.
-5. How exactly the project can do things differently?
-
-Note that it is important that an implementation should be done differently than
-existing ones. For instance, an existing implementation was written in C++ and OpenGL, and you may propose to implement it using TypeScript and three.js.
+It is planned to write a engine that takes in a shader (likely a compute shader) that describes a volume. This engine then calculates the geometry for parts of the volume that are greater than zero in density. The meshing algorithm has to be decided later on. This proposal isnt related to a research paper although it might be using a meshing algorithm that is described in a paper. The meshing of a volume is very much related to geometry processing. I havent seen an existing implementation/solution. 
 
 ## Implementation
 
-This section should discuss a concrete plan about how to implement the proposed idea.
-The following question should be answered in this section:
-
-1. What could be the development settings, e.g., programming language, possible dependencies, target platforms, etc.
-2. What are the milestones for the project?
-3. What issues might occur in each milestone during the implementation?
-4. What are challenges might encounter?
-5. How is the plan of solving all these issues and challenges?
-6. What are the alternative solutions (Plan B) if the issue cannot be resolved?
+I would love to create this in typescript with three.js, but since Compute shaders are not supported in the browser I will have to use unity. In unity the programming language is C#, the compute shader language is HLSL and it can target many platforms such as windows, linux and macos. First milestone will be to create a compute shader system that displays the volume denisity in the 3D world with debug points in different colors. An issue here might be finding a representation to describe a volume. The next milestone will be a first meshing algorithm that generate a mesh from the volume information. This will likely be very slow at first. Here I will likely encounter the most issues when creating a nonmanifold mesh without artifacts. Finally I will try to optimize performance as much as possible. If I figure out a way I will try to use compute shaders to generate the mesh as fast as possible. A big challange of this project is making the meshing process as fast as possible. To achieve this one has to find clever solutions to run tasks in parrallel and maybe even on the gpu. This will involve alot of research and trial and error. If I cannot make these run in parrallel I will fall back to a single core approach which isnt as fast but can still be useful and interesting for experiments.
 
 ## References
 
-The reference section should list all possible resources (e.g., Research papers, blog posts, development documentation, YouTube videos, etc.) that can help to finish the implementation. All resources should be formulated in the following format and ordered by name:
-
-- Author name. Title. Publish date. https://link.to.the/resource.
+- Johannes S. Mueller-Roemer. GPU Data Structures and Code Generation for Modeling, Simulation, and Visualization. 2019. https://tuprints.ulb.tu-darmstadt.de/11291/1/dissertation-2019-12-20.pdf
+- Unity. Compute Shaders. 2017. https://docs.unity3d.com/560/Documentation/Manual/ComputeShaders.html
+- Blender. Metaball. 2021. https://developer.blender.org/diffusion/B/browse/master/source/blender/editors/metaball/
