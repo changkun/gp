@@ -46,5 +46,5 @@ A different idea i could use as a backup plan is to regularize a mesh, by using:
 ## References
 
 
--Ligang Liu, Lecture slides on Delaunay Triangulation and Mesh Generation, http://staff.ustc.edu.cn/~lgliu/Courses/DGP_2012_spring-summer/Courseware/DGP03_DT-and-MeshGeneration.pdf
--Surazhsky and Gotsman, Explicit Surface Remeshing, 2003, http://mesh.brown.edu/DGP/pdfs/Surazhsky-sgp03.pdf
+- Ligang Liu, Lecture slides on Delaunay Triangulation and Mesh Generation, http://staff.ustc.edu.cn/~lgliu/Courses/DGP_2012_spring-summer/Courseware/DGP03_DT-and-MeshGeneration.pdf
+- Surazhsky and Gotsman, Explicit Surface Remeshing, 2003, http://mesh.brown.edu/DGP/pdfs/Surazhsky-sgp03.pdf
