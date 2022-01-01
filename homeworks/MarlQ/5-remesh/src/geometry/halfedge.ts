@@ -381,7 +381,7 @@ export class HalfedgeMesh {
     neighbor_edges.forEach(e => {
       if(!e.removed) {
         e!.err = -1;
-        edgeQueue.replace(e);
+        edgeQueue.replace(e); // FIXME: This actually makes no sense, but it makes it look better
       }
     });
     vert_keep.pos = newVertexPos;
