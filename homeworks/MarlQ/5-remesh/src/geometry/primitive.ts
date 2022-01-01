@@ -16,14 +16,12 @@ export class Halfedge {
   next?: Halfedge;
   twin?: Halfedge;
 
-  removed: boolean;
   idx: number;
   onBoundary: boolean;
 
   constructor() {
     this.idx = -1;
     this.onBoundary = false;
-    this.removed = false;
   }
   vector(): Vector {
     const a = this.next!.vert!;
@@ -57,6 +55,7 @@ export class Edge {
     this.err = -1; // an error is guaranteed to be positive, hence initialize it as negative values.
   }
   error(): number {
+    // FIXME: For some reason, all errors are negative??
     // If the error is cached, then return immediately.
     if (this.err > -1) {
       return this.err;
@@ -71,31 +70,33 @@ export class Edge {
     //    This is preferred. Boundary of a mesh are considered as features,
     //    except the faulty noisy meshes. If that happens, we need clean up
     //    the mesh first.
-    if(this.halfedge!.onBoundary) {
+    if(this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
     this.err = -555; // FIXME:
 
     const pos = this.bestVertex();
-    
-    const quadric = this.quadric();
+    const quadric = this.quadric(false);
+    this.err = Edge.positionError(pos, quadric);
 
+    return this.err;
+  }
+
+  private static positionError(pos: Vector, quadric: Matrix): number {
+    let error = -1;
     let a = quadric.mul(pos);
-    console.log("quadric", quadric)
-    console.log("a", a)
+
     pos.w = 0; // FIXME: Is this necessary?
     if(a instanceof Vector) a.w = 0; // FIXME: Is this necessary?
     
     if(a instanceof Vector) {
-      console.log("pos", pos)
-      
-      this.err = a.dot(pos); 
+      error = a.dot(pos); 
       // Add missing entries by hand, as dot product does not support w = 1 TODO: Is this actually correct?
-      this.err += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
+      //error += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
     }
-    console.log("Error: " + this.err);
-    return this.err;
+    return error;
   }
+
   /**
    * bestVertex returns the optimal vertex that can replaces the connecting vertices
    * of the given edge.
@@ -109,36 +110,66 @@ export class Edge {
     //      The search process should sample a position iteratively from one
     //      to the other. Use the one with least quadric error.
     let v = this.halfedge!.vert!.pos;
+    
     try{ 
       // 1st try: quadric matrix is invertible
-      let quadric = this.quadric();
+      let quadric = this.quadric(false);
+      quadric.x30 = 0;
+      quadric.x31 = 0;
+      quadric.x32 = 0;
+      quadric.x33 = 1;
       quadric = quadric.inv();
       let h = quadric.mul(new Vector(0,0,0,1));
       if(h instanceof Vector) v = h; // I hate Typescript
     }
     catch {
+      console.log("Previous pos "+ v.x + ", " + v.y + ", " + v.z + ", " + v.w)
+      console.log("Not Invertible")
       // 2nd try: chose vertex along edge segment
       const resolution = 5; // Determines how often the line segment is divided
-      let v2 = this.halfedge!.twin!.vert!.pos;
-      v = v.add(v2).scale(1/2);
-      // TODO: sample edge
+      const quadric = this.quadric(true);
+      console.log("Quadric", quadric)
+      const v2 = this.halfedge!.twin!.vert!.pos;
+      let error_min = Number.POSITIVE_INFINITY;
+      let best_pos = v;
+      
 
-     /*  for(let step = 0; step < resolution; step++) {
+      // TODO: Try out v and v2
 
-        for(let div = 0; div < Math.pow(2,step); div++) {
-          let half = v.add(v2).scale(1/2);
+
+      
+      let sample_points : Vector[] = [v, v2];
+      console.log("samplers", sample_points)
+      // TODO: Sample edge by continuously dividing up the line segment into halves
+      for(let step = 0; step < resolution; step++) {
+       console.log("Step " + step)
+       let newSamples = sample_points.slice();
+       console.log("samples", newSamples)
+        for(let div = 0; div < sample_points.length - 1; div++) {
+          let half = sample_points[div].add(sample_points[div+1]).scale(1/2);
+          let error = Edge.positionError(half, quadric);
+          if(error < error_min) {
+            best_pos = half;
+            error_min = error;
+          }
+          newSamples.splice(div + 1, 0, half);
         }
-      } */
-
+        sample_points = newSamples;
+      }
+      v = best_pos;
+      console.log("New pos "+ v.x + ", " + v.y + ", " + v.z + ", " + v.w)
+      throw new Error("HELLo");
     }
-
+    v.w = 1; // FIXME: Is this necessary?
+    
+    
     return v;
   }
   /**
    * quadric computes and returns the quadric matrix of the given edge
    */
-  quadric(): Matrix {
-    return this.halfedge!.vert!.quadric().add(this.halfedge!.twin!.vert!.quadric());
+  quadric(debug: boolean): Matrix {
+    return this.halfedge!.vert!.quadric(debug).add(this.halfedge!.twin!.vert!.quadric(debug));
   }
 }
 
@@ -194,7 +225,8 @@ export class Face {
    * quadric computes and returns the quadric matrix of the given face
    * @returns {Matrix}
    */
-  quadric(): Matrix {
+  quadric(debug: boolean): Matrix {
+    if(debug) console.log("Computing face quadric")
     const normal = this.normal();
     const pos = this.halfedge!.vert!.pos; // TODO: Is this the correct vert?
     const nx = -normal.x * pos.x - normal.y * pos.y - normal.z * pos.z;
@@ -283,19 +315,14 @@ export class Vertex {
   /**
    * quadric computes and returns the quadric matrix of the given vertex
    */
-  quadric(): Matrix {
-    // FIXME: Performance, no need to iterate through faces twice
-    const e0 = this.halfedge;
-    const neighbor_faces = [e0!.face!];
+  quadric(debug: boolean): Matrix {
+    if(debug) console.log("Compute vertex quadric")
     let sum = new Matrix();
-    // Sum of neighbor face quadrics
-    for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
-      neighbor_faces.push(e.face!);
-    }
 
-    neighbor_faces.forEach(face => {
-      sum = sum.add(face.quadric());
+    this.faces(face => {
+      sum = sum.add(face.quadric(debug));
     });
+
     return sum;
   }
 
