@@ -28,6 +28,8 @@ Improving the error calculation and edge selection merely made spotting mistakes
 ```
 No 'impressive' bugs, as most of them were just infinity loops or thrown errors caused by one of my asserts.
 I had to rewrite the edge collapse algorithm multiple times to get it to work.
+
+Edit: in fact the most persistent bug that I just found, hours before the deadline, was that the edge queue tried to update the edge error of edges that were already deleted, causing an infinite loop when finding adjacent faces.
 ```
 
 **Runtime performance**: Which part of your code could be a bottleneck and how the computation performance could be improved?
