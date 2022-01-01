@@ -73,27 +73,31 @@ export class Edge {
     if(this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
-    this.err = -555; // FIXME:
 
     const pos = this.bestVertex();
-    const quadric = this.quadric(false);
+    const quadric = this.quadric();
     this.err = Edge.positionError(pos, quadric);
 
     return this.err;
   }
 
-  private static positionError(pos: Vector, quadric: Matrix): number {
-    let error = -1;
+  private static positionError(v: Vector, q: Matrix): number {
+    /* let error = -1;
     let a = quadric.mul(pos);
 
-    pos.w = 0; // FIXME: Is this necessary?
-    if(a instanceof Vector) a.w = 0; // FIXME: Is this necessary?
+    pos.w = 1;
+    //if(a instanceof Vector) a.w = 0;
     
     if(a instanceof Vector) {
       error = a.dot(pos); 
       // Add missing entries by hand, as dot product does not support w = 1 TODO: Is this actually correct?
-      //error += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
-    }
+      error += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
+    } */
+
+    const error = v.x * (v.x*q.x00 + v.y*q.x10 + v.z*q.x20 + q.x30) 
+                  + v.y * (v.x*q.x01 + v.y +q.x11 + v.z*q.x21 + q.x31)
+                  + v.z * (v.x*q.x02 + v.y*q.x12 + v.z*q.x22 + q.x32)
+                  + (v.x*q.x03 + v.y*q.x13 + v.z*q.x23 + q.x33);
     return error;
   }
 
@@ -113,7 +117,7 @@ export class Edge {
     
     try{ 
       // 1st try: quadric matrix is invertible
-      let quadric = this.quadric(false);
+      let quadric = this.quadric();
       quadric.x30 = 0;
       quadric.x31 = 0;
       quadric.x32 = 0;
@@ -127,20 +131,23 @@ export class Edge {
       console.log("Not Invertible")
       // 2nd try: chose vertex along edge segment
       const resolution = 5; // Determines how often the line segment is divided
-      const quadric = this.quadric(true);
+      const quadric = this.quadric();
       console.log("Quadric", quadric)
       const v2 = this.halfedge!.twin!.vert!.pos;
       let error_min = Number.POSITIVE_INFINITY;
+
+      // Try out v and v2
       let best_pos = v;
       
-
-      // TODO: Try out v and v2
-
-
+      const v2_error = Edge.positionError(v2, quadric);
+      if(v2_error < error_min) {
+        error_min = v2_error;
+        best_pos = v2;
+      }
       
       let sample_points : Vector[] = [v, v2];
       console.log("samplers", sample_points)
-      // TODO: Sample edge by continuously dividing up the line segment into halves
+      // Sample edge by continuously dividing up the line segment into halves
       for(let step = 0; step < resolution; step++) {
        console.log("Step " + step)
        let newSamples = sample_points.slice();
@@ -168,8 +175,8 @@ export class Edge {
   /**
    * quadric computes and returns the quadric matrix of the given edge
    */
-  quadric(debug: boolean): Matrix {
-    return this.halfedge!.vert!.quadric(debug).add(this.halfedge!.twin!.vert!.quadric(debug));
+  quadric(): Matrix {
+    return this.halfedge!.vert!.quadric().add(this.halfedge!.twin!.vert!.quadric());
   }
 }
 
@@ -225,10 +232,9 @@ export class Face {
    * quadric computes and returns the quadric matrix of the given face
    * @returns {Matrix}
    */
-  quadric(debug: boolean): Matrix {
-    if(debug) console.log("Computing face quadric")
+  quadric(): Matrix {
     const normal = this.normal();
-    const pos = this.halfedge!.vert!.pos; // TODO: Is this the correct vert?
+    const pos = this.halfedge!.vert!.pos;
     const nx = -normal.x * pos.x - normal.y * pos.y - normal.z * pos.z;
     // FIXME: Performance, the Matrix is symmetric (less computations needed)
     return new Matrix(normal.x*normal.x, normal.x*normal.y, normal.x*normal.z, normal.x*nx,
@@ -315,23 +321,13 @@ export class Vertex {
   /**
    * quadric computes and returns the quadric matrix of the given vertex
    */
-  quadric(debug: boolean): Matrix {
-    if(debug) console.log("Compute vertex quadric")
+  quadric(): Matrix {
     let sum = new Matrix();
 
     this.faces(face => {
-      sum = sum.add(face.quadric(debug));
+      sum = sum.add(face.quadric());
     });
 
     return sum;
-  }
-
-  getNeighbors(): Vertex[] {
-    const e0 = this.halfedge;
-    const neighbor_verts = [e0!.twin!.vert!];
-    for(let e = e0!.twin!.next!.twin!; e != e0!.twin; e = e!.next!.twin!) {
-      neighbor_verts.push(e.vert!);
-    }
-    return neighbor_verts;
   }
 }
