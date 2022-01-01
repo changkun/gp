@@ -340,7 +340,7 @@ export class HalfedgeMesh {
     }
   }
 
-  collapse(edge: Edge) {
+  collapse(edge: Edge, edgeQueue: EdgeQueue) {
     const newVertexPos = edge.bestVertex();
     let vert_remove = edge.halfedge!.vert!;
     let vert_keep = edge.halfedge!.twin!.vert!;
@@ -353,6 +353,16 @@ export class HalfedgeMesh {
       outgoing_halfedges_from_old_vert.push(he);
       neighbor_edges.push(he!.edge!);
     });
+    vert_keep.halfedges(he => {
+      neighbor_edges.push(he!.edge!)
+    });
+    edge.halfedge!.prev!.vert!.halfedges(he => {
+      neighbor_edges.push(he!.edge!)
+    });
+    edge.halfedge!.twin!.prev!.vert!.halfedges(he => {
+      neighbor_edges.push(he!.edge!)
+    });
+
     vert_keep.halfedge = edge.halfedge!.twin!.next!.next!.twin;
     this.deleteFace(edge.halfedge!.twin!.face!, vert_remove, vert_keep);
     this.deleteFace(edge.halfedge!.face!, vert_remove, vert_keep);
@@ -370,6 +380,7 @@ export class HalfedgeMesh {
     neighbor_edges.forEach(e => {
       if(!e.removed) {
         e!.err = -1;
+        edgeQueue.replace(e);
       }
     });
     vert_keep.pos = newVertexPos;
@@ -397,7 +408,6 @@ export class HalfedgeMesh {
 
     while((facecount > targetFaces) && edgeQueue.size()) {
       let edge = edgeQueue.pop();
-
       // Check whether edge is valid
 
       // Edge already removed
@@ -437,7 +447,7 @@ export class HalfedgeMesh {
       }
 
       // Edge Collapse
-      this.collapse(edge);
+      this.collapse(edge, edgeQueue);
 
       // TODO: Collapse for final face
 

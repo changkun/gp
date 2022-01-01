@@ -136,7 +136,7 @@ export class Edge {
       }
       v = best_pos;
     }
-    v.w = 1;
+    //v.w = 1;
     
     
     return v;
