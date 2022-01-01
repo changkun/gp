@@ -7,6 +7,7 @@ Jakob Schmid
 ## Abstract
 
 The project aims to write an algorithm, that regularizes an input mesh into a more regular mesh, by using local operations on the vertices.
+This improves the mesh quality.
 The implementation will be based on a section of the provided paper.
 
 ## Motivation
@@ -34,11 +35,13 @@ Milestones could be:
 * Algorithm for advanced edge classification and handling
 
 Problems could arise with the angle based smoothing, since that might be difficult to implement, and also changes Vertex positions.
-I hope theose won't be too problematic, since the smoothing is only applied locally.
+A different issue might be that since in the original paper the meshes were created in the remehsing scheme the author can make certain guarantees about them, that might not be true for all meshes.
+
+I hope this won't be too problematic, since the smoothing is only applied locally.
 
 A different idea i could use as a backup plan is to regularize a mesh, by using:
 * First a simplification (e.g the qslim we implemented as homework)
-* Then Use edge flips to regularize Vertices
+* Then Use edge operations to regularize Vertices
 * Use regular subdivision to get a high regular mesh
 
 (A Problem of that approach would be loss of details during simplification)
