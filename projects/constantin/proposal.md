@@ -6,47 +6,35 @@ Constantin Geier
 
 ## Abstract
 
-A short abstract that summarizes the proposal. Maximum 200 words.
-
-The aim of this project is to implement an algorithm that takes a mesh represented by the halfedge data structure from our exercises and output a voxelized Mesh.
+The aim of this project is to implement an algorithm that voxelizes a mesh represented by the halfedge data structure from our exercises.
+Furthermore,the output - either a point cloud or a cube mesh - will be rendered for comparison.
 
 ## Motivation
 
-In this section, we should write a good introduction to the background of an
-individual project. The following questions should be answered as an introduction:
+One of the first tasks of the lecture (teaser.png) included voxelizing a mesh in blender. Voxelizing a 3D mesh not only looks cool (Minecraft), but is also usefull for many applications (Physics simulations,volumetric imaging). 
+While many implementations of this task already exist (blender,https://github.com/karimnaaji/voxelizer/blob/master/voxelizer.h) I cannot find an already existing implementation in .ts that takes a halfedge data structure (h.e.d.s.) as input. 
+It would be interesting to see how an implementation of this task in .ts and using a h.e.d.s. looks and performs.
 
-1. What are the problems or features included in the project?
-2. Why is it interesting to *you*, or what motivates you to work on it?
-3. Why it is interesting to *others*, or what attracts people to admire the work?
 
 ## Proposal
 
-This section should discuss the core idea of a proposal, and also
-addresses these question:
+Several techniques exist to voxelize a mesh into either cubes or a point cloud. I plan to implement an algorithm that takes a mesh represented by a h.e.d.s as input and generates either a voxel grid (identically sized cubes eqidistant apart) or a point cloud
+and/or also a representation of the result using a h.e.d.s. for simple visualization. This can be done simply by testing each cube against all faces of the h.e.d.s., but such a naive algorithm would have a O(n^n) run time complexity and therefore I plan to find
+a more efficient way utilizing the properties of the h.e.d.s., like quick access to the neighbours of a face. As already mentioned, there are many implementations of this task in c/c++/ 3D modelling tools like blender, but I cannot find a single implementation
+written a) in .ts and b) using a h.e.d.s as input instead of a nromal triangle mesh.
 
-1. What are the planned features to implement? Explain with decent details.
-2. Is the proposal related to a research paper(s)? List all of them.
-3. Why this is a geometry processing related topic/project?
-4. What are the existing implementations/solutions? Or if not, please indicate.
-5. How exactly the project can do things differently?
-
-Note that it is important that an implementation should be done differently than
-existing ones. For instance, an existing implementation was written in C++ and OpenGL, and you may propose to implement it using TypeScript and three.js.
 
 ## Implementation
 
-This section should discuss a concrete plan about how to implement the proposed idea.
-The following question should be answered in this section:
-
-1. What could be the development settings, e.g., programming language, possible dependencies, target platforms, etc.
-2. What are the milestones for the project?
-3. What issues might occur in each milestone during the implementation?
-4. What are challenges might encounter?
-5. How is the plan of solving all these issues and challenges?
-6. What are the alternative solutions (Plan B) if the issue cannot be resolved?
+I plan to use the exercise template as a starting point and therefore implement this task in .ts. My milestones are:
+1) naive implementation of the voxelizing algorithm in .ts.
+2) improving the algorithm using properties of h.e.d.s.
+3) visualizing the results nicely
+4) adding additional features like coloring the resulting voxel mesh, variable cube size and calculating normals.
 
 ## References
 
-The reference section should list all possible resources (e.g., Research papers, blog posts, development documentation, YouTube videos, etc.) that can help to finish the implementation. All resources should be formulated in the following format and ordered by name:
-
-- Author name. Title. Publish date. https://link.to.the/resource.
+Bronson zegeb, https://bronsonzgeb.com/index.php/2021/05/15/simple-mesh-voxelization-in-unity/
+Blender, https://docs.blender.org/manual/en/latest/sculpt_paint/sculpting/tool_settings/remesh.html
+karimnaji, https://github.com/karimnaaji/voxelizer
+Guangming, Li, et al. "A new mesh simplification algorithm combining half-edge data structure with modified quadric error metric." Object recognition supported by user interaction for service robots. Vol. 2. IEEE, 2002. https://images-insite.sgp1.digitaloceanspaces.com/dunia_buku/koleksi-buku-lainnya/a-new-mesh-simplification-algorithm-combining-half-edge-data-structure-with-modified-quadric-pdfdrivecom-2881581480755.pdf
