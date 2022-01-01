@@ -1,12 +1,14 @@
-# Proposal: [Project Title]
+# Proposal: Halfedge Mesh Voxelizer
 
-[NameOrGitHubUsername]
+Constantin Geier
 
-[Date]
+01.01.2022
 
 ## Abstract
 
 A short abstract that summarizes the proposal. Maximum 200 words.
+
+The aim of this project is to implement an algorithm that takes a mesh represented by the halfedge data structure from our exercises and output a voxelized Mesh.
 
 ## Motivation
 
