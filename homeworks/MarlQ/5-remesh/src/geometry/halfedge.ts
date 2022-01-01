@@ -354,13 +354,14 @@ export class HalfedgeMesh {
       neighbor_edges.push(he!.edge!);
     });
     vert_keep.halfedges(he => {
-      neighbor_edges.push(he!.edge!)
+      
+      if(!neighbor_edges.includes(he!.edge!)) neighbor_edges.push(he!.edge!)
     });
     edge.halfedge!.prev!.vert!.halfedges(he => {
-      neighbor_edges.push(he!.edge!)
+      if(!neighbor_edges.includes(he!.edge!)) neighbor_edges.push(he!.edge!)
     });
     edge.halfedge!.twin!.prev!.vert!.halfedges(he => {
-      neighbor_edges.push(he!.edge!)
+      if(!neighbor_edges.includes(he!.edge!)) neighbor_edges.push(he!.edge!)
     });
 
     vert_keep.halfedge = edge.halfedge!.twin!.next!.next!.twin;
