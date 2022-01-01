@@ -286,22 +286,24 @@ export class HalfedgeMesh {
 
   // Deletes the face
   deleteFace(face: Face, v_remove: Vertex, v_keep: Vertex) {
-    console.log("Removing face", face)
     let halfedges = [face.halfedge!, face.halfedge!.next!, face.halfedge!.next!.next!];
-    let edges = [face.halfedge!.edge!, face.halfedge!.next!.edge!, face.halfedge!.next!.next!.edge!];
     let verts = [face.halfedge!.vert!, face.halfedge!.next!.vert!, face.halfedge!.next!.next!.vert!];
     
     let overlap = verts.filter(v => v.idx !== v_remove.idx && v.idx !== v_keep.idx)[0];
 
-    const ne = [overlap.halfedge];
+    const ne : Halfedge[] = [];
+    overlap.halfedges(he => {
+      ne.push(he);
+    })
+
+    /* const ne = [overlap.halfedge];
     for(let e = overlap.halfedge!.twin!.next!; e != overlap.halfedge; e = e!.twin!.next!) {
       ne.push(e);
-    }
+    } */
 
     const he_vert_to_vert_keep = ne.find(he => he!.next!.vert!.idx === v_keep.idx)!;
     const he_vert_remove_to_vert = ne.find(he => he!.next!.vert!.idx === v_remove.idx)!.twin!;
 
-    console.log("Removing edge", he_vert_to_vert_keep!.edge!.idx)
     this.edges[he_vert_to_vert_keep!.edge!.idx]!.removed = true;
     this.edges[he_vert_to_vert_keep!.edge!.idx] = null;
 
@@ -313,23 +315,27 @@ export class HalfedgeMesh {
     this.faces[face!.idx]!.removed = true;
     this.faces[face!.idx] = null;
 
-    //FIXME: This is wrong somehow
     if(he_vert_to_vert_keep.face!.idx === face.idx) { // he_vert_to_vert_keep belongs to the face
+      /* v_keep.halfedge = he_vert_to_vert_keep.twin; */ 
+      overlap.halfedge = he_vert_remove_to_vert.twin; 
+      
+
       he_vert_remove_to_vert.twin!.twin = he_vert_to_vert_keep.twin;
       he_vert_to_vert_keep.twin!.twin = he_vert_remove_to_vert.twin;
       he_vert_to_vert_keep.twin!.edge = he_vert_remove_to_vert.edge;
 
       he_vert_to_vert_keep.twin!.edge!.halfedge = he_vert_remove_to_vert.twin;
-      v_keep.halfedge = he_vert_to_vert_keep.twin; // FIXME:
-      overlap.halfedge = he_vert_remove_to_vert.twin; // FIXME:
+      
     } else { // he_vert_to_vert_keep twin belongs to the face
+      /* v_keep.halfedge = he_vert_remove_to_vert; */
+      overlap.halfedge = he_vert_to_vert_keep;
+
       he_vert_remove_to_vert.twin = he_vert_to_vert_keep;
       he_vert_to_vert_keep.twin = he_vert_remove_to_vert;
       he_vert_to_vert_keep.edge = he_vert_remove_to_vert.edge;
 
       he_vert_to_vert_keep.edge!.halfedge = he_vert_remove_to_vert;
-      v_keep.halfedge = he_vert_remove_to_vert; // FIXME:
-      overlap.halfedge = he_vert_to_vert_keep; // FIXME:
+      
       //he_vert_remove_to_vert.vert = v_keep;
     }
   }
@@ -342,17 +348,12 @@ export class HalfedgeMesh {
     //const e0 = edge.halfedge;
     const outgoing_halfedges_from_old_vert : Halfedge[] = [];
     const neighbor_edges : Edge[] = [];
-    /* for(let e = e0!.twin!.next!; e != e0!; e = e!.twin!.next!) {
-      console.log("Loop", e)
-      outgoing_halfedges_from_old_vert.push(e);
-      neighbor_edges.push(e.edge);
-    } */
 
     vert_remove.halfedges(he => {
       outgoing_halfedges_from_old_vert.push(he);
       neighbor_edges.push(he!.edge!);
     });
-
+    vert_keep.halfedge = edge.halfedge!.twin!.next!.next!.twin;
     this.deleteFace(edge.halfedge!.twin!.face!, vert_remove, vert_keep);
     this.deleteFace(edge.halfedge!.face!, vert_remove, vert_keep);
 
@@ -362,15 +363,14 @@ export class HalfedgeMesh {
 
     // Remove vertex and collapsed edge
     this.verts[vert_remove.idx] = null;
-    console.log("Removing edge", edge.idx)
     this.edges[edge.idx]!.removed = true;
     this.edges[edge.idx] = null;
 
-    console.assert(!this.halfedges[edge.halfedge!.idx] && !this.halfedges[edge.halfedge!.twin!.idx], {errorMsg: "Edge halfedges not removed!"});
-
     // Re-calculate neighbor error
     neighbor_edges.forEach(e => {
-      e!.err = -1;
+      if(!e.removed) {
+        e!.err = -1;
+      }
     });
     vert_keep.pos = newVertexPos;
   }
@@ -397,29 +397,26 @@ export class HalfedgeMesh {
 
     while((facecount > targetFaces) && edgeQueue.size()) {
       let edge = edgeQueue.pop();
-      console.log("Collapsing edge ", edge)
-      console.log("edges", this.edges)
-      console.log("faces", this.faces)
-      console.log("vertices", this.verts)
-      console.log("halfedges", this.halfedges)
 
       // Check whether edge is valid
 
       // Edge already removed
       if(!edge) {
-        console.log("Edge undefined");
         continue;
       }
 
       if(edge.removed) {
-        console.log("Edge already removed");
         continue;
       }
-      // Edge on boundary
-      if(edge.halfedge!.onBoundary || edge.halfedge!.twin!.onBoundary) {
-        console.log("Edge on boundary!")
-        continue;
-      }
+      // Vertex to remove on boundary
+      let onBoundary = false;
+
+      edge.halfedge!.vert!.halfedges(he => {
+        if(he.onBoundary || he.twin!.onBoundary) {
+          onBoundary = true;
+        }
+      });
+      if(onBoundary) continue;
       
       // Joint neighbourhood vertices must be exactly two
       let neighbors_keep : Vertex[] = [];
@@ -432,7 +429,6 @@ export class HalfedgeMesh {
       })
 
       if(neighbors_keep.filter(e => neighbors_remove.includes(e)).length !== 2) {
-        console.log("Joint neighbors not exactly 2!")
         continue;
       }
       if(neighbors_keep[0]!.idx === neighbors_keep[1]!.idx) {
