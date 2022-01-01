@@ -60,16 +60,10 @@ export class Edge {
     if (this.err > -1) {
       return this.err;
     }
+    if(this.removed) {
+      return Number.POSITIVE_INFINITY;
+    }
 
-    // TODO: implemented edge error.
-    //
-    // Hint:
-    //    We do not work on boundary edges, set their error to infinity, so
-    //    that the priority queue will never pop these edges.
-    //
-    //    This is preferred. Boundary of a mesh are considered as features,
-    //    except the faulty noisy meshes. If that happens, we need clean up
-    //    the mesh first.
     if(this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
@@ -126,7 +120,10 @@ export class Edge {
       let h = quadric.mul(new Vector(0,0,0,1));
       if(h instanceof Vector) v = h; // I hate Typescript
     }
-    catch {
+    catch(e) {
+      if(e !== 'zero determinant') {
+        throw(e);
+      }
       console.log("Previous pos "+ v.x + ", " + v.y + ", " + v.z + ", " + v.w)
       console.log("Not Invertible")
       // 2nd try: chose vertex along edge segment
