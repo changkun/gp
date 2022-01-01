@@ -55,16 +55,13 @@ export class Edge {
     this.err = -1; // an error is guaranteed to be positive, hence initialize it as negative values.
   }
   error(): number {
-    // FIXME: For some reason, all errors are negative??
+    
     // If the error is cached, then return immediately.
     if (this.err > -1) {
       return this.err;
     }
-    if(this.removed) {
-      return Number.POSITIVE_INFINITY;
-    }
 
-    if(this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
+    if(this.removed || this.halfedge!.onBoundary || this.halfedge!.twin!.onBoundary) {
       return Number.POSITIVE_INFINITY;
     }
 
@@ -75,19 +72,7 @@ export class Edge {
     return this.err;
   }
 
-  private static positionError(v: Vector, q: Matrix): number {
-    /* let error = -1;
-    let a = quadric.mul(pos);
-
-    pos.w = 1;
-    //if(a instanceof Vector) a.w = 0;
-    
-    if(a instanceof Vector) {
-      error = a.dot(pos); 
-      // Add missing entries by hand, as dot product does not support w = 1 TODO: Is this actually correct?
-      error += pos.x * quadric.x03 + pos.y * quadric.x13 + pos.z * quadric.x23 + quadric.x33 + pos.x * quadric.x30 + pos.y * quadric.x31 + pos.z * quadric.x32;
-    } */
-
+  private static positionError(v: Vector, q: Matrix): number { // FIXME: For some reason, many errors are negative??
     const error = v.x * (v.x*q.x00 + v.y*q.x10 + v.z*q.x20 + q.x30) 
                   + v.y * (v.x*q.x01 + v.y +q.x11 + v.z*q.x21 + q.x31)
                   + v.z * (v.x*q.x02 + v.y*q.x12 + v.z*q.x22 + q.x32)
@@ -100,13 +85,6 @@ export class Edge {
    * of the given edge.
    */
   bestVertex(): Vector {
-    // TODO: estimate the best replacing vertex by computing
-    // the quadric error.
-    //
-    // Hint:
-    //      If a quadric is ill-posed, search a best vertex on the current edge
-    //      The search process should sample a position iteratively from one
-    //      to the other. Use the one with least quadric error.
     let v = this.halfedge!.vert!.pos;
     
     try{ 
@@ -124,12 +102,10 @@ export class Edge {
       if(e !== 'zero determinant') {
         throw(e);
       }
-      console.log("Previous pos "+ v.x + ", " + v.y + ", " + v.z + ", " + v.w)
-      console.log("Not Invertible")
       // 2nd try: chose vertex along edge segment
       const resolution = 5; // Determines how often the line segment is divided
       const quadric = this.quadric();
-      console.log("Quadric", quadric)
+
       const v2 = this.halfedge!.twin!.vert!.pos;
       let error_min = Number.POSITIVE_INFINITY;
 
@@ -143,12 +119,10 @@ export class Edge {
       }
       
       let sample_points : Vector[] = [v, v2];
-      console.log("samplers", sample_points)
       // Sample edge by continuously dividing up the line segment into halves
       for(let step = 0; step < resolution; step++) {
-       console.log("Step " + step)
        let newSamples = sample_points.slice();
-       console.log("samples", newSamples)
+
         for(let div = 0; div < sample_points.length - 1; div++) {
           let half = sample_points[div].add(sample_points[div+1]).scale(1/2);
           let error = Edge.positionError(half, quadric);
@@ -161,10 +135,8 @@ export class Edge {
         sample_points = newSamples;
       }
       v = best_pos;
-      console.log("New pos "+ v.x + ", " + v.y + ", " + v.z + ", " + v.w)
-      throw new Error("HELLo");
     }
-    v.w = 1; // FIXME: Is this necessary?
+    v.w = 1;
     
     
     return v;
