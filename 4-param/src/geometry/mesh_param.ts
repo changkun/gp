@@ -72,6 +72,8 @@ export class ParameterizedMesh extends HalfedgeMesh {
     //    3. compute matrix depending on the laplacian weight type.
     //    4. solve linear equation and assing computed uv to corresponding vertex uv.
     //
+    // Hint: Note that the linear equation cannot be solved using Cholesky solver (why?)
+    // Using a general solver such as LU solver would solve the euqation without issues.
   }
 
   /**
