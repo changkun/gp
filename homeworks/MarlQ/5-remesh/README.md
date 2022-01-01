@@ -35,6 +35,7 @@ I had to rewrite the edge collapse algorithm multiple times to get it to work.
 ```
 As mentioned in the paper, the quadrics should probably have been stored, as they are calculated multiple times right now, which is expensive.
 The edge collapse also performs some unncesseary calculations.
+Best vertex position is also calculated multiple times.
 ```
 
 ## Submission Instruction
