@@ -12,6 +12,7 @@ from mathutils.bvhtree import BVHTree
 from mathutils.geometry import (
         distance_point_to_plane,
         closest_point_on_tri)
+from math import pi, acos
 
 # TODO: Multiple hard objects
 
@@ -41,37 +42,43 @@ bvh1 = BVHTree.FromPolygons( vert1, poly1 )
 bvh2 = BVHTree.FromPolygons( vert2, poly2 )
 
 # Overlapping vertices (list of index pairs, first belongs to the soft object, the other to the hard object)
-overlap = bvh1.overlap(bvh2)
+overlap = bvh2.overlap(bvh1)
 
-print(overlap)
+# IDEA
+# Find overlap of hard with soft
+# Find verts inside hard mesh
+# for each inside vert:
+#   Find closest face of overlap to inside vert
+#   Displace inside vert along face normal by distance
+
 
 # FIXME: objects don't overlap
 # FIXME: all vertices overlap
-
-for i in overlap:
-    print(i)
-    face1 = poly1[i[0]]
-    face2 = poly2[i[1]]
-    face1_verts = [(vert1[vi], vi) for vi in face1]
-    face2_verts = [vert2[vi] for vi in face2]
-    print(face2_verts)
+tolerance = 0.2
+for j in range(len(vert1)):
+    vert_global = vert1[j]
+    vert_local_ho = hardObject.matrix_world.inverted() @ vert_global
+    result, location, normal, _ = hardObject.closest_point_on_mesh(vert_local_ho)
     
-    for vert in face1_verts:
-        print(vert)
-
-        (result, location, normal, index) = hardObject.closest_point_on_mesh(vert[0])
-        print(result)
-        print(location)
-        print(normal)
-        print(index)
-        
-        if result:
+    if result:
+        p2 = location-vert_local_ho
+        v = p2.dot(normal)
+        print(v)
+        #print(angle)
+        if abs(v) < 0.5:
+            print("Intersect")
             loc_global = hardObject.matrix_world @ location
             loc_local = softObject.matrix_world.inverted() @ loc_global
-            softObject.data.vertices[vert[1]].co = loc_local
+            softObject.data.vertices[j].co = loc_local
 
         # FIXME: This only works for triangles
-        """ plane_co = face2_verts[0]
+        """ 
+        for i in overlap:
+            face1 = poly1[i[0]]
+            face2 = poly2[i[1]]
+            face1_verts = [(vert1[vi], vi) for vi in face1]
+            face2_verts = [vert2[vi] for vi in face2]
+        plane_co = face2_verts[0]
         plane_no = (face2_verts[2] - face2_verts[0]).cross(face2_verts[1] - face2_verts[0]).normalized()
         dist = distance_point_to_plane(vert[0],plane_co,plane_no)
         
