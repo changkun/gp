@@ -5,3 +5,12 @@
 # in the LICENSE file.
 
 # This file serves as a demonstration of source code files.
+import bmesh
+import bpy
+import mathutils
+
+softObject = bpy.context.object
+hardObjects = set(bpy.context.selected_objects).difference(set([softObject]))
+
+softObject_verts = bmesh.from_edit_mesh(softObject.data).verts
+
