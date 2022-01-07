@@ -56,35 +56,45 @@ bvh1 = BVHTree.FromPolygons( verts1, poly1 )
 bvh2 = BVHTree.FromPolygons( verts2, poly2 )
 
 # Overlapping vertices (list of index pairs, first belongs to the soft object, the other to the hard object)
-
-
-# IDEA
-# Find overlap of hard with soft
 overlap = bvh2.overlap(bvh1)
 overlap_fi = list(dict.fromkeys([i1 for (i1, i2) in overlap]))
 print(overlap_fi)
 
-for j in range(len(verts1)):
-    vert1_global = verts1[j]
-    vert1_local_ho = hardObject.matrix_world.inverted() @ vert1_global
-    # For each inside vert:
-    if insideMesh(vert1_local_ho, hardObject):
-        # Find closest face of overlap to inside vert
-        dist_min = inf
-        closest_min = Vector((0.0, 0.0, 0.0))
-        for face2_index in overlap_fi:
-            face2 = poly2[face2_index]
-            f2_v1, f2_v2, f2_v3 = localC(verts2[face2[0]], hardObject), localC(verts2[face2[1]], hardObject), localC(verts2[face2[2]], hardObject)
-            dist = abs(distance_point_to_plane(vert1_local_ho, f2_v1, normal(f2_v1, f2_v2, f2_v3)))
-            if dist < dist_min:
-                dist_min = dist
-                closest = closest_point_on_tri(vert1_local_ho, f2_v1, f2_v2, f2_v3)
-                closest_min = closest
-        closest_so = localC(globalC(closest_min, hardObject), softObject)
-        softObject.data.vertices[j].co = closest_so
+# Vertices of soft object inside hard object
+inside_verts = [i for i in range(len(verts1)) if insideMesh( localC(verts1[i], hardObject), hardObject)]
+average_displace = Vector((0.0, 0.0, 0.0))
 
+for vert1_index in inside_verts:
+    vert1_global = verts1[vert1_index]
+    vert1_local_ho = localC(vert1_global, hardObject)
+    dist_min = inf
+    closest_min = Vector((0.0, 0.0, 0.0))
+    for face2_index in overlap_fi:
+        face2 = poly2[face2_index]
+        f2_v1, f2_v2, f2_v3 = localC(verts2[face2[0]], hardObject), localC(verts2[face2[1]], hardObject), localC(verts2[face2[2]], hardObject)
+        #dist = abs(distance_point_to_plane(vert1_local_ho, f2_v1, normal(f2_v1, f2_v2, f2_v3)))
+        closest = closest_point_on_tri(vert1_local_ho, f2_v1, f2_v2, f2_v3)
+        # TODO: Check if closest is inside softMesh, otherwise dismiss
+            #TODO: Sample other points along dismissed face
+        dist = closest.length
+        if dist < dist_min:
+            dist_min = dist
+            closest_min = closest
+    average_displace = average_displace + localC(globalC(closest_min, hardObject), softObject)
+    #softObject.data.vertices[vert1_index].co = localC(globalC(closest_min, hardObject), softObject)
+    #hit, hitloc, _, _ = hardObject.ray_cast(vert1_local_ho, -localC(globalC(closest_min, hardObject), softObject))
+    #if hit:
+        #softObject.data.vertices[vert1_index].co = localC(globalC(hitloc, hardObject), softObject)
+    
+average_displace = average_displace * (1 / len(inside_verts))
+print(average_displace)
 
-
+for vert1_index in inside_verts:
+    vert1_global = verts1[vert1_index]
+    vert1_local_ho = localC(vert1_global, hardObject)
+    hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, -average_displace)
+    if hit:
+        softObject.data.vertices[vert1_index].co = localC(globalC(hitloc, hardObject), softObject)
 #   Displace inside vert along face normal by distance
 
 
