@@ -11,8 +11,22 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from mathutils.geometry import (
         distance_point_to_plane,
-        closest_point_on_tri)
-from math import pi, acos
+        closest_point_on_tri,
+        normal)
+from math import pi, acos, inf
+
+
+def insideMesh(point, mesh):
+    _, closest, normal, _ = mesh.closest_point_on_mesh(point)
+    p2 = closest-point
+    v = p2.dot(normal)
+    return not(v < 0.0)
+
+def localC(point, obj):
+    return obj.matrix_world.inverted() @ point
+
+def globalC(point, obj):
+    return obj.matrix_world @ point
 
 # TODO: Multiple hard objects
 
@@ -30,64 +44,50 @@ mat1 = softObject.matrix_world
 mat2 = hardObject.matrix_world
 
 # Get the geometry in world coordinates
-vert1 = [mat1 @ v.co for v in softObject.data.vertices] 
+verts1 = [mat1 @ v.co for v in softObject.data.vertices] 
 poly1 = [p.vertices for p in softObject.data.polygons]
 
-vert2 = [mat2 @ v.co for v in hardObject.data.vertices] 
+verts2 = [mat2 @ v.co for v in hardObject.data.vertices] 
 poly2 = [p.vertices for p in hardObject.data.polygons]
 
 # Create the BVH trees
 depsgraph = bpy.context.evaluated_depsgraph_get()
-bvh1 = BVHTree.FromPolygons( vert1, poly1 )
-bvh2 = BVHTree.FromPolygons( vert2, poly2 )
+bvh1 = BVHTree.FromPolygons( verts1, poly1 )
+bvh2 = BVHTree.FromPolygons( verts2, poly2 )
 
 # Overlapping vertices (list of index pairs, first belongs to the soft object, the other to the hard object)
-overlap = bvh2.overlap(bvh1)
+
 
 # IDEA
 # Find overlap of hard with soft
-# Find verts inside hard mesh
-# for each inside vert:
-#   Find closest face of overlap to inside vert
+overlap = bvh2.overlap(bvh1)
+overlap_fi = list(dict.fromkeys([i1 for (i1, i2) in overlap]))
+print(overlap_fi)
+
+for j in range(len(verts1)):
+    vert1_global = verts1[j]
+    vert1_local_ho = hardObject.matrix_world.inverted() @ vert1_global
+    # For each inside vert:
+    if insideMesh(vert1_local_ho, hardObject):
+        # Find closest face of overlap to inside vert
+        dist_min = inf
+        closest_min = Vector((0.0, 0.0, 0.0))
+        for face2_index in overlap_fi:
+            face2 = poly2[face2_index]
+            f2_v1, f2_v2, f2_v3 = localC(verts2[face2[0]], hardObject), localC(verts2[face2[1]], hardObject), localC(verts2[face2[2]], hardObject)
+            dist = abs(distance_point_to_plane(vert1_local_ho, f2_v1, normal(f2_v1, f2_v2, f2_v3)))
+            if dist < dist_min:
+                dist_min = dist
+                closest = closest_point_on_tri(vert1_local_ho, f2_v1, f2_v2, f2_v3)
+                closest_min = closest
+        closest_so = localC(globalC(closest_min, hardObject), softObject)
+        softObject.data.vertices[j].co = closest_so
+
+
+
 #   Displace inside vert along face normal by distance
 
 
 # FIXME: objects don't overlap
 # FIXME: all vertices overlap
-tolerance = 0.2
-for j in range(len(vert1)):
-    vert_global = vert1[j]
-    vert_local_ho = hardObject.matrix_world.inverted() @ vert_global
-    result, location, normal, _ = hardObject.closest_point_on_mesh(vert_local_ho)
-    
-    if result:
-        p2 = location-vert_local_ho
-        v = p2.dot(normal)
-        print(v)
-        #print(angle)
-        if abs(v) < 0.5:
-            print("Intersect")
-            loc_global = hardObject.matrix_world @ location
-            loc_local = softObject.matrix_world.inverted() @ loc_global
-            softObject.data.vertices[j].co = loc_local
-
-        # FIXME: This only works for triangles
-        """ 
-        for i in overlap:
-            face1 = poly1[i[0]]
-            face2 = poly2[i[1]]
-            face1_verts = [(vert1[vi], vi) for vi in face1]
-            face2_verts = [vert2[vi] for vi in face2]
-        plane_co = face2_verts[0]
-        plane_no = (face2_verts[2] - face2_verts[0]).cross(face2_verts[1] - face2_verts[0]).normalized()
-        dist = distance_point_to_plane(vert[0],plane_co,plane_no)
-        
-        if dist < 0: # vert is overlapping
-            closest = closest_point_on_tri(vert[0], face2_verts[0], face2_verts[1], face2_verts[2])
-            print(dist)
-            print(closest)
-            softObject.data.vertices[vert[1]].co = closest """
-    # TODO: Get overlapping verts of face1
-    # TODO: Get overlapping distance between vert and face2
-    # TODO: Move vert along face2 normal by distance
     
