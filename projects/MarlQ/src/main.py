@@ -80,7 +80,7 @@ for vert1_index in inside_verts:
         if dist < dist_min:
             dist_min = dist
             closest_min = closest
-    average_displace = average_displace + localC(globalC(closest_min, hardObject), softObject)
+    average_displace = average_displace + closest_min
     #softObject.data.vertices[vert1_index].co = localC(globalC(closest_min, hardObject), softObject)
     #hit, hitloc, _, _ = hardObject.ray_cast(vert1_local_ho, -localC(globalC(closest_min, hardObject), softObject))
     #if hit:
@@ -92,7 +92,7 @@ print(average_displace)
 for vert1_index in inside_verts:
     vert1_global = verts1[vert1_index]
     vert1_local_ho = localC(vert1_global, hardObject)
-    hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, -average_displace)
+    hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, average_displace)
     if hit:
         softObject.data.vertices[vert1_index].co = localC(globalC(hitloc, hardObject), softObject)
 #   Displace inside vert along face normal by distance
