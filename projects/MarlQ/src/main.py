@@ -88,16 +88,44 @@ for vert1_index in inside_verts:
     
 average_displace = average_displace * (1 / len(inside_verts))
 print(average_displace)
+dist_total = 0
 
 for vert1_index in inside_verts:
     vert1_global = verts1[vert1_index]
     vert1_local_ho = localC(vert1_global, hardObject)
     hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, average_displace)
     if hit:
-        softObject.data.vertices[vert1_index].co = localC(globalC(hitloc, hardObject), softObject)
-#   Displace inside vert along face normal by distance
+        hitloc_local = localC(globalC(hitloc, hardObject), softObject)
+        dist = (hitloc_local - softObject.data.vertices[vert1_index].co).length
+        dist_total = dist_total + dist
+        softObject.data.vertices[vert1_index].co = hitloc_local
 
 
 # FIXME: objects don't overlap
 # FIXME: all vertices overlap
-    
+
+# STEP 2:
+print(dist_total)
+outside_verts = [i for i in range(len(verts1)) if i not in inside_verts]
+
+dist_each = dist_total / len(outside_verts)
+print(dist_each)
+
+# Calculate shortest distance between an inside and an outside vert
+shortest_dist = inf
+for vert1_index in inside_verts:
+    vert1 = localC(verts1[vert1_index], softObject)
+    for vert2_index in outside_verts:
+        vert2 = localC(verts1[vert2_index], softObject)
+        dist = (vert1 - vert2).length
+
+        if dist < shortest_dist:
+            shortest_dist = dist
+
+print(shortest_dist)
+
+for vert1_index in outside_verts:
+    vert1_global = verts1[vert1_index]
+    normal = softObject.data.vertices[vert1_index].normal
+    newPos = normal + dist_each * normal
+    softObject.data.vertices[vert1_index].co = newPos

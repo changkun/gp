@@ -28,7 +28,10 @@ Then, for each vert of the soft object, raycast using that average vector onto t
 **Problems:**
 1. The faces around the edge of the impact area can stretch very far, especially if the hard object sticks into the soft object quite far.
 2. Also still suffers from the problem that faces can still intersect with the hard object at the end, because verts are moved, not faces.
+3. Most severe: if the hard object sticks too far into the soft object, and not straight on, the average vector is completely wrong (goes to the side)
 
+## Idea (to solve 3.)
+Take the average normal fector of all inside faces (or verts). This way, the average is not affected by how the hard object hits the soft object.
 
 
 ## Other problems
