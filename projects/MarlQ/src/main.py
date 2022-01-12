@@ -108,8 +108,8 @@ for vert1_index in inside_verts:
 print(dist_total)
 outside_verts = [i for i in range(len(verts1)) if i not in inside_verts]
 
-dist_each = dist_total / len(outside_verts)
-print(dist_each)
+#dist_each = dist_total / len(outside_verts)
+#print(dist_each)
 
 # Calculate shortest distance between an inside and an outside vert
 shortest_dist = inf
@@ -124,8 +124,32 @@ for vert1_index in inside_verts:
 
 print(shortest_dist)
 
+inverse_square_sum = 0
+for vert1_index in outside_verts:
+    vert1 = localC(verts1[vert1_index], softObject)
+    dist_min = inf
+    for vert2_index in inside_verts:
+        vert2 = localC(verts1[vert2_index], softObject)
+        dist = (vert1 - vert2).length
+        if dist < dist_min:
+            dist_min = dist # TODO: Save these for later
+    inverse_square_sum += 1 / ( shortest_dist + dist_min * dist_min )
+    
+x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
+print(x_fac)
+
 for vert1_index in outside_verts:
     vert1_global = verts1[vert1_index]
+    vert1 = localC(verts1[vert1_index], softObject)
+    dist_min = inf
+    for vert2_index in inside_verts:
+        vert2 = localC(verts1[vert2_index], softObject)
+        dist = (vert1 - vert2).length
+        if dist < dist_min:
+            dist_min = dist # TODO: Save these for later
+    #print(dist_min)
+    move_dist = x_fac * 1 / (shortest_dist + dist_min * dist_min)
+    #print(move_dist)
     normal = softObject.data.vertices[vert1_index].normal
-    newPos = normal + dist_each * normal
+    newPos = softObject.data.vertices[vert1_index].co + move_dist * normal
     softObject.data.vertices[vert1_index].co = newPos
