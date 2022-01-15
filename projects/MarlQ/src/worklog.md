@@ -1,6 +1,6 @@
 The following only documents problems with the approach, *not* the implementation.
 
-# Displacing the soft object vertices so that it no longer intersects with the hard object
+# Step 1: Displacing the soft object vertices so that it no longer intersects with the hard object
 
 ## First implementation
 Trying to find vertices of the soft object inside the hard object, then move those to the closest point on the hard object.
@@ -52,11 +52,9 @@ Soft object has to be convex at the overlapping area (otherwise intersecting geo
     - Should not cause the soft object geometry to intersect excessively
 
 
-# Adding the lost volume back to the soft object
+# Step 2: Adding the lost volume back to the soft object
 
-Idea: Sum up the volume (maybe distance of faces/vertices moved is enough for an approximation) lost during the first operation.
-Mark all vertices which were moved during the first operation.
-Then, visit all neighboring vertices of the marked vertices, ignoring vertices which are marked, and add a certain amount of volume (based on a function, e.g. square loss) back to the vertices visited and mark the these vertices.
-Continue until all volume has been added back.
-
-*What happens if all vertices have been marked, but there is still volume left?*
+## First implementation
+Sum up all distances that all vertices moved during the first step.
+Then, based on the distance to the closest overlapping vertex, distribute this distance across the mesh according to the inverse square law.
+Every vertex is then discplaces along its normal by this distance.
