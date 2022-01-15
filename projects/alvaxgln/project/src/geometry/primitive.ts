@@ -68,6 +68,15 @@ export class Halfedge {
     //vert of twins face
     const v3 = this.twin!.prev!.vert!;
 
+
+    //Calculate angle of faces
+    const f0 = v0.halfedge!.face!;
+    const f1 = v3.halfedge!.face!;
+    const face_angle = f0.normal().angle(f1.normal())+Math.PI;
+
+    console.log("Winkel: "+ face_angle);
+    if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)) return false;
+
     //calculates error of degree for current connectivity
     let deg_error_current = v0.deg_error(v0.deg()) + v1.deg_error(v1.deg()) + v2.deg_error(v2.deg()) + v3.deg_error(v3.deg());
 

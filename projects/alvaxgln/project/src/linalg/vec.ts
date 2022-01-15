@@ -156,9 +156,9 @@ export class Vector {
   }
 
   //computes the angle between two vectors
-  angle(v1: Vector, v2: Vector){
+  angle(v: Vector) :number{
 
-    const cos = v1.dot(v2)/(v1.len() *v2.len())
+    const cos = Math.abs(this.dot(v)/(this.len() *v.len()))
     return Math.acos(cos);
 
   }

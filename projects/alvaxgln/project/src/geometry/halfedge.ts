@@ -307,11 +307,15 @@ export class HalfedgeMesh {
   console.log("regular!");
 
 
-  for (let i = 0; i <50; i++){
+  for (let i = 0; i <600; i++){
     let h = this.halfedges[i]!;
     let flip = h.detectFlip();
-    console.log("Halfedge number " + i + ": " + flip + "!")
-    if(flip) this.flip(h);
+    
+    if(flip) {
+      this.flip(h);
+      console.log("Halfedge number " + i + ": " + flip + "!")
+    
+    }
   }
 
 
@@ -327,7 +331,7 @@ export class HalfedgeMesh {
 
   //TODO: fix indices
 
-  //TODO: Check for flipped faces
+  //TODO: Check for flipped faces (maybe compare normals before and after)
 
   //TODO: Handle bad angles:
   //When angle between h4->h1 or h2->h3 is too large don't flip
