@@ -41,6 +41,7 @@ print("Done loading mesh")
 
 
 # TODO: render the loaded mesh using the already imported classes and functions
+# based on https://pytorch3d.org/tutorials/render_textured_meshes
 
 # ---------------------------------
 # Initialize a camera.
@@ -73,7 +74,7 @@ materials = Materials(
 )
 
 # black background
-#background_color: Sequence = (1.0, 1.0, 1.0) 
+# background_color = Sequence(1.0, 1.0, 1.0) 
 
 # Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
@@ -98,6 +99,7 @@ plt.imshow(texture_image.squeeze().cpu().numpy())
 plt.axis("off");"""
 # render the textured mesh
 images = renderer(mesh,lights=lights,materials=materials)
+plt.gcf().set_facecolor('black')
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
 plt.axis("off");
@@ -106,7 +108,6 @@ print("Done rendering")
 
 plt.grid('off')
 plt.axis('off')
-plt.gcf().set_facecolor('black')
 plt.savefig('render.png')
 
 print("Done plotting")
