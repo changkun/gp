@@ -47,7 +47,7 @@ print("Done loading mesh")
 # Initialize a camera.
 # Move camera by 20° 'up'
 # Move camera by 45° in the azimuth directon so it is facing the side of the bunny
-R, T = look_at_view_transform(8, 20, 45) 
+R, T = look_at_view_transform(6, 20, 45) 
 cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Define the settings for rasterization and shading. Here we set the output image to be of size
@@ -59,7 +59,7 @@ cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 raster_settings = RasterizationSettings(
     image_size=512, 
     blur_radius=0.0, 
-    faces_per_pixel=1, 
+    faces_per_pixel=30, # higher == better image quality
 )
 
 # Place a point light on the side/ above the object
@@ -99,7 +99,6 @@ plt.imshow(texture_image.squeeze().cpu().numpy())
 plt.axis("off");"""
 # render the textured mesh
 images = renderer(mesh,lights=lights,materials=materials)
-plt.gcf().set_facecolor('black')
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
 plt.axis("off");
