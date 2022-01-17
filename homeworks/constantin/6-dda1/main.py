@@ -16,7 +16,7 @@ from pytorch3d.renderer import (
     MeshRasterizer,
     SoftPhongShader,
     BlendParams,
-    Materials # added 
+    Materials, # added 
 )
 import matplotlib.pyplot as plt
 
@@ -39,16 +39,14 @@ device = torch.device("cpu")
 mesh = load_objs_as_meshes([os.path.join('./data', 'bunny.obj')], device=device)
 print("Done loading mesh")
 
+
 # TODO: render the loaded mesh using the already imported classes and functions
 
 # ---------------------------------
 # Initialize a camera.
-# With world coordinates +Y up, +X left and +Z in, the front of the cow is facing the -Z direction. 
-# So we move the camera by 180 in the azimuth direction so it is facing the front of the cow. 
-#R, T = look_at_view_transform(2.7, 0, 180) 
-# MODIFIED for assignment
-# Move camera by 180 in the azimuth directon so it is facing the side of the bunny
-R, T = look_at_view_transform(8, 0, 45) 
+# Move camera by 20° 'up'
+# Move camera by 45° in the azimuth directon so it is facing the side of the bunny
+R, T = look_at_view_transform(8, 20, 45) 
 cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Define the settings for rasterization and shading. Here we set the output image to be of size
@@ -63,16 +61,19 @@ raster_settings = RasterizationSettings(
     faces_per_pixel=1, 
 )
 
-# Place a point light in front of the object. As mentioned above, the front of the cow is facing the 
-# -z direction. 
-lights = PointLights(device=device, location=[[0.0, 0.0, 0.0]])
+# Place a point light on the side/ above the object
+lights = PointLights(device=device, location=[[2.0, 3.0, 0.0]])
 
-# Change specular color to green and change material shininess 
+# White specular color, really shiny
+# max for shininess is 1000 (https://pytorch3d.readthedocs.io/en/latest/modules/renderer/materials.html)
 materials = Materials(
     device=device,
-    specular_color=[[0.0, 1.0, 0.0]],
-    shininess=50.0
+    specular_color=[[1.0, 1.0, 1.0]],
+    shininess=1000.0
 )
+
+# black background
+#background_color: Sequence = (1.0, 1.0, 1.0) 
 
 # Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
@@ -106,6 +107,6 @@ print("Done rendering")
 plt.grid('off')
 plt.axis('off')
 plt.gcf().set_facecolor('black')
-plt.savefig('render1.png')
+plt.savefig('render.png')
 
 print("Done plotting")
