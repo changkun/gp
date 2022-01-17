@@ -1,0 +1,2 @@
+// needs to be re-run after restarting the system
+conda activate gp
