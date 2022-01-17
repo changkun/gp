@@ -84,19 +84,22 @@ $ pip install --no-cache --no-index pytorch3d -f https://dl.fbaipublicfiles.com/
 1. What are the supported structures in PyTorch3D?
 
 ```
-TODO: your answer goes here
+Meshes, Point clouds, (and Volumes). Within Meshes, there are 3 different representations of the faces/vertex data - List,Padded and Packed. The same
+is true for Point clouds.
 ```
 
 2. What are the required arguments for Pytorch3D to save an .OBJ file, and how can you get these arguments from a mesh?
 
 ```
-TODO: your answer goes here
+The non-optional arguments are: f (file string or path), verts (FloatTensor of shape V3, giving vertex coordinates) and faces (LongTensor of shape F,3 giving faces). If the vertices / faces wthin the mesh are represented by a list, they can be optained by verts_list() / faces_list(). 
 ```
 
 3. (Answer this after Task 3 is completed) Which part is the most time consuming for you to implement?
 
 ```
-TODO: your answer goes here
+Honestly, installing pytorch3d and its dependencies was the most time consuming part. I first tried it on windows (with conda) but there the installation of pytorch3d
+did not work, and searching the error messages on stackoverflow did not really help (some comments straight up said 'it wouldn't work on windows').
+After I switched to linux, I was still unable to install ptorch3d via conda / python, but for some reason compiling pytorch3d from sources finally worked.
 ```
 
 **Task 3. Render the bunny provided in the data folder using PyTorch3D.**
