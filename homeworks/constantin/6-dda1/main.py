@@ -16,6 +16,7 @@ from pytorch3d.renderer import (
     MeshRasterizer,
     SoftPhongShader,
     BlendParams,
+    Materials # added 
 )
 import matplotlib.pyplot as plt
 
@@ -39,18 +40,15 @@ mesh = load_objs_as_meshes([os.path.join('./data', 'bunny.obj')], device=device)
 print("Done loading mesh")
 
 # TODO: render the loaded mesh using the already imported classes and functions
-#plt.figure(figsize=(7,7))
-#texture_image=mesh.textures.maps_padded()
-#plt.imshow(texture_image.squeeze().cpu().numpy())
-#plt.axis("off");
 
 # ---------------------------------
 # Initialize a camera.
 # With world coordinates +Y up, +X left and +Z in, the front of the cow is facing the -Z direction. 
 # So we move the camera by 180 in the azimuth direction so it is facing the front of the cow. 
-# MODIFIED for assignment
 #R, T = look_at_view_transform(2.7, 0, 180) 
-R, T = look_at_view_transform(4, 4, 80) 
+# MODIFIED for assignment
+# Move camera by 180 in the azimuth directon so it is facing the side of the bunny
+R, T = look_at_view_transform(8, 0, 45) 
 cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Define the settings for rasterization and shading. Here we set the output image to be of size
@@ -67,7 +65,14 @@ raster_settings = RasterizationSettings(
 
 # Place a point light in front of the object. As mentioned above, the front of the cow is facing the 
 # -z direction. 
-lights = PointLights(device=device, location=[[0.0, 0.0, -3.0]])
+lights = PointLights(device=device, location=[[0.0, 0.0, 0.0]])
+
+# Change specular color to green and change material shininess 
+materials = Materials(
+    device=device,
+    specular_color=[[0.0, 1.0, 0.0]],
+    shininess=50.0
+)
 
 # Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
@@ -83,8 +88,15 @@ renderer = MeshRenderer(
         lights=lights
     )
 )
-# ---------------------------------
-images = renderer(mesh)
+
+# --------------------------------- 
+# testing,visualize the texture map
+"""plt.figure(figsize=(7,7))
+texture_image=mesh.textures.maps_padded()
+plt.imshow(texture_image.squeeze().cpu().numpy())
+plt.axis("off");"""
+# render the textured mesh
+images = renderer(mesh,lights=lights,materials=materials)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
 plt.axis("off");
