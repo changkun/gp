@@ -24,8 +24,7 @@ torch.cuda.set_device(device)
 
 mesh = load_objs_as_meshes([os.path.join('./data', 'bunny.obj')], device=device)
 
-# TODO: render the loaded mesh using the already imported classes and functions
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # I had to enable this because of some weird OpenMP problems I couldn't solve.
 
 R, T = look_at_view_transform(
     dist=3.5, 
