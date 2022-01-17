@@ -50,12 +50,8 @@ print("Done loading mesh")
 R, T = look_at_view_transform(6, 20, 45) 
 cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
-# Define the settings for rasterization and shading. Here we set the output image to be of size
-# 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1
-# and blur_radius=0.0. We also set bin_size and max_faces_per_bin to None which ensure that 
-# the faster coarse-to-fine rasterization method is used. Refer to rasterize_meshes.py for 
-# explanations of these parameters. Refer to docs/notes/renderer.md for an explanation of 
-# the difference between naive and coarse-to-fine rasterization. 
+# Image size of 512x512 and no blur.
+# 'quality' can be adjusted, see below
 raster_settings = RasterizationSettings(
     image_size=512, 
     blur_radius=0.0, 
@@ -75,6 +71,8 @@ materials = Materials(
 
 # black background
 # background_color = Sequence(1.0, 1.0, 1.0) 
+# https://github.com/facebookresearch/pytorch3d/blob/7f1e63aed1252ba8145d4a66ce2272331d60cdae/pytorch3d/renderer/blending.py#L19
+
 
 # Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
