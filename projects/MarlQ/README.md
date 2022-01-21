@@ -17,6 +17,14 @@ Then, execute the script (preferably from inside a Python editor window, using r
 
 For the script to work properly, the two objects have to overlap (otherwise the script will do nothing).
 The soft object should also be convex in the overlapping area, or the resulting geometry will be messed up (just as in real life its impossible to compress a non-convex shape).
+
+[<img src="/screenshots/characterSheet.png" width="400" height="400">](/assets/showcase_1.png)
+[<img src="/screenshots/characterSheet.png" width="400" height="400">](/assets/showcase_2.png)
+## How does it works
+
+First, all overlapping vertices of both the soft object and the hard object are computed.
+All overlapping vertices of the soft object are then displaced along the average normal of all overlapping vertices of the hard object until they hit the edges of the hard object.
+The total displacement distance is accumulated, and then distributed across the rest of the mesh according to the inverse square law based on the distance to the overlap.
 ## Comparison to other solutions
 
 **Sculpting:** My solution takes significantly less effort and time, and provides more realistic results in terms of volume preservation.
@@ -33,11 +41,9 @@ It also requires the usage of vertex groups.
 Also not volume preserving.
 
 **Soft body simulation:** ...
-
-
 ## Current issues
 
-1. The overlapping soft object vertices are currently deformed along the average direction of their closest surface point on the hard object.
-This creates unwanted results in a lot of cases.
+1. Since all overlapping vertices are displaced by the same vector, there can be a lot of stretching along the edges of overlap.
+Some might consider this desirable, however.
 
-2. 
+2. Because the volume preservation works with displaced distance and not displaced volume, it is only fully volume preserving if the mesh geometry is even.
