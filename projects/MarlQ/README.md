@@ -18,9 +18,10 @@ Then, execute the script (preferably from inside a Python editor window, using r
 For the script to work properly, the two objects have to overlap (otherwise the script will do nothing).
 The soft object should also be convex in the overlapping area, or the resulting geometry will be messed up (just as in real life its impossible to compress a non-convex shape).
 
-[<img src="projects/MarlQ/assets/showcase_1.png" width="400" height="400">](assets/showcase_1.png?raw=true "Showcase 1")
-[<img src="projects/MarlQ/assets/showcase_2.png" width="400" height="400">](assets/showcase_2.png?raw=true "Showcase 2")
-## How does it works
+<img src="assets/showcase_1.png" width="400" height="400">
+<img src="assets/showcase_2.png" width="400" height="400">
+
+## How does it work
 
 First, all overlapping vertices of both the soft object and the hard object are computed.
 All overlapping vertices of the soft object are then displaced along the average normal of all overlapping vertices of the hard object until they hit the edges of the hard object.
