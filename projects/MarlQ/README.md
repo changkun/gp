@@ -18,7 +18,7 @@ Then, execute the script (preferably from inside a Python editor window, using r
 For the script to work properly, the two objects have to overlap (otherwise the script will do nothing).
 The soft object should also be convex in the overlapping area, or the resulting geometry will be messed up (just as in real life its impossible to compress a non-convex shape).
 
-<img src="assets/showcase_1.png" width="400" height="400">
+<img src="assets/showcase_1.png" width="500" height="400">
 <img src="assets/showcase_2.png" width="400" height="400">
 
 ## How does it work
