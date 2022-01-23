@@ -158,7 +158,9 @@ export class Vector {
   //computes the angle between two vectors
   angle(v: Vector) :number{
 
-    const cos = Math.abs(this.dot(v)/(this.len() *v.len()))
+
+    //TODO: find solution without Math.abs
+    const cos = this.dot(v)/(this.len() *v.len())
     return Math.acos(cos);
 
   }
