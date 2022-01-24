@@ -54,7 +54,7 @@ During the rest of the semester, students should propose a project idea througho
 |29.11.2021 | Deformation                                      | [Link](https://changkun.de/s/gp/ws21/6-deform) |
 |06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
 |10.01.2021 | Data-driven Approach I                           | [Link](https://changkun.de/s/gp/ws21/7-dda) |
-|24.01.2022 | Data-driven Approach II  & Project Idea-Pitch    | TBA |
+|24.01.2022 | Data-driven Approach II  & Project Idea-Pitch    | [Link](https://changkun.de/s/gp/ws21/8-dda2) |
 |07.02.2022 | Project Intermediate                             | Presentation |
 |14.02.2022 | Project Final                                    | Presentation |
 
