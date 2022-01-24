@@ -304,6 +304,108 @@ export class Vertex {
 
   }
 
+ 
+  /**
+   * calculates position of vertex after angle based smooting
+   * 
+   * Angle based smoothing is described in this paper: "DOI 10.1007/s00366-004-0282-6"
+   * The procedure calculates a vertex-position for every edge connected to the vertex, and then moves the vertex to the average of those.
+   * The positions are chosen so, that the angle at the vertex the respective edge connects to (left and right of the edge) are getting equalized.
+   * 
+   * It is described for 2D meshes in the paper and thus had to be modified for 3D models.
+   * I decided rather then rotating the edges around the connecting vertices as described i would shift the vertex, (that should get smoothed) on the respective neighbouring edge to equalize the angles.
+   * 
+   * TODO: remove console logs for debugging
+   */
+  angle_smooth(): Vector{
+
+    let count = 0;
+    let sum = new Vector(0,0,0,0);
+
+    //calculate modified position of vertex for each halfedge
+    this.halfedges((h,i)=>{
+
+      //get positions of vertices
+      const v = this.pos!;
+      const p1 = h.next!.vert!.pos!;
+      const p2 = h.prev!.vert!.pos!;
+      const p0 = h.twin!.prev!.vert!.pos!;
+
+      //get vectors
+      const vec = v.sub(p1);
+      const vec0 = p0.sub(p1);
+      const vec1 = p2.sub(p1);
+
+      //get angle a
+      let a = vec0.angle(vec);
+      //get angle b
+      let b = vec1.angle(vec);
+
+
+      //goal is to equalize a and b
+
+      //get the larger angle of the two
+      let max_angle = Math.max(a,b);
+
+      //determine halfedge along which the vertex will be shifted
+      let vec_shift = a>b? p0.sub(v) : p2.sub(v);
+
+      //difference between angles
+      let dif = Math.abs(a-b);
+      //angle has to be reduced by half the difference
+      let shift = dif/2;
+      //ratio between shift and max_angle determines how far the vertex will be moved on the edge
+      let ratio = shift/max_angle;
+
+
+      //debugging
+      console.log("Position of the vertices: v, p0, p1, p2");
+      console.log(v);
+      console.log(p0);
+      console.log(p1);
+      console.log(p2);
+
+      console.log("Angles: a, b");
+      console.log(a);
+      console.log(b);
+
+      
+      //new position on the edge after shifting
+      let pos = v.add(vec_shift.scale(ratio));
+
+      //debugging
+      console.log("new position on halfedge:");
+      console.log(pos);
+
+      //Find the new position by constructing a vector from p1 to pos, and then scale (p1->pos) to the original length of the edge
+      pos = p1.add(pos.sub(p1).unit().scale(vec.len()));
+
+      console.log("new position 2:");
+      console.log(pos);
+      
+
+      //For weighted version find the new angle
+      let ab = (a+b)/2
+      let a_i = 1/(ab*ab)
+
+      //add value to count
+      count = count + a_i;
+      //add value to sum
+      sum = sum.add(pos.scale(a_i));
+
+    }); 
+
+    //multiply results
+    let res = sum.scale(1/count);
+
+    console.log("summe:");
+    console.log(res);
+
+    //return new position vector
+    return res;
+
+  }
+
   /**
    * quadric computes and returns the quadric matrix of the given vertex
    */

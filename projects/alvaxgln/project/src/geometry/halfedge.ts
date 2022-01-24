@@ -302,12 +302,15 @@ export class HalfedgeMesh {
     const reducedFaces = Math.floor(this.faces.length * reduceRatio);
   }
 
+
+  //Regularize the halfedge mesh
+  //TODO: everything
   regularize(){
 
   console.log("regular!");
 
 
-  for (let i = 0; i <600; i++){
+/*   for (let i = 0; i <600; i++){
     let h = this.halfedges[i]!;
     let flip = h.detectFlip();
     
@@ -317,6 +320,18 @@ export class HalfedgeMesh {
     
     }
   }
+ */
+
+  this.smooth();
+
+
+/*
+//For testing
+let v = this.verts[4]!;
+console.log(v);
+v.pos = v.angle_smooth();
+ */
+
 
 
   //this.flip(this.halfedges[2]!);
@@ -326,6 +341,31 @@ export class HalfedgeMesh {
 
   }
   
+  //applies one round of angle based smoothing to the mesh
+  smooth(){
+
+    //create array for updated vertex positions
+    let verts_smooth = [];
+
+    //calculate new position for all vertices and store them
+    for (let [i,v] of this.verts.entries()){
+
+      console.log(i, v);
+      verts_smooth[i] = v!.angle_smooth();
+    
+    }
+    
+    //Apply new positions to mesh vertices
+    //note: two loops are necessary because we need to use unmodified vertex positions for all the calculations
+    for (let [i,v] of verts_smooth.entries()){
+    
+      this.verts[i]!.pos! = v;
+    
+    }
+    
+  }
+
+
   //flips the halfedge h
   flip(h: Halfedge){
 
@@ -395,6 +435,7 @@ export class HalfedgeMesh {
   console.log("flipped!");
 
   }
+
 
 
 
