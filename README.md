@@ -53,8 +53,8 @@ During the rest of the semester, students should propose a project idea througho
 |22.11.2021 | Remeshing                                        | [Link](https://changkun.de/s/gp/ws21/5-remesh) |
 |29.11.2021 | Deformation                                      | [Link](https://changkun.de/s/gp/ws21/6-deform) |
 |06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
-|10.01.2021 | Geometric Deep Learning                          | TBA |
-|27.01.2022 | Differentiable Rendering & Project Idea-Pitch    | TBA |
+|10.01.2021 | Data-driven Approach I                           | [Link](https://changkun.de/s/gp/ws21/7-dda) |
+|24.01.2022 | Data-driven Approach II  & Project Idea-Pitch    | TBA |
 |07.02.2022 | Project Intermediate                             | Presentation |
 |14.02.2022 | Project Final                                    | Presentation |
 
@@ -75,8 +75,8 @@ Select 5 out of 7 given projects (5x10%), or feel free to finish them all (no bo
 | 10% | [Laplace Smooth](./3-smooth/)           | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
 | 10% | [Tutte's Embedding](./4-param/)         | <img src="./4-param/assets/teaser.png" width="200"/> </br>13.12.2021 23:59:59 |
 | 10% | [Quadric Error Metric Simplification](./5-remesh/)  | <img src="./5-remesh/assets/bunny-95.png" width="200"/> </br> 01.01.2022 23:59:59 |
-| 10% | TBA                                                | 14.01.2022 23:59:59 |
-| 10% | TBA                                                | 28.01.2022 23:59:59 |
+| 10% | [Rendering with PyTorch(3D)](./6-dda1)                                                | <img src="./6-dda1/render.png" width="200"/> </br> 17.01.2022 23:59:59 |
+| 10% | TBA                                                | 31.01.2022 23:59:59 |
 
 ### Individual Project
 
@@ -94,10 +94,10 @@ The timeline for individual projects are as follows:
 | Submission             | Deadline            |
 |:-----------------------|:-------------------:|
 | Proposal Submission    | 01.01.2022 23:59:59 |
-| Intermediate Submission| 15.01.2022 23:59:59 |
-| Video Submission       | 30.01.2022 23:59:59 |
-| Presentation           | 08.02.2022 23:59:59 |
-| Code Submission        | 08.02.2022 23:59:59 |
+| Intermediate Submission| 24.01.2022 23:59:59 |
+| Video Submission       | 13.01.2022 23:59:59 |
+| Presentation           | 13.02.2022 23:59:59 |
+| Code Submission        | 13.02.2022 23:59:59 |
 
 Note that the individual project can be conducted in parallel with the coding projects,
 meaning the individual projects can be submitted anytime before the deadline; Individual
@@ -114,4 +114,4 @@ Find more details about how to do an individual project [here](./projects/README
 
 ## License
 
-Copyright &copy; 2020-2022 LMU Munich Media Informatics Group by [Changkun Ou](https://changkun.de).
+Copyright &copy; 2020-2022 LMU Munich Media Informatics Group. Created by [Changkun Ou](https://changkun.de).
