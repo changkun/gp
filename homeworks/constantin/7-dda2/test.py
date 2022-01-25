@@ -21,6 +21,11 @@ mpl.rcParams['figure.dpi'] = 80
 # Set the device
 device = torch.device("cpu")
 print("WARNING: CPU only, this will be slow!")
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+# how many points we sample from the surface of the mesh in each iteration
+N_SAMPLE_POINTS=5000
 
 def my_load_and_uniform(model_path: str) -> Meshes:
     # We read the target 3D model using load_obj
@@ -50,7 +55,7 @@ src_mesh = ico_sphere(4, device)
 
 def plot_pointcloud(mesh, title=""):
     # Sample points uniformly from the surface of the mesh.
-    points = sample_points_from_meshes(mesh, 5000)
+    points = sample_points_from_meshes(mesh, N_SAMPLE_POINTS)
     x, y, z = points.clone().detach().cpu().squeeze().unbind(1)    
     fig = plt.figure(figsize=(5, 5))
     ax = Axes3D(fig)
@@ -79,7 +84,7 @@ optimizer = torch.optim.SGD([deform_verts], lr=1.0, momentum=0.9)
 
 
 # Number of optimization steps
-Niter = 500
+Niter = 1000
 # Weight for the chamfer loss
 w_chamfer = 1.0 
 # Weight for mesh edge loss
@@ -89,7 +94,7 @@ w_normal = 0.01
 # Weight for mesh laplacian smoothing
 w_laplacian = 0.1 
 # Plot period for the losses
-plot_period = 250
+plot_period = 200
 #loop = tqdm(range(Niter))
 loop = range(Niter)
 
@@ -109,8 +114,8 @@ for i in loop:
     new_src_mesh = src_mesh.offset_verts(deform_verts)
     
     # We sample 5k points from the surface of each mesh 
-    sample_trg = sample_points_from_meshes(trg_mesh, 5000)
-    sample_src = sample_points_from_meshes(new_src_mesh, 5000)
+    sample_trg = sample_points_from_meshes(trg_mesh, N_SAMPLE_POINTS)
+    sample_src = sample_points_from_meshes(new_src_mesh, N_SAMPLE_POINTS)
     
     # We compare the two sets of pointclouds by computing (a) the chamfer loss
     loss_chamfer, _ = chamfer_distance(sample_trg, sample_src)
@@ -159,7 +164,9 @@ ax.legend(fontsize="16")
 ax.set_xlabel("Iteration", fontsize="16")
 ax.set_ylabel("Loss", fontsize="16")
 ax.set_title("Loss vs iterations", fontsize="16");   
+plt.show() # hm
 
+plot_pointcloud(new_src_mesh, "New Source mesh")
 
 # Fetch the verts and faces of the final predicted mesh
 final_verts, final_faces = new_src_mesh.get_mesh_verts_faces(0)

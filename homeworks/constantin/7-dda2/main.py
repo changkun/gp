@@ -13,6 +13,7 @@ from pytorch3d.loss import (
     mesh_edge_loss,
     mesh_laplacian_smoothing,
     mesh_normal_consistency,
+    chamfer_distance, # added
 )
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
@@ -26,12 +27,19 @@ from pytorch3d.renderer import (
     BlendParams,
     Textures
 )
+# added dependencies begin
+from pytorch3d.ops import sample_points_from_meshes
+from mpl_toolkits.mplot3d import Axes3D
+# added dependencies end
 import matplotlib.pyplot as plt
 
 debug  = True
 """device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"torch: {torch.__version__}, torch3d: {pytorch3d.__version__}, device: ", device)"""
 device = torch.device("cpu")
+
+# how many points we sample from the surface of the mesh in each iteration
+N_SAMPLE_POINTS=1000
 
 def load_and_uniform(model_path: str) -> Meshes:
     # load target mesh
@@ -80,6 +88,157 @@ class Render():
 
     def render(self, mesh: Meshes, camera: FoVPerspectiveCameras = None) -> torch.Tensor:
         return self.renderer(mesh, cameras=camera or self.camera)
+
+    def render_and_debug(self, mesh: Meshes, camera: FoVPerspectiveCameras = None):
+        images=self.render(mesh,camera)
+        plt.figure(figsize=(10, 10))
+        plt.imshow(images[0, ..., :3].cpu().numpy())
+        plt.axis("off");
+        plt.show();
+
+
+# 1. Load meshes and transform them into a unit cube.
+trg_mesh = load_and_uniform(os.path.join('./data', 'bunny.obj')) # target mesh
+src_mesh = load_and_uniform(os.path.join('./data', 'source.obj')) # source mesh
+
+# debug the current looks of the mesh
+def plot_pointcloud(mesh, title=""):
+    # Sample points uniformly from the surface of the mesh.
+    points = sample_points_from_meshes(mesh, N_SAMPLE_POINTS)
+    x, y, z = points.clone().detach().cpu().squeeze().unbind(1)    
+    fig = plt.figure(figsize=(5, 5))
+    ax = Axes3D(fig)
+    ax.scatter3D(x, z, -y)
+    ax.set_xlabel('x')
+    ax.set_ylabel('z')
+    ax.set_zlabel('y')
+    ax.set_title(title)
+    ax.view_init(190, 30)
+    plt.show()
+
+
+# for debugging
+#plot_pointcloud(trg_mesh, "Target mesh")
+#plot_pointcloud(src_mesh, "Source mesh")
+
+# 2. Define losses, learning target (i.e. deformation tensor), optimizer.
+# We will learn to deform the source mesh by offsetting its vertices
+# The shape of the deform parameters is equal to the total number of vertices in src_mesh
+deform_verts = torch.full(src_mesh.verts_packed().shape, 0.0, device=device, requires_grad=True)
+
+# The optimizer
+optimizer = torch.optim.SGD([deform_verts], lr=1.0, momentum=0.9)
+
+
+renderer = Render()
+
+#renderer.render_and_debug(src_mesh)
+#renderer.render_and_debug(trg_mesh)
+
+images1=renderer.render(src_mesh)
+images2=renderer.render(trg_mesh)
+criterionMSE = torch.nn.MSELoss(reduction='sum')
+loss = criterionMSE(images1, images2)
+
+
+# Number of optimization steps
+Niter = 100
+# Weight for the chamfer loss
+w_chamfer = 1.0 
+# Weight for the MSELoss of the rendered image
+w_mse_rendered=0.0
+# Weight for mesh edge loss
+w_edge = 1.0 
+# Weight for mesh normal consistency
+w_normal = 0.01 
+# Weight for mesh laplacian smoothing
+w_laplacian = 0.1 
+# Plot period for the losses
+plot_period = 10
+loop = range(Niter)
+
+chamfer_losses = []
+laplacian_losses = []
+edge_losses = []
+normal_losses = []
+mse_rendered_losses = []
+
+print("Optimizing begin")
+
+for i in loop:
+    print("Opt_loop begin");
+    # Initialize optimizer
+    optimizer.zero_grad()
+    
+    # Deform the mesh
+    new_src_mesh = src_mesh.offset_verts(deform_verts)
+    
+    # We sample 5k points from the surface of each mesh 
+    sample_trg = sample_points_from_meshes(trg_mesh, N_SAMPLE_POINTS)
+    sample_src = sample_points_from_meshes(new_src_mesh, N_SAMPLE_POINTS)
+    
+    # We compare the two sets of pointclouds by computing (a) the chamfer loss
+    loss_chamfer, _ = chamfer_distance(sample_trg, sample_src)
+
+    # KKK also the MSE error
+    render1=renderer.render(trg_mesh)
+    render2=renderer.render(new_src_mesh)
+    loss_mse_rendered = criterionMSE(render1,render2)
+
+    # and (b) the edge length of the predicted mesh
+    loss_edge = mesh_edge_loss(new_src_mesh)
+    
+    # mesh normal consistency
+    loss_normal = mesh_normal_consistency(new_src_mesh)
+    
+    # mesh laplacian smoothing
+    loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
+    
+    # Weighted sum of the losses
+    loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian + loss_mse_rendered*w_mse_rendered
+    
+    # Print the losses
+    #loop.set_description('total_loss = %.6f' % loss)
+    
+    # Save the losses for plotting
+    chamfer_losses.append(float(loss_chamfer.detach().cpu()))
+    edge_losses.append(float(loss_edge.detach().cpu()))
+    normal_losses.append(float(loss_normal.detach().cpu()))
+    laplacian_losses.append(float(loss_laplacian.detach().cpu()))
+    mse_rendered_losses.append(float(loss_mse_rendered.detach().cpu()))
+    
+    # Plot mesh
+    if i % plot_period == 0:
+        #plot_pointcloud(new_src_mesh, title="iter: %d" % i)
+        images1=renderer.render(new_src_mesh)
+        save_fig(os.path.join('./data', 'render_'+str(i)+".png"),images1)
+       
+    # Optimization step
+    loss.backward()
+    optimizer.step()
+    print("Opt_loop end"+str(i));
+
+print("Optimizing end")
+
+#Visualize the loss
+fig = plt.figure(figsize=(13, 5))
+ax = fig.gca()
+ax.plot(chamfer_losses, label="chamfer loss")
+ax.plot(edge_losses, label="edge loss")
+ax.plot(normal_losses, label="normal loss")
+ax.plot(laplacian_losses, label="laplacian loss")
+ax.plot(mse_rendered_losses, label="mse rendered loss")
+ax.legend(fontsize="16")
+ax.set_xlabel("Iteration", fontsize="16")
+ax.set_ylabel("Loss", fontsize="16")
+ax.set_title("Loss vs iterations", fontsize="16");   
+plt.show() # hm
+
+images1=renderer.render(new_src_mesh)
+save_fig(os.path.join('./data', 'render_final.png'),images1)
+
+#debugging
+#plot_pointcloud(new_src_mesh, "New Source mesh")
 
 
 # TODO: implement an optimization process that deforms the given source mesh to
