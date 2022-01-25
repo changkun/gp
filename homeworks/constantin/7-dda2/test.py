@@ -25,7 +25,7 @@ print("WARNING: CPU only, this will be slow!")
 
 
 # how many points we sample from the surface of the mesh in each iteration
-N_SAMPLE_POINTS=5000
+N_SAMPLE_POINTS=10000
 
 def my_load_and_uniform(model_path: str) -> Meshes:
     # We read the target 3D model using load_obj
