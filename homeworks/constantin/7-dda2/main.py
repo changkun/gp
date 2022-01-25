@@ -29,8 +29,9 @@ from pytorch3d.renderer import (
 import matplotlib.pyplot as plt
 
 debug  = True
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(f"torch: {torch.__version__}, torch3d: {pytorch3d.__version__}, device: ", device)
+"""device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"torch: {torch.__version__}, torch3d: {pytorch3d.__version__}, device: ", device)"""
+device = torch.device("cpu")
 
 def load_and_uniform(model_path: str) -> Meshes:
     # load target mesh
