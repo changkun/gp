@@ -61,7 +61,6 @@ def load_and_plot(model_path: str):
     plot_pointcloud(mesh,model_path)
 
 
-# Load the dolphin mesh.
 load_and_plot(os.path.join('./data2', 'dolphin.obj'))
 load_and_plot(os.path.join('./data2', 'final_model.obj'))
 load_and_plot(os.path.join('./data', 'source.obj'))

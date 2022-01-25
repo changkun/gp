@@ -41,7 +41,8 @@ def my_load_and_uniform(model_path: str) -> Meshes:
     return Meshes(verts=[verts], faces=[faces_idx])
 
 # Load the dolphin mesh.
-trg_obj = os.path.join('./data2', 'dolphin.obj')
+#trg_obj = os.path.join('./data2', 'dolphin.obj')
+trg_obj = os.path.join('./data', 'bunny.obj')
 trg_mesh = my_load_and_uniform(trg_obj)
 
 # We initialize the source shape to be a sphere of radius 1
