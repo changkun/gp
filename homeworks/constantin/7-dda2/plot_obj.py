@@ -56,13 +56,14 @@ def plot_pointcloud(mesh, title=""):
     plt.show()    
 
 
+def load_and_plot(model_path: str):
+    mesh=my_load_and_uniform(model_path)
+    plot_pointcloud(mesh,model_path)
+
+
 # Load the dolphin mesh.
-#trg_obj = os.path.join('./data2', 'dolphin.obj')
-#trg_obj = os.path.join('./data2', 'final_model.obj')
-trg_obj = os.path.join('./data', 'source.obj')
-#trg_obj = os.path.join('./data', 'bunny.obj')
+load_and_plot(os.path.join('./data2', 'dolphin.obj'))
+load_and_plot(os.path.join('./data2', 'final_model.obj'))
+load_and_plot(os.path.join('./data', 'source.obj'))
+load_and_plot(os.path.join('./data', 'bunny.obj'))
 
-trg_mesh=my_load_and_uniform(trg_obj)
-
-
-plot_pointcloud(trg_mesh, "Target mesh")
