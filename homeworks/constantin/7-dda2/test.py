@@ -40,7 +40,7 @@ def my_load_and_uniform(model_path: str) -> Meshes:
     # We construct a Meshes structure for the target mesh
     return Meshes(verts=[verts], faces=[faces_idx])
 
-# Load the dolphin mesh.
+# Load the mesh
 #trg_obj = os.path.join('./data2', 'dolphin.obj')
 trg_obj = os.path.join('./data', 'bunny.obj')
 trg_mesh = my_load_and_uniform(trg_obj)
@@ -165,7 +165,7 @@ ax.set_title("Loss vs iterations", fontsize="16");
 final_verts, final_faces = new_src_mesh.get_mesh_verts_faces(0)
 
 # Scale normalize back to the original target size
-final_verts = final_verts * scale + center
+#final_verts = final_verts * scale + center
 
 # Store the predicted mesh using save_obj
 final_obj = os.path.join('./data2', 'final_model.obj')
