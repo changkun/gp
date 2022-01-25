@@ -142,10 +142,10 @@ loss = criterionMSE(images1, images2)
 
 
 # Number of optimization steps
-Niter = 100
+Niter = 5000
 # Weight for the chamfer loss
 w_chamfer = 1.0 
-# Weight for the MSELoss of the rendered image
+# Weight for the MSELoss between the rendered images
 w_mse_rendered=0.0
 # Weight for mesh edge loss
 w_edge = 1.0 
@@ -153,8 +153,8 @@ w_edge = 1.0
 w_normal = 0.01 
 # Weight for mesh laplacian smoothing
 w_laplacian = 0.1 
-# Plot period for the losses
-plot_period = 10
+# Plot period for the losses -
+plot_period = 1000
 loop = range(Niter)
 
 chamfer_losses = []
@@ -181,9 +181,9 @@ for i in loop:
     loss_chamfer, _ = chamfer_distance(sample_trg, sample_src)
 
     # KKK also the MSE error
-    render1=renderer.render(trg_mesh)
-    render2=renderer.render(new_src_mesh)
-    loss_mse_rendered = criterionMSE(render1,render2)
+    #render1=renderer.render(trg_mesh)
+    #render2=renderer.render(new_src_mesh)
+    #loss_mse_rendered = criterionMSE(render1,render2)
 
     # and (b) the edge length of the predicted mesh
     loss_edge = mesh_edge_loss(new_src_mesh)
@@ -195,7 +195,8 @@ for i in loop:
     loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
     
     # Weighted sum of the losses
-    loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian + loss_mse_rendered*w_mse_rendered
+    loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian
+    #loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian + loss_mse_rendered*w_mse_rendered
     
     # Print the losses
     #loop.set_description('total_loss = %.6f' % loss)
@@ -205,13 +206,13 @@ for i in loop:
     edge_losses.append(float(loss_edge.detach().cpu()))
     normal_losses.append(float(loss_normal.detach().cpu()))
     laplacian_losses.append(float(loss_laplacian.detach().cpu()))
-    mse_rendered_losses.append(float(loss_mse_rendered.detach().cpu()))
+    #mse_rendered_losses.append(float(loss_mse_rendered.detach().cpu()))
     
     # Plot mesh
     if i % plot_period == 0:
         #plot_pointcloud(new_src_mesh, title="iter: %d" % i)
         images1=renderer.render(new_src_mesh)
-        save_fig(os.path.join('./data', 'render_'+str(i)+".png"),images1)
+        save_fig(os.path.join('./out_test', 'render_'+str(i)+".png"),images1)
        
     # Optimization step
     loss.backward()
@@ -235,10 +236,10 @@ ax.set_title("Loss vs iterations", fontsize="16");
 plt.show() # hm
 
 images1=renderer.render(new_src_mesh)
-save_fig(os.path.join('./data', 'render_final.png'),images1)
+save_fig(os.path.join('./out_test', 'render_final.png'),images1)
 
 #debugging
-#plot_pointcloud(new_src_mesh, "New Source mesh")
+plot_pointcloud(new_src_mesh, "New Source mesh")
 
 
 # TODO: implement an optimization process that deforms the given source mesh to
