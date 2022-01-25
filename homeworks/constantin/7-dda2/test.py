@@ -22,29 +22,27 @@ mpl.rcParams['figure.dpi'] = 80
 device = torch.device("cpu")
 print("WARNING: CPU only, this will be slow!")
 
+def my_load_and_uniform(model_path: str) -> Meshes:
+    # We read the target 3D model using load_obj
+    verts, faces, aux = load_obj(model_path)
+    # verts is a FloatTensor of shape (V, 3) where V is the number of vertices in the mesh
+    # faces is an object which contains the following LongTensors: verts_idx, normals_idx and textures_idx
+    # For this tutorial, normals and textures are ignored.
+    faces_idx = faces.verts_idx.to(device)
+    verts = verts.to(device)
+    # We scale normalize and center the target mesh to fit in a sphere of radius 1 centered at (0,0,0). 
+    # (scale, center) will be used to bring the predicted mesh to its original center and scale
+    # Note that normalizing the target mesh, speeds up the optimization but is not necessary!
+    center = verts.mean(0)
+    verts = verts - center
+    scale = max(verts.abs().max(0)[0])
+    verts = verts / scale
+    # We construct a Meshes structure for the target mesh
+    return Meshes(verts=[verts], faces=[faces_idx])
+
 # Load the dolphin mesh.
 trg_obj = os.path.join('./data2', 'dolphin.obj')
-
-
-# We read the target 3D model using load_obj
-verts, faces, aux = load_obj(trg_obj)
-
-# verts is a FloatTensor of shape (V, 3) where V is the number of vertices in the mesh
-# faces is an object which contains the following LongTensors: verts_idx, normals_idx and textures_idx
-# For this tutorial, normals and textures are ignored.
-faces_idx = faces.verts_idx.to(device)
-verts = verts.to(device)
-
-# We scale normalize and center the target mesh to fit in a sphere of radius 1 centered at (0,0,0). 
-# (scale, center) will be used to bring the predicted mesh to its original center and scale
-# Note that normalizing the target mesh, speeds up the optimization but is not necessary!
-center = verts.mean(0)
-verts = verts - center
-scale = max(verts.abs().max(0)[0])
-verts = verts / scale
-
-# We construct a Meshes structure for the target mesh
-trg_mesh = Meshes(verts=[verts], faces=[faces_idx])
+trg_mesh = my_load_and_uniform(trg_obj)
 
 # We initialize the source shape to be a sphere of radius 1
 src_mesh = ico_sphere(4, device)
@@ -76,8 +74,6 @@ deform_verts = torch.full(src_mesh.verts_packed().shape, 0.0, device=device, req
 
 # The optimizer
 optimizer = torch.optim.SGD([deform_verts], lr=1.0, momentum=0.9)
-
-
 
 
 
