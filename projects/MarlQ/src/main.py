@@ -50,16 +50,29 @@ def getIslands(verts):
                     
         
 # Variables
+displace_increase = 0.02
 delta_initial = 3.0
 delta_increase = 0.1
 delta = delta_initial
 
 elasticity = 0.3
-elasticity_factor = -0.2
+elasticity_factor = -0.1
 # TODO: Multiple hard objects
 
 softObject = bpy.context.object
 hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop()
+
+sk_basis = softObject.shape_key_add(name='Basis',from_mix=False)
+sk_basis.interpolation = 'KEY_LINEAR'
+# must set relative to false here
+#softObject.data.shape_keys.use_relative = False
+
+# create new shape key
+sk = softObject.shape_key_add(name='Deform',from_mix=False)
+sk.interpolation = 'KEY_LINEAR'
+sk.slider_min = 0.0
+sk.slider_max = 1.0
+sk.value = 1.0
 
 # FIXME: Not enough objects selected
 
@@ -69,7 +82,7 @@ hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop
 mat1 = softObject.matrix_world
 mat2 = hardObject.matrix_world
 
-verts1 = [mat1 @ v.co for v in softObject.data.vertices] 
+verts1 = [mat1 @ v.co for v in sk.data] 
 poly1 = [p.vertices for p in softObject.data.polygons]
 
 verts2 = [mat2 @ v.co for v in hardObject.data.vertices] 
@@ -106,9 +119,11 @@ for vert1_index in inside_verts:
         hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, average_displace)
         if hit:
             hitloc_local = localC(globalC(hitloc, hardObject), softObject)
-            dist = (hitloc_local - softObject.data.vertices[vert1_index].co).length
+            hitloc_local = hitloc_local + displace_increase * normal
+            dist = (hitloc_local - sk.data[vert1_index].co ).length
             dist_total = dist_total + dist
-            softObject.data.vertices[vert1_index].co = hitloc_local
+            #softObject.data.vertices[vert1_index].co = hitloc_local
+            sk.data[vert1_index].co = hitloc_local
     else:
         print("Delta was too small")
     delta = delta_initial
@@ -143,15 +158,18 @@ for vert1_index in outside_verts:
     if dist_min < elasticity:
         print(dist_min)
         move_dist = elasticity_factor * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
+        #move_dist = elasticity_factor * 1 / (shortest_dist + dist_min * dist_min)
         normal = softObject.data.vertices[vert1_index].normal
-        newPos = softObject.data.vertices[vert1_index].co + move_dist * normal
-        softObject.data.vertices[vert1_index].co = newPos
+        newPos = sk.data[vert1_index].co  + move_dist * normal
+        #softObject.data.vertices[vert1_index].co = newPos
+        sk.data[vert1_index].co = newPos
         dist_total = dist_total - move_dist
         print(move_dist)
         #outside_verts.remove(vert1_index)
         
     else:
         inverse_square_sum += 1 / ( 1 + (dist_min-shortest_dist) * (dist_min-shortest_dist) )
+        #inverse_square_sum += 1 / (shortest_dist + dist_min * dist_min)
     
 x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
 
@@ -167,8 +185,10 @@ for vert1_index in outside_verts:
             dist_min = dist # TODO: Save these for later
     #print(dist_min)
     move_dist = x_fac * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
+    #move_dist = x_fac * 1 / (shortest_dist + dist_min * dist_min)
     test += move_dist
     #print(move_dist)
     normal = softObject.data.vertices[vert1_index].normal
-    newPos = softObject.data.vertices[vert1_index].co + move_dist * normal
-    softObject.data.vertices[vert1_index].co = newPos
+    newPos = sk.data[vert1_index].co + move_dist * normal
+    sk.data[vert1_index].co = newPos
+    #softObject.data.vertices[vert1_index].co = newPos
