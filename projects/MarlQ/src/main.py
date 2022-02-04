@@ -56,20 +56,25 @@ delta_increase = 0.1
 delta = delta_initial
 
 elasticity = 0.3
-elasticity_factor = -0.1
+elasticity_factor = 0.5
+
+volume_preservation = 1
 # TODO: Multiple hard objects
 
 softObject = bpy.context.object
 hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop()
 
-sk_basis = softObject.shape_key_add(name='Basis',from_mix=False)
-sk_basis.interpolation = 'KEY_LINEAR'
+
+print("Creating shape keys")
+if softObject.data.shape_keys is None or len(softObject.data.shape_keys.key_blocks) < 1:
+    sk_basis = softObject.shape_key_add(name='Basis',from_mix=False)
+    #sk_basis.interpolation = 'KEY_LINEAR'
 # must set relative to false here
 #softObject.data.shape_keys.use_relative = False
 
 # create new shape key
 sk = softObject.shape_key_add(name='Deform',from_mix=False)
-sk.interpolation = 'KEY_LINEAR'
+#sk.interpolation = 'KEY_LINEAR'
 sk.slider_min = 0.0
 sk.slider_max = 1.0
 sk.value = 1.0
@@ -79,6 +84,8 @@ sk.value = 1.0
 # STEP 1: Find overlapping faces, and displace vertices so that they no longer overlap
 
 # Get the verts and faces in world coordinates
+print("Getting object data.")
+
 mat1 = softObject.matrix_world
 mat2 = hardObject.matrix_world
 
@@ -96,7 +103,7 @@ inside_vert_ho = [i for i in range(len(verts2)) if insideMesh( localC(verts2[i],
 
 dist_total = 0
 
-
+print("Displacing verts")
 for vert1_index in inside_verts:
     # Calculate the average normal of all hard object vertices that are inside the soft object
     len_delta = 0
@@ -110,6 +117,9 @@ for vert1_index in inside_verts:
         if len_delta < 1:
             # Delta was not high enough
             delta = delta + delta_increase
+        if delta > 100:
+            print("Error: no overlapping vertices. Aborting.")
+            break
     if len_delta > 0:
         average_displace = average_displace * (1 / len_delta)
         
@@ -124,18 +134,18 @@ for vert1_index in inside_verts:
             dist_total = dist_total + dist
             #softObject.data.vertices[vert1_index].co = hitloc_local
             sk.data[vert1_index].co = hitloc_local
-    else:
-        print("Delta was too small")
     delta = delta_initial
         
 
 # FIXME: objects don't overlap
 # FIXME: all vertices overlap
 
+
 # STEP 2: Add the lost volume back
 outside_verts = [i for i in range(len(verts1)) if i not in inside_verts]
 
 # Calculate shortest distance between an inside and an outside vert
+print("Getting the shortest distance")
 shortest_dist = inf
 for vert1_index in inside_verts:
     vert1 = localC(verts1[vert1_index], softObject)
@@ -145,33 +155,36 @@ for vert1_index in inside_verts:
 
         if dist < shortest_dist:
             shortest_dist = dist
-
+print("Getting inverse square factor and adding elasticity")
 inverse_square_sum = 0
 for vert1_index in outside_verts:
     vert1 = localC(verts1[vert1_index], softObject)
     dist_min = inf
+    closest_vert = vert1_index
     for vert2_index in inside_verts:
         vert2 = localC(verts1[vert2_index], softObject)
         dist = (vert1 - vert2).length
         if dist < dist_min:
             dist_min = dist # TODO: Save these for later
+            closest_vert = vert2_index
     if dist_min < elasticity:
-        print(dist_min)
-        move_dist = elasticity_factor * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
+        closest_vert_move = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co).length
+        move_dist = elasticity_factor * closest_vert_move * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
         #move_dist = elasticity_factor * 1 / (shortest_dist + dist_min * dist_min)
         normal = softObject.data.vertices[vert1_index].normal
-        newPos = sk.data[vert1_index].co  + move_dist * normal
+        newPos = sk.data[vert1_index].co  - move_dist * normal
         #softObject.data.vertices[vert1_index].co = newPos
         sk.data[vert1_index].co = newPos
-        dist_total = dist_total - move_dist
-        print(move_dist)
+        dist_total = dist_total + move_dist
+        print(closest_vert_move)
         #outside_verts.remove(vert1_index)
         
     else:
         inverse_square_sum += 1 / ( 1 + (dist_min-shortest_dist) * (dist_min-shortest_dist) )
         #inverse_square_sum += 1 / (shortest_dist + dist_min * dist_min)
-    
+dist_total = dist_total * volume_preservation
 x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
+print("Adding back volume")
 
 test = 0
 for vert1_index in outside_verts:
