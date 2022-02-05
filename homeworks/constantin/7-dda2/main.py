@@ -147,7 +147,7 @@ loss = criterionMSE(images1, images2)
 
 
 # Number of optimization steps
-Niter = 5000
+Niter = 500
 # Weight for the chamfer loss
 w_chamfer = 1.0 
 # Weight for the MSELoss between the rendered images
@@ -236,11 +236,11 @@ print("Optimizing end")
 #Visualize the loss
 fig = plt.figure(figsize=(13, 5))
 ax = fig.gca()
-ax.plot(chamfer_losses, label="chamfer loss")
-ax.plot(edge_losses, label="edge loss")
-ax.plot(normal_losses, label="normal loss")
-ax.plot(laplacian_losses, label="laplacian loss")
-ax.plot(mse_rendered_losses, label="mse rendered loss")
+ax.plot(chamfer_losses, label="chamfer loss (w:"+str(w_chamfer)+")")
+ax.plot(edge_losses, label="edge loss (w:"+str(w_edge)+")")
+ax.plot(normal_losses, label="normal loss (w:"+str(w_normal)+")")
+ax.plot(laplacian_losses, label="laplacian loss (w:"+str(w_laplacian)+")")
+ax.plot(mse_rendered_losses, label="mse rendered loss (w:"+str(w_mse_rendered)+")")
 ax.legend(fontsize="16")
 ax.set_xlabel("Iteration", fontsize="16")
 ax.set_ylabel("Loss", fontsize="16")
