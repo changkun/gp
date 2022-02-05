@@ -40,7 +40,7 @@ print(f"torch: {torch.__version__}, torch3d: {pytorch3d.__version__}, device: ",
 device = torch.device("cpu")
 
 # how many points we sample from the surface of the mesh in each iteration
-N_SAMPLE_POINTS=1000
+N_SAMPLE_POINTS=10000
 # enable/disable also using the 3D rendered image and the difference for the loss
 # note: suboptimal, only renders from one single view point, but I cannot do more with my hardware
 ENABLE_3D_RENDERING_LOSS=False
@@ -140,10 +140,10 @@ renderer = Render()
 #renderer.render_and_debug(src_mesh)
 #renderer.render_and_debug(trg_mesh)
 
-images1=renderer.render(src_mesh)
-images2=renderer.render(trg_mesh)
+#images1=renderer.render(src_mesh)
+#images2=renderer.render(trg_mesh)
 criterionMSE = torch.nn.MSELoss(reduction='sum')
-loss = criterionMSE(images1, images2)
+#loss = criterionMSE(images1, images2)
 
 
 # Number of optimization steps
@@ -183,6 +183,7 @@ for i in loop:
     # We sample X points from the surface of each mesh 
     sample_trg = sample_points_from_meshes(trg_mesh, N_SAMPLE_POINTS)
     sample_src = sample_points_from_meshes(new_src_mesh, N_SAMPLE_POINTS)
+
     
     # We compare the two sets of pointclouds by computing (a) the chamfer loss
     loss_chamfer, _ = chamfer_distance(sample_trg, sample_src)
@@ -196,8 +197,8 @@ for i in loop:
     loss_normal = mesh_normal_consistency(new_src_mesh)
     
     # mesh laplacian smoothing
-    #loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
-    loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="cot")
+    loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
+    #loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="cot")
     
     # Weighted sum of the losses
     loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian
@@ -225,6 +226,7 @@ for i in loop:
         #plot_pointcloud(new_src_mesh, title="iter: %d" % i)
         images1=renderer.render(new_src_mesh)
         save_fig(os.path.join('./out_test', 'render_'+str(i)+".png"),images1)
+        #plt.clf();
        
     # Optimization step
     loss.backward()
@@ -246,6 +248,9 @@ ax.set_xlabel("Iteration", fontsize="16")
 ax.set_ylabel("Loss", fontsize="16")
 ax.set_title("Loss vs iterations", fontsize="16");   
 plt.show() # hm
+#plt.savefig(os.path.join('./out_test', 'losses.png'))
+#plt.clf()
+
 
 images1=renderer.render(new_src_mesh)
 save_fig(os.path.join('./out_test', 'render_final.png'),images1)
