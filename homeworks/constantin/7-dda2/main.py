@@ -147,7 +147,7 @@ criterionMSE = torch.nn.MSELoss(reduction='sum')
 
 
 # Number of optimization steps
-Niter = 500
+Niter = 5000
 # Weight for the chamfer loss
 w_chamfer = 1.0 
 # Weight for the MSELoss between the rendered images
