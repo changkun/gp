@@ -14,6 +14,7 @@ from pytorch3d.loss import (
     mesh_laplacian_smoothing,
     mesh_normal_consistency,
     chamfer_distance, # added
+    #point_mesh_edge_distance, #added
 )
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
@@ -40,6 +41,9 @@ device = torch.device("cpu")
 
 # how many points we sample from the surface of the mesh in each iteration
 N_SAMPLE_POINTS=1000
+# enable/disable also using the 3D rendered image and the difference for the loss
+# note: suboptimal, only renders from one single view point, but I cannot do more with my hardware
+ENABLE_3D_RENDERING_LOSS=False
 
 def load_and_uniform(model_path: str) -> Meshes:
     # load target mesh
@@ -98,7 +102,8 @@ class Render():
 
 
 # 1. Load meshes and transform them into a unit cube.
-trg_mesh = load_and_uniform(os.path.join('./data', 'bunny.obj')) # target mesh
+#trg_mesh = load_and_uniform(os.path.join('./data2', 'dolphin.obj')) # target mesh
+trg_mesh = load_and_uniform(os.path.join('./data', 'bunny.obj'))
 src_mesh = load_and_uniform(os.path.join('./data', 'source.obj')) # source mesh
 
 # debug the current looks of the mesh
@@ -146,11 +151,13 @@ Niter = 5000
 # Weight for the chamfer loss
 w_chamfer = 1.0 
 # Weight for the MSELoss between the rendered images
-w_mse_rendered=0.0
+# only applied if ENABLE_3D_RENDERING_LOSS is true
+w_mse_rendered=0.5
 # Weight for mesh edge loss
 w_edge = 1.0 
 # Weight for mesh normal consistency
-w_normal = 0.01 
+w_normal = 0.05 
+#w_normal = 0.0
 # Weight for mesh laplacian smoothing
 w_laplacian = 0.1 
 # Plot period for the losses -
@@ -173,30 +180,35 @@ for i in loop:
     # Deform the mesh
     new_src_mesh = src_mesh.offset_verts(deform_verts)
     
-    # We sample 5k points from the surface of each mesh 
+    # We sample X points from the surface of each mesh 
     sample_trg = sample_points_from_meshes(trg_mesh, N_SAMPLE_POINTS)
     sample_src = sample_points_from_meshes(new_src_mesh, N_SAMPLE_POINTS)
     
     # We compare the two sets of pointclouds by computing (a) the chamfer loss
     loss_chamfer, _ = chamfer_distance(sample_trg, sample_src)
 
-    # KKK also the MSE error
-    #render1=renderer.render(trg_mesh)
-    #render2=renderer.render(new_src_mesh)
-    #loss_mse_rendered = criterionMSE(render1,render2)
-
     # and (b) the edge length of the predicted mesh
+    #https://pytorch3d.readthedocs.io/en/latest/modules/loss.html#pytorch3d.loss.mesh_edge_loss
     loss_edge = mesh_edge_loss(new_src_mesh)
     
     # mesh normal consistency
+    # https://pytorch3d.readthedocs.io/en/latest/modules/loss.html#pytorch3d.loss.mesh_normal_consistency
     loss_normal = mesh_normal_consistency(new_src_mesh)
     
     # mesh laplacian smoothing
-    loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
+    #loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="uniform")
+    loss_laplacian = mesh_laplacian_smoothing(new_src_mesh, method="cot")
     
     # Weighted sum of the losses
     loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian
     #loss = loss_chamfer * w_chamfer + loss_edge * w_edge + loss_normal * w_normal + loss_laplacian * w_laplacian + loss_mse_rendered*w_mse_rendered
+    if(ENABLE_3D_RENDERING_LOSS==True):
+        render1=renderer.render(trg_mesh)
+        render2=renderer.render(new_src_mesh)
+        loss_mse_rendered = criterionMSE(render1,render2)
+        loss+=loss_mse_rendered*w_mse_rendered;
+        mse_rendered_losses.append(float(loss_mse_rendered.detach().cpu()))
+
     
     # Print the losses
     #loop.set_description('total_loss = %.6f' % loss)
