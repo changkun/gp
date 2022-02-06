@@ -20,7 +20,7 @@ export class AABB {
    * constructor constructs the minimum axis-aligned bounding box of
    * the given vertices.
    */
-  constructor(vs: Vertex[]) {
+  /*constructor(vs: Vertex[]) {
     this.min = new Vector();
     this.max = new Vector();
 
@@ -31,6 +31,19 @@ export class AABB {
       this.max.x = Math.max(this.max.x, vs[i].position.x);
       this.max.y = Math.max(this.max.y, vs[i].position.y);
       this.max.z = Math.max(this.max.z, vs[i].position.z);
+    }
+  }*/
+  constructor(vs: Vector[]) {
+    this.min = new Vector();
+    this.max = new Vector();
+
+    for (let i = 0; i < vs.length; i++) {
+      this.min.x = Math.min(this.min.x, vs[i].x);
+      this.min.y = Math.min(this.min.y, vs[i].y);
+      this.min.z = Math.min(this.min.z, vs[i].z);
+      this.max.x = Math.max(this.max.x, vs[i].x);
+      this.max.y = Math.max(this.max.y, vs[i].y);
+      this.max.z = Math.max(this.max.z, vs[i].z);
     }
   }
 

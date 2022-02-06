@@ -36,6 +36,9 @@ import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
 import { Cube } from '../linalg/cube';
+import * as THREE from 'three'
+import { Vector3 } from 'three';
+import {AABB} from './aabb';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -98,16 +101,14 @@ export class HalfedgeMesh {
     this.edges = [];
     this.faces = [];
     this.halfedges = [];
+    // do the scaling here instead of in main renderer
+    const aabb = new AABB(positions);
+    for(let i=0;i<positions.length;i++){
+      positions[i]=positions[i].sub(aabb.center()).scale(1 / aabb.radius());
+    }
     this.buildMesh(indices, positions);
   }
 
-  createVoxels(indices:number[],positions:Vector[]){
-    for(let i=0;i<indices.length;i+=3){
-      for(let j=0;j<3;j++){
-        
-      }
-    }
-  }
 
   /**
    * buildMesh builds half-edge based connectivity for the given vertex index buffer
@@ -313,18 +314,72 @@ export class HalfedgeMesh {
       v.position = new Vector(orgV.position.x, orgV.position.y,
         orgV.position.z, orgV.position.w);
     }
+  }
 
-    
-    const VOX_GRID_SIZE=10;
+  getRandomInt(max:number):number {
+    return Math.floor(Math.random() * max);
+  }
 
-    for(let x=-VOX_GRID_SIZE;x<VOX_GRID_SIZE;x++){
-      for(let y=-VOX_GRID_SIZE;y<VOX_GRID_SIZE;y++){
-        for(let z=-VOX_GRID_SIZE;z<VOX_GRID_SIZE;z++){
-          console.log("Smoothing begin with weightType:" + x +","+y+","+z);
-          const cube=new Cube(x,y,z,1);
+  convertToThreeJs(vertices:Vector[]):THREE.Triangle{
+    const v1=new THREE.Vector3(vertices[0].x,vertices[0].y,vertices[0].z);
+    const v2=new THREE.Vector3(vertices[1].x,vertices[1].y,vertices[1].z);
+    const v3=new THREE.Vector3(vertices[2].x,vertices[2].y,vertices[2].z);
+    return new THREE.Triangle(v1,v2,v3);
+  }
+
+  createVoxels(scene:THREE.Scene):THREE.Mesh[]{
+    let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
+    let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
+    let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
+
+    const VOXELS_PER_AXIS=20;
+    const VOXELS_PER_AXIS_2=VOXELS_PER_AXIS*2;
+    const VOXEL_SIZE=0.05;
+    let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2);
+    let idx=0;
+    for(let x=-VOXELS_PER_AXIS;x<VOXELS_PER_AXIS;x++){
+      for(let y=-VOXELS_PER_AXIS;y<VOXELS_PER_AXIS;y++){
+        for(let z=-VOXELS_PER_AXIS;z<VOXELS_PER_AXIS;z++){
+          console.log("Voxelizing:" + x +","+y+","+z);
+
+          const x1=x*VOXEL_SIZE;
+          const y1=y*VOXEL_SIZE;
+          const z1=z*VOXEL_SIZE;
+
+          const min=new Vector3(x1,y1,z1);
+          const max=new Vector3(x1+VOXEL_SIZE,y1+VOXEL_SIZE,z1+VOXEL_SIZE);
+
+          const box = new THREE.Box3(min,max);
+          let intersectsAny=false;
+          for(let f of this.faces){
+            const triangleData=f.asTriangle();
+            const triangle=this.convertToThreeJs(triangleData);
+            if(box.intersectsTriangle(triangle)){
+              intersectsAny=true;
+              break;
+            }
+          }
+          //const geometry=new THREE.BoxBufferGeometry()
+          const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
+          const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
+          mesh.position.set(x1,y1,z1);
+
+          const helper = new THREE.Box3Helper( box);
+
+          if(intersectsAny){
+            scene.add(helper);
+          }
+          //ret[idx]=helper;
+          idx++;
         }
       }
     }
+
+    let tmp=new Array<THREE.Mesh>(1);
+    const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1),materialGreen);
+    tmp[0]=mesh;
+    //return tmp;
+    return ret;
   }
 
   

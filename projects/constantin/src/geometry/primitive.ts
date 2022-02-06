@@ -73,6 +73,22 @@ export class Face {
     }
   }
 
+  asTriangle():Vector[]{
+    let ret=new Array<Vector>(3);
+    let count=0;
+    this.vertices((v, i) => {
+      if(i<3){
+        ret[i]=v.position;
+      }
+      count++;
+    });
+    if(count!=3){
+      throw new Error("Count not 3");
+    }
+
+    return ret;
+  }
+
   normal(): Vector {
     // Compute the face normal of this face.
     if (this.halfedge!.onBoundary) {

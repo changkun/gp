@@ -18,6 +18,7 @@ import {
   DoubleSide,
   MeshPhongMaterial,
   MeshBasicMaterial,
+  BoxBufferGeometry
 } from 'three';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {Vector} from './linalg/vec';
@@ -260,12 +261,13 @@ export default class Main extends Renderer {
     this.bufcolors = new Float32Array(v * 3);
     this.bufnormals = new Float32Array(v * 3);
 
-    const aabb = new AABB(this.internal.mesh!.verts!);
+    //const aabb = new AABB(this.internal.mesh!.verts!);
 
     this.internal.mesh!.verts.forEach(v => {
       const i = v.idx;
       // use AABB and rescale to viewport center
-      const p = v.position.sub(aabb.center()).scale(1 / aabb.radius());
+      //const p = v.position.sub(aabb.center()).scale(1 / aabb.radius());
+      const p=v.position;
       this.bufpos[3 * i + 0] = p.x;
       this.bufpos[3 * i + 1] = p.y;
       this.bufpos[3 * i + 2] = p.z;
@@ -319,6 +321,15 @@ export default class Main extends Renderer {
     }
     if (this.params.showWireframe) {
       this.scene.add(this.internal.wireframeHelper);
+    }
+
+    // add voxels loop
+    //const mesh = new Mesh(new BoxBufferGeometry(1, 1, 1),new MeshPhongMaterial({color: 'red'}));
+    //this.scene.add(mesh);
+
+    const tmp=this.internal.mesh!.createVoxels(this.scene);
+    for(let i=0;i<tmp.length;i++){
+      //this.scene.add(tmp[i]);
     }
   }
 }
