@@ -1,7 +1,7 @@
 {
-  "name": "gp-3-smooth",
+  "name": "consti-voxelizer",
   "version": "1.0.0",
-  "description": "LMU Munich Geometry Processing",
+  "description": "LMU Munich Geometry Processing - individual project",
   "main": "src/main.ts",
   "scripts": {
     "start": "npx webpack serve",
@@ -21,7 +21,7 @@
     "Computer Graphics",
     "Geometry Processing"
   ],
-  "author": "Changkun Ou <research@changkun.de>",
+  "author": "Changkun Ou <research@changkun.de, Constantin Geier>",
   "license": "GPL-3.0+",
   "devDependencies": {
     "@types/dat.gui": "^0.7.6",
