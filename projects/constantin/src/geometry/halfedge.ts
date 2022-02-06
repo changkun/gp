@@ -35,6 +35,7 @@ import { Vertex, Edge, Face, Halfedge } from './primitive';
 import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
+import { Cube } from '../linalg/cube';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -52,6 +53,8 @@ export class HalfedgeMesh {
   edges: Edge[]; // a list of edges
   faces: Face[]; // a list of faces
   halfedges: Halfedge[]; // a list of halfedges
+
+
 
   /**
    * constructor constructs the halfedge-based mesh representation.
@@ -96,6 +99,14 @@ export class HalfedgeMesh {
     this.faces = [];
     this.halfedges = [];
     this.buildMesh(indices, positions);
+  }
+
+  createVoxels(indices:number[],positions:Vector[]){
+    for(let i=0;i<indices.length;i+=3){
+      for(let j=0;j<3;j++){
+        
+      }
+    }
   }
 
   /**
@@ -287,6 +298,12 @@ export class HalfedgeMesh {
     });
   }
 
+
+  // Returns true if the given face intersect this cube
+  faceCubeIntersect(face:Face,cube:Cube){
+
+  }
+
   // update the vertex positions from their original positions
   resetFromOriginalPositions() {
     //assert(this.vertsOrig.length==this.verts.length);
@@ -296,13 +313,29 @@ export class HalfedgeMesh {
       v.position = new Vector(orgV.position.x, orgV.position.y,
         orgV.position.z, orgV.position.w);
     }
+
+    
+    const VOX_GRID_SIZE=10;
+
+    for(let x=-VOX_GRID_SIZE;x<VOX_GRID_SIZE;x++){
+      for(let y=-VOX_GRID_SIZE;y<VOX_GRID_SIZE;y++){
+        for(let z=-VOX_GRID_SIZE;z<VOX_GRID_SIZE;z++){
+          console.log("Smoothing begin with weightType:" + x +","+y+","+z);
+          const cube=new Cube(x,y,z,1);
+        }
+      }
+    }
   }
 
   
+
+
   smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
     console.log("Smoothing begin with weightType:" + weightType + " timeStep:" + timeStep + " smoothStep:" + smoothStep);
     this.resetFromOriginalPositions();
   }
+
+
 
 
 }

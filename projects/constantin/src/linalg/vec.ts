@@ -4,6 +4,8 @@
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
 
+import * as THREE from 'three'
+
 export function approxEqual(v1: number, v2: number, epsilon = 1e-7): boolean {
   return Math.abs(v1 - v2) <= epsilon;
 }
@@ -154,4 +156,69 @@ export class Vector {
     u.w = 0;
     return u;
   }
+
+  convertT():THREE.Vector3{
+    return new THREE.Vector3(this.x,this.y,this.z);
+  }
+}
+
+
+
+// https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox.txt
+
+export class Vector3 {
+  numbers: number[];
+ 
+  constructor(x?: number, y?: number, z?: number) {
+    this.numbers =new Array<number>(3);
+    this.numbers[0] = x || 0;
+    this.numbers[1] = y || 0;
+    this.numbers[2] = z || 0;
+  }
+
+  public static cross(v1:number[],v2:number[]):number[]{
+    let dest=new Array<number>(3);
+    dest[0]=v1[1]*v2[2]-v1[2]*v2[1];
+    dest[1]=v1[2]*v2[0]-v1[0]*v2[2];
+    dest[2]=v1[0]*v2[1]-v1[1]*v2[0];
+    return dest;
+  }
+
+  public static dot(v1:number[],v2:number[]):number{
+    return (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]);
+  }
+
+  public static sub(v1:number[],v2:number[]):number[]{
+    let dest=new Array<number>(3);
+    dest[0]=v1[0]-v2[0];
+    dest[1]=v1[1]-v2[1];
+    dest[2]=v1[2]-v2[2];
+    return dest;
+  }
+
+  public static planeBoxOverlap(normal:number[],d:number,maxbox:number[]):number{
+    let vmin=new Array<number>(3);
+    let vmax=new Array<number>(3);
+    for(let q=0;q<=2;q++){
+      if(normal[q]>0.0) {
+        vmin[q]=-maxbox[q];
+        vmax[q]=maxbox[q];
+      }else{
+        vmin[q]=maxbox[q];
+        vmax[q]=-maxbox[q];
+      }
+    }
+    if(Vector3.dot(normal,vmin)+d>0.0) return 0;
+    if(Vector3.dot(normal,vmax)+d>=0.0) return 1;
+    return 0;
+  }
+
+
+  public static checkTriangleCube():boolean{
+    let triangle=new THREE.Triangle();
+    let cube = new THREE.Box3;
+    return cube.intersectsTriangle(triangle);
+  }
+
+
 }
