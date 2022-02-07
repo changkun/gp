@@ -9,6 +9,7 @@ import { HalfedgeMesh } from './geometry/halfedge';
 
 
 export class Voxelizer {
+
     helperBoxes: Array<THREE.Box3Helper>;
 
     constructor(){
@@ -27,12 +28,15 @@ export class Voxelizer {
     }
     
 
-    createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene){
+    createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
+        this.removeFromScene(scene);
+        this.helperBoxes=[];
+        
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
         let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
         let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
     
-        const VOXELS_PER_HALF_AXIS=10;
+        const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
         const VOXELS_PER_AXIS=VOXELS_PER_HALF_AXIS*2;
         const VOXEL_SIZE=1/VOXELS_PER_AXIS;
         let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS*VOXELS_PER_AXIS*VOXELS_PER_AXIS);

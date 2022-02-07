@@ -52,8 +52,7 @@ export default class Main extends Renderer {
     normalMethod: NormalMethod;
     curvatureMethod: CurvatureMethod;
     laplacian: WeightType;
-    timeStep: number;
-    smoothStep: number;
+    nVoxelsPerAxis: number;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -91,8 +90,7 @@ export default class Main extends Renderer {
       normalMethod: NormalMethod.EqualWeighted,
       curvatureMethod: CurvatureMethod.None,
       laplacian: WeightType.Uniform,
-      timeStep: 0.001,
-      smoothStep: 1,
+      nVoxelsPerAxis: 5,
     };
 
     this.bufpos = new Float32Array();
@@ -161,20 +159,16 @@ export default class Main extends Renderer {
       .onChange(() => this.updateCurvature());
 
     methods
-      .add(this.params, 'laplacian', [WeightType.Uniform, WeightType.Cotan])
-      .onChange(() => this.updateSmoothing());
+      .add(this.params, 'laplacian', [WeightType.Uniform, WeightType.Cotan]);
+      //.onChange(() => this.updateSmoothing());
     methods.open();
 
-    const smoothing = this.gui.addFolder('Laplacian Smoothing');
-    smoothing
-      .add(this.params, 'timeStep', 0.001, 10, 0.001)
-      .name('time step')
-      .onChange(() => this.updateSmoothing());
-    smoothing
-      .add(this.params, 'smoothStep', 1, 3, 1)
-      .name('smooth step')
-      .onChange(() => this.updateSmoothing());
-    smoothing.open();
+    const folder1 = this.gui.addFolder('Voxelizer');
+    folder1
+      .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
+      .name('n vox per axis')
+      .onChange(() => this.updateVoxelizer());
+    folder1.open();
 
     // just for the first load
     fetch('./assets/bunny.obj')
@@ -262,14 +256,14 @@ export default class Main extends Renderer {
     });
     this.internal.mesh3js!.geometry.attributes.color.needsUpdate = true;
   }
-  updateSmoothing() {
-    this.internal.mesh!.smooth(
-      this.params.laplacian,
-      this.params.timeStep,
-      this.params.smoothStep
-    );
-    this.renderMesh();
+  updateVoxelizer(){
+    this.internal.voxelizer!.removeFromScene(this.scene);
+    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    if(this.params.showVoxels){
+      this.internal.voxelizer!.addToScene(this.scene);
+    }
   }
+
   renderMesh() {
     // clear old instances
     if (this.internal.normalHelper !== null) {
@@ -368,7 +362,7 @@ export default class Main extends Renderer {
     //this.scene.add(helper);
     AABB.debugBoundingBox(box);
 
-    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene);
+    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
 
     if(this.params.showVoxels){
       this.internal.voxelizer!.addToScene(this.scene);

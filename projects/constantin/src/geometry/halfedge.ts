@@ -291,6 +291,4 @@ export class HalfedgeMesh {
   }
 
 
-
-
 }
