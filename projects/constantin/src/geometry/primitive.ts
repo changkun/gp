@@ -7,7 +7,6 @@
 import {Vector} from '../linalg/vec';
 
 export class Halfedge {
-  vertsOrig?: Vertex[];
   vert?: Vertex;
   edge?: Edge;
   face?: Face;
@@ -24,9 +23,8 @@ export class Halfedge {
     this.onBoundary = false;
   }
   vector(): Vector {
-    // HACK: using the original vertex
-    const a = this.vertsOrig![this.next!.vert!.idx];
-    const b = this.vertsOrig![this.vert!.idx];
+    const a = this.next!.vert!;
+    const b = this.vert!;
     return a.position.sub(b.position);
   }
   cotan(): number {

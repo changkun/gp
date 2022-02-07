@@ -51,8 +51,7 @@ export class HalfedgeMesh {
 
   // The following four fields are the key fields to represent half-edge based
   // meshes.
-  vertsOrig: Vertex[]; // The original copy of all vertex positions
-  verts: Vertex[]; // The current vertex that are updated after smooth for actual rendering
+  verts: Vertex[]; // a list of vertices
   edges: Edge[]; // a list of edges
   faces: Face[]; // a list of faces
   halfedges: Halfedge[]; // a list of halfedges
@@ -96,7 +95,6 @@ export class HalfedgeMesh {
       }
     }
 
-    this.vertsOrig = [];
     this.verts = [];
     this.edges = [];
     this.faces = [];
@@ -285,33 +283,8 @@ export class HalfedgeMesh {
     this.faces.forEach(f => { f.idx = index++ })
     index = 0
     this.halfedges.forEach(h => { h.idx = index++ })
-
-    // we need to populate the vertsOriginal, too
-    this.vertsOrig = new Array(this.verts.length);
-    for (let i = 0; i < this.verts.length; i++) {
-      const v = this.verts[i];
-      let tmp = new Vertex(new Vector(v.position.x, v.position.y, v.position.z, v.position.w));
-      tmp.halfedge = v.halfedge;
-      tmp.idx = v.idx;
-      this.vertsOrig[i] = tmp;
-    }
-    // aparently a pointer to vertsOriginal is stored in all the halfedges
-    // yeah, this makes sense
-    this.halfedges.forEach(he => {
-      he.vertsOrig = this.vertsOrig;
-    });
   }
 
-  // update the vertex positions from their original positions
-  resetFromOriginalPositions() {
-    //assert(this.vertsOrig.length==this.verts.length);
-    for (let i = 0; i < this.vertsOrig.length; i++) {
-      let v = this.verts[i];
-      let orgV = this.vertsOrig[i];
-      v.position = new Vector(orgV.position.x, orgV.position.y,
-        orgV.position.z, orgV.position.w);
-    }
-  }
 
   getRandomInt(max:number):number {
     return Math.floor(Math.random() * max);
@@ -384,7 +357,7 @@ export class HalfedgeMesh {
 
   smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
     console.log("Smoothing begin with weightType:" + weightType + " timeStep:" + timeStep + " smoothStep:" + smoothStep);
-    this.resetFromOriginalPositions();
+    //this.resetFromOriginalPositions();
   }
 
 
