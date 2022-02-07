@@ -101,11 +101,14 @@ export class HalfedgeMesh {
     this.edges = [];
     this.faces = [];
     this.halfedges = [];
-    // do the scaling here instead of in main renderer
+    // Here we scale the vertices of the input mesh such that
+    // they are inside a bounding box of size [-1,1] (3D)
     const aabb = new AABB(positions);
     for(let i=0;i<positions.length;i++){
-      positions[i]=positions[i].sub(aabb.center()).scale(1 / aabb.radius());
+      positions[i]=aabb.transformToFit(positions[i]);
     }
+    aabb.debug();
+    aabb.checkTransformSuccessfull(positions);
     this.buildMesh(indices, positions);
   }
 
@@ -299,12 +302,6 @@ export class HalfedgeMesh {
     });
   }
 
-
-  // Returns true if the given face intersect this cube
-  faceCubeIntersect(face:Face,cube:Cube){
-
-  }
-
   // update the vertex positions from their original positions
   resetFromOriginalPositions() {
     //assert(this.vertsOrig.length==this.verts.length);
@@ -332,9 +329,9 @@ export class HalfedgeMesh {
     let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
     let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
 
-    const VOXELS_PER_AXIS=20;
+    const VOXELS_PER_AXIS=1;
     const VOXELS_PER_AXIS_2=VOXELS_PER_AXIS*2;
-    const VOXEL_SIZE=0.05;
+    const VOXEL_SIZE=0.5;
     let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2);
     let idx=0;
     for(let x=-VOXELS_PER_AXIS;x<VOXELS_PER_AXIS;x++){
@@ -366,9 +363,9 @@ export class HalfedgeMesh {
 
           const helper = new THREE.Box3Helper( box);
 
-          if(intersectsAny){
+          //if(intersectsAny){
             scene.add(helper);
-          }
+          //}
           //ret[idx]=helper;
           idx++;
         }

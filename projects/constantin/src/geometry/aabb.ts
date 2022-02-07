@@ -8,6 +8,7 @@
 
 import {Vector} from '../linalg/vec';
 import {Vertex} from './primitive';
+import * as THREE from 'three';
 
 /**
  * AABB represents an AABB of the given vertices.
@@ -81,4 +82,47 @@ export class AABB {
   radius(): number {
     return this.max.sub(this.min).len() / 2;
   }
+  maxRadius():number{
+    const distances=this.max.sub(this.min);
+    return distances.max();
+  }
+
+  // Transform the given vertex such that if this operation is applied to all vertices of the mesh,
+  // the whole mesh fits into a bounding box of x,y,z in range [-1,1]
+  transformToFit(vec:Vector):Vector{
+    return vec.sub(this.center()).scale(1 / this.maxRadius());
+  }
+
+  // check if the given number x is inside the interval [min,max]
+  public static between(x:number, min:number, max:number):boolean {
+    return x >= min && x <= max;
+  }
+
+  // check if all given vertices are inside the unit range [-1,1]
+  public checkTransformSuccessfull(verts:Vector[]){
+    for(let i=0;i<verts.length;i++){
+      let vert=verts[i];
+      const min=-1.0;
+      const max=1.0;
+      let inside=AABB.between(vert.x,min,max) && AABB.between(vert.y,min,max) && AABB.between(vert.z,min,max);
+      if(!inside){
+        console.log("ERROR vertex is not inside range [-1,1]");
+      }
+    }
+  }
+
+  public debug(){
+    console.log("AABB:Center("+this.center().x+","+this.center().y+","+this.center().z+") radius:"+this.radius());
+  }
+
+  public static debugBoundingBox(box:THREE.Box3){
+    let v1=new THREE.Vector3();
+    let v2=new THREE.Vector3();
+    box.getSize(v1);
+    box.getCenter(v2);
+
+    console.log("Box:Center("+v2.x+","+v2.y+","+v2.z+")"+"Size("+v1.x+","+v1.y+","+v1.z+")");
+
+  }
+
 }

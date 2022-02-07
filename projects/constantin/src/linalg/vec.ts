@@ -160,6 +160,13 @@ export class Vector {
   convertT():THREE.Vector3{
     return new THREE.Vector3(this.x,this.y,this.z);
   }
+
+  min():number{
+    return Math.min(this.x,this.y,this.z);
+  }
+  max():number{
+    return Math.max(this.x,this.y,this.z);
+  }
 }
 
 

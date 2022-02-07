@@ -18,7 +18,9 @@ import {
   DoubleSide,
   MeshPhongMaterial,
   MeshBasicMaterial,
-  BoxBufferGeometry
+  BoxBufferGeometry,
+  Box3,
+  Box3Helper
 } from 'three';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {Vector} from './linalg/vec';
@@ -326,6 +328,14 @@ export default class Main extends Renderer {
     // add voxels loop
     //const mesh = new Mesh(new BoxBufferGeometry(1, 1, 1),new MeshPhongMaterial({color: 'red'}));
     //this.scene.add(mesh);
+
+    this.internal.mesh3js!.geometry.computeBoundingBox();
+    let box = new Box3();
+    box.copy(this.internal.mesh3js!.geometry.boundingBox!);
+    const helper = new Box3Helper(box);
+    this.scene.add(helper);
+
+    AABB.debugBoundingBox(box);
 
     const tmp=this.internal.mesh!.createVoxels(this.scene);
     for(let i=0;i<tmp.length;i++){
