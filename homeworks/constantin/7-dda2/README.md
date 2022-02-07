@@ -6,6 +6,12 @@
 |:------:|:------:|:------:|:------:|:------:|:------:|
 |![](./out/render_0.png)|![](./out/render_100.png)|![](./out/render_500.png)|![](./out/render_1000.png)|...|![](./deform.png)|
 
+# My Best Run
+| Iter=0 | Iter=1000 | Iter=2000 | Iter=3000 | ... | Target |
+|:------:|:------:|:------:|:------:|:------:|:------:|
+|![](./out_test1/render_0.png)|![](./out_test1/render_1000.png)|![](./out_test1/render_2000.png)|![](./out_test1/render_3000.png)|...|![](./out_test1/render_final.png)|
+
+
 The `data` folder provides two meshes: bunny.obj as our learning target, and source.obj as the initial mesh. The task is to deform the initial mesh to the given bunny. See more information and hints in the `main.py` file.
 
 > Note: An appropriate parameter setting on an NVIDIA RTX 2080Ti requires at least 30 minutes of computation and a minimum of 10000 iterations. The training may require excessive amount of debugging.
@@ -16,13 +22,13 @@ The `data` folder provides two meshes: bunny.obj as our learning target, and sou
 1. What are the reasons that you choose the submitted loss function? How much possibilities have you tried and how long does it take you to train on what kind of hardware?
 
 ```
-TODO: your answer goes here
+The submitted loss function uses similar weights as the losses from the Pytorch3D "deform dolphin" project. However, the N of samples taken from the source and dest mesh per iteration had to be increased for the best results. I played with the weights a lot, but modifying the N of iterations and N of samples had the biggest effects. Comparing the results was also not easy, since each training phase took quite a while to complete. While playing with the parameters, I had to reduce the samples taken by quite a lot. The Best Run (See above images) used 4000 iterations and took ~4h to complete on my system (i7 laptop CPU, Gigabyte Aero 15X).
 ```
 
 2. Which part is the most time consuming for you to implement?
 
 ```
-TODO: your answer goes here
+Modifying the optimizer. To see changes take effect, I had to train the model for an average of ~1-2min each with a greatly reduced sample size. 
 ```
 
 
