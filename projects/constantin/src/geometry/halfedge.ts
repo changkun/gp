@@ -285,10 +285,6 @@ export class HalfedgeMesh {
     this.halfedges.forEach(h => { h.idx = index++ })
   }
 
-  smooth(weightType: WeightType, timeStep: number, smoothStep: number) {
-    console.log("Smoothing begin with weightType:" + weightType + " timeStep:" + timeStep + " smoothStep:" + smoothStep);
-    //this.resetFromOriginalPositions();
-  }
 
 
 }

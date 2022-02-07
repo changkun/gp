@@ -339,6 +339,7 @@ export default class Main extends Renderer {
       new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 1})
     );
+
     this.internal.halfedgesHelper = new LineSegments(
       new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 1})

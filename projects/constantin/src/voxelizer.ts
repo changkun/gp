@@ -31,7 +31,7 @@ export class Voxelizer {
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
         this.helperBoxes=[];
-        
+
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
         let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
         let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
@@ -67,7 +67,7 @@ export class Voxelizer {
                 const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
                 const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
                 mesh.position.set(x1,y1,z1);
-    
+
                 const helper = new THREE.Box3Helper(box);
     
                 if(intersectsAny){
