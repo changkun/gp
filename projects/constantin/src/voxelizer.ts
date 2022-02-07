@@ -11,9 +11,11 @@ import { HalfedgeMesh } from './geometry/halfedge';
 export class Voxelizer {
 
     helperBoxes: Array<THREE.Box3Helper>;
+    lastVoxelConstructionTime:number;
 
     constructor(){
         this.helperBoxes=[];
+        this.lastVoxelConstructionTime=0;
     }
 
     getRandomInt(max:number):number {
@@ -31,6 +33,7 @@ export class Voxelizer {
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
         this.helperBoxes=[];
+        const start = new Date().getTime();
 
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
         let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
@@ -44,7 +47,7 @@ export class Voxelizer {
         for(let x=-VOXELS_PER_HALF_AXIS;x<VOXELS_PER_HALF_AXIS;x++){
             for(let y=-VOXELS_PER_HALF_AXIS;y<VOXELS_PER_HALF_AXIS;y++){
             for(let z=-VOXELS_PER_HALF_AXIS;z<VOXELS_PER_HALF_AXIS;z++){
-                console.log("Voxelizing:" + x +","+y+","+z);
+                //console.log("Voxelizing:" + x +","+y+","+z);
     
                 const x1=x*VOXEL_SIZE;
                 const y1=y*VOXEL_SIZE;
@@ -79,10 +82,14 @@ export class Voxelizer {
             }
             }
         }
+
+        var elapsed = new Date().getTime() - start;
+        this.lastVoxelConstructionTime=elapsed;
+        console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
     
-        let tmp=new Array<THREE.Mesh>(1);
-        const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1),materialGreen);
-        tmp[0]=mesh;
+        //let tmp=new Array<THREE.Mesh>(1);
+        //const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1),materialGreen);
+        //tmp[0]=mesh;
         //return tmp;
         //return ret;
     }

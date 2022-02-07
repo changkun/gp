@@ -53,6 +53,7 @@ export default class Main extends Renderer {
     curvatureMethod: CurvatureMethod;
     laplacian: WeightType;
     nVoxelsPerAxis: number;
+    computationTime:number;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -91,6 +92,7 @@ export default class Main extends Renderer {
       curvatureMethod: CurvatureMethod.None,
       laplacian: WeightType.Uniform,
       nVoxelsPerAxis: 5,
+      computationTime:0,
     };
 
     this.bufpos = new Float32Array();
@@ -137,8 +139,7 @@ export default class Main extends Renderer {
           :  this.internal.voxelizer!.removeFromScene(this.scene);
       });  
 
-    const methods = this.gui.addFolder('Methods');
-
+    /*const methods = this.gui.addFolder('Methods');
     methods
       .add(this.params, 'normalMethod', [
         NormalMethod.EqualWeighted,
@@ -161,13 +162,17 @@ export default class Main extends Renderer {
     methods
       .add(this.params, 'laplacian', [WeightType.Uniform, WeightType.Cotan]);
       //.onChange(() => this.updateSmoothing());
-    methods.open();
+    methods.open();*/
 
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
       .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
-      .name('n vox per axis')
+      .name('n half vox per axis')
       .onChange(() => this.updateVoxelizer());
+    folder1
+      .add(this.params,'computationTime')
+      .name("computation time(ms)")
+      .listen();
     folder1.open();
 
     // just for the first load
@@ -259,6 +264,7 @@ export default class Main extends Renderer {
   updateVoxelizer(){
     this.internal.voxelizer!.removeFromScene(this.scene);
     this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
     if(this.params.showVoxels){
       this.internal.voxelizer!.addToScene(this.scene);
     }
@@ -364,6 +370,7 @@ export default class Main extends Renderer {
     AABB.debugBoundingBox(box);
 
     this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
 
     if(this.params.showVoxels){
       this.internal.voxelizer!.addToScene(this.scene);
