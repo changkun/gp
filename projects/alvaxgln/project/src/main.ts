@@ -48,6 +48,8 @@ export default class Main extends Renderer {
     flatShading: boolean;
     qSim: number;
     melaxSim: number;
+    smooth: () => void;
+    regularize: () => void
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -84,6 +86,17 @@ export default class Main extends Renderer {
       normalMethod: NormalMethod.EqualWeighted,
       qSim: 0.0,
       melaxSim: 0.0,
+      //smooth: () => console.log("GUI test!")
+      smooth: () => {
+        this.internal!.mesh!.angle_smooth()
+        this.prepareBuf();
+        this.renderMeshLeft();
+      },
+      regularize: () => {
+        this.internal!.mesh!.regularize()
+        this.prepareBuf();
+        this.renderMeshLeft();
+      }
     };
 
     this.bufpos = new Float32Array();
@@ -143,8 +156,16 @@ export default class Main extends Renderer {
           this.internal.mesh3jsRightSim!.material
         )).needsUpdate = true;
       });
-    vis.open();
+    //vis.open();
 
+    //add Button for regularization
+    const reg = this.gui.addFolder('Regularize');
+    reg.add(this.params, 'smooth').name('smooth');
+    reg.add(this.params, 'regularize').name('regularize');
+    reg.open();
+  
+
+    /*
     const mod = this.gui.addFolder('Reduce Ratio');
     mod
       .add(this.params, 'qSim', 0.0, 1.0, 0.001)
@@ -163,6 +184,7 @@ export default class Main extends Renderer {
         this.renderMeshLeft();
       });
 
+    
     const simplifier = new SimplifyModifier();
     mod
       .add(this.params, 'melaxSim', 0.0, 1.0, 0.001)
@@ -217,6 +239,7 @@ export default class Main extends Renderer {
         this.sceneRight.add(this.internal.mesh3jsRightSim);
       });
     mod.open();
+    */
 
     // just for the first load
     fetch('./assets/bunny.obj')
