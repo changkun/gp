@@ -333,8 +333,7 @@ export default class Main extends Renderer {
     let box = new Box3();
     box.copy(this.internal.mesh3js!.geometry.boundingBox!);
     const helper = new Box3Helper(box);
-    this.scene.add(helper);
-
+    //this.scene.add(helper);
     AABB.debugBoundingBox(box);
 
     const tmp=this.internal.mesh!.createVoxels(this.scene);

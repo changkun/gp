@@ -329,14 +329,14 @@ export class HalfedgeMesh {
     let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
     let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
 
-    const VOXELS_PER_AXIS=1;
-    const VOXELS_PER_AXIS_2=VOXELS_PER_AXIS*2;
-    const VOXEL_SIZE=0.5;
-    let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2*VOXELS_PER_AXIS_2);
+    const VOXELS_PER_HALF_AXIS=10;
+    const VOXELS_PER_AXIS=VOXELS_PER_HALF_AXIS*2;
+    const VOXEL_SIZE=1/VOXELS_PER_AXIS;
+    let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS*VOXELS_PER_AXIS*VOXELS_PER_AXIS);
     let idx=0;
-    for(let x=-VOXELS_PER_AXIS;x<VOXELS_PER_AXIS;x++){
-      for(let y=-VOXELS_PER_AXIS;y<VOXELS_PER_AXIS;y++){
-        for(let z=-VOXELS_PER_AXIS;z<VOXELS_PER_AXIS;z++){
+    for(let x=-VOXELS_PER_HALF_AXIS;x<VOXELS_PER_HALF_AXIS;x++){
+      for(let y=-VOXELS_PER_HALF_AXIS;y<VOXELS_PER_HALF_AXIS;y++){
+        for(let z=-VOXELS_PER_HALF_AXIS;z<VOXELS_PER_HALF_AXIS;z++){
           console.log("Voxelizing:" + x +","+y+","+z);
 
           const x1=x*VOXEL_SIZE;
@@ -361,11 +361,11 @@ export class HalfedgeMesh {
           const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
           mesh.position.set(x1,y1,z1);
 
-          const helper = new THREE.Box3Helper( box);
+          const helper = new THREE.Box3Helper(box);
 
-          //if(intersectsAny){
+          if(intersectsAny){
             scene.add(helper);
-          //}
+          }
           //ret[idx]=helper;
           idx++;
         }

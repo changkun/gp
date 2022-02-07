@@ -48,7 +48,7 @@ export default class Renderer {
       0.1,
       1000
     );
-    this.camera.position.z = 3.5;
+    this.camera.position.z = 2.5;
     window.addEventListener(
       'resize',
       () => {
