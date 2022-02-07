@@ -1,8 +1,7 @@
 # Individual Project - Voxelizer
 
 # Installation and running
-npm install 
-npm start
+npm install & npm start
 
 # Usage
 Use "showVoxels" to display. Use "n half vox per axis" to change the size of the individual voxel cubes.
@@ -12,9 +11,8 @@ Since at the time the algorithm only performs Surface Voxelization, the only con
 is that it needs to be a manifold mesh. The input mesh is scaled and translated to fit into a unit cube (cube size 1 with center(0,0,0) ).
 This makes it easier to display and the voxelizing algorithm only needs to check a pre-defined axis range.
 
-# Current TODOs
 # LIMITATION
-I did not add the code to efficiently create a single half-edge mesh during or after the voxelizing step. At the time, only Three.js is used
+1) I did not add the code to efficiently create a single half-edge mesh during or after the voxelizing step. At the time, only Three.js is used
 to visualize the voxels. 
 I plan to add a method appendNewCube(Cube cube) that merges each new cube into the already existing mesh.
 
