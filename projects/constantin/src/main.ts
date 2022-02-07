@@ -26,6 +26,7 @@ import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelpe
 import {Vector} from './linalg/vec';
 import {colormap} from './colors';
 import {AABB} from './geometry/aabb';
+import { Voxelizer } from './voxelizer';
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -36,6 +37,7 @@ export default class Main extends Renderer {
   internal: {
     mesh?: HalfedgeMesh; // internal mesh object
     mesh3js?: Mesh; // three.js buffer geometry object
+    voxelizer?:Voxelizer; // Consti10 handle to voxels
     normalHelper?: VertexNormalsHelper;
     wireframeHelper?: LineSegments;
     halfedgesHelper?: LineSegments;
@@ -132,9 +134,9 @@ export default class Main extends Renderer {
       .name('show voxels')
       .listen()
       .onChange(show => {
-        /*show
-          ? this.scene.add(this.internal.halfedgesHelper!)
-          : this.scene.remove(this.internal.halfedgesHelper!);*/
+        show
+          ? this.internal.voxelizer!.addToScene(this.scene)
+          :  this.internal.voxelizer!.removeFromScene(this.scene);
       });  
 
     const methods = this.gui.addFolder('Methods');
@@ -184,6 +186,7 @@ export default class Main extends Renderer {
       this.scene.remove(this.internal.mesh3js!);
     }
     this.internal.mesh = new HalfedgeMesh(data);
+    this.internal.voxelizer = new Voxelizer();
     this.renderMesh();
   }
   exportScreenshot() {
@@ -357,13 +360,6 @@ export default class Main extends Renderer {
     if(this.params.showHalfedges){
       this.scene.add(this.internal.halfedgesHelper);
     }
-    if(this.params.showVoxels){
-      //this.scene.add(this.internal.halfedgesHelper);
-    }
-
-    // add voxels loop
-    //const mesh = new Mesh(new BoxBufferGeometry(1, 1, 1),new MeshPhongMaterial({color: 'red'}));
-    //this.scene.add(mesh);
 
     this.internal.mesh3js!.geometry.computeBoundingBox();
     let box = new Box3();
@@ -372,9 +368,10 @@ export default class Main extends Renderer {
     //this.scene.add(helper);
     AABB.debugBoundingBox(box);
 
-    const tmp=this.internal.mesh!.createVoxels(this.scene);
-    for(let i=0;i<tmp.length;i++){
-      //this.scene.add(tmp[i]);
+    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene);
+
+    if(this.params.showVoxels){
+      this.internal.voxelizer!.addToScene(this.scene);
     }
   }
 }
