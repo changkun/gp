@@ -7,7 +7,7 @@
 |![](./out/render_0.png)|![](./out/render_100.png)|![](./out/render_500.png)|![](./out/render_1000.png)|...|![](./deform.png)|
 
 # My Best Run
-| Iter=0 | Iter=1000 | Iter=2000 | Iter=3000 | ... | Target |
+| Iter=0 | Iter=1000 | Iter=2000 | Iter=3000 | ... | Final(5000) |
 |:------:|:------:|:------:|:------:|:------:|:------:|
 |![](./out_test1/render_0.png)|![](./out_test1/render_1000.png)|![](./out_test1/render_2000.png)|![](./out_test1/render_3000.png)|...|![](./out_test1/render_final.png)|
 
@@ -23,6 +23,8 @@ The `data` folder provides two meshes: bunny.obj as our learning target, and sou
 
 ```
 The submitted loss function uses similar weights as the losses from the Pytorch3D "deform dolphin" project. However, the N of samples taken from the source and dest mesh per iteration had to be increased for the best results. I played with the weights a lot, but modifying the N of iterations and N of samples had the biggest effects. Comparing the results was also not easy, since each training phase took quite a while to complete. While playing with the parameters, I had to reduce the samples taken by quite a lot. The Best Run (See above images) used 4000 iterations and took ~4h to complete on my system (i7 laptop CPU, Gigabyte Aero 15X).
+Note: I've added the code to also render the image and compute the loss between target and current rendered image. It can be enabled by also setting 
+ENABLE_3D_RENDERING_LOSS=True. However, I cannot test this configuration due to computational limitations.
 ```
 
 2. Which part is the most time consuming for you to implement?
