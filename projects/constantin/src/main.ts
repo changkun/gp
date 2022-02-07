@@ -171,7 +171,7 @@ export default class Main extends Renderer {
       .onChange(() => this.updateVoxelizer());
     folder1
       .add(this.params,'computationTime')
-      .name("computation time(ms)")
+      .name("computation time_ms")
       .listen();
     folder1.open();
 
@@ -363,11 +363,13 @@ export default class Main extends Renderer {
     }
 
     this.internal.mesh3js!.geometry.computeBoundingBox();
-    let box = new Box3();
-    box.copy(this.internal.mesh3js!.geometry.boundingBox!);
+    //let box = new Box3();
+    //box.copy(this.internal.mesh3js!.geometry.boundingBox!);
+    let box = new Box3()
     const helper = new Box3Helper(box);
     //this.scene.add(helper);
     AABB.debugBoundingBox(box);
+    //Voxelizer.addCubeSizeOne(this.scene);
 
     this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
     this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;

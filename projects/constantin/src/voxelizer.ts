@@ -38,6 +38,10 @@ export class Voxelizer {
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
         let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
         let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
+
+        var singleGeometry = new THREE.BufferGeometry();
+        //const tmpCube=new THREE.BoxBufferGeometry(1,1,1);
+        //THREE.GeometryUtils.merge(singleGeometry,tmpCube);
     
         const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
         const VOXELS_PER_AXIS=VOXELS_PER_HALF_AXIS*2;
@@ -68,7 +72,8 @@ export class Voxelizer {
                 }
                 //const geometry=new THREE.BoxBufferGeometry()
                 const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
-                const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
+                //const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
+                const mesh = new THREE.Mesh(geometry,materialGreen);
                 mesh.position.set(x1,y1,z1);
 
                 const helper = new THREE.Box3Helper(box);
@@ -76,12 +81,19 @@ export class Voxelizer {
                 if(intersectsAny){
                     //scene.add(helper);
                     this.helperBoxes.push(helper);
+                    //scene.add(mesh);
+
+                    //mesh.updateMatrix();
+                    //singleGeometry.merge(mesh.geometry);
+                    //THREE.GeometryUtils.merge(singleGeometry,mesh);
                 }
                 //ret[idx]=helper;
                 idx++;
             }
             }
         }
+        var singleGeometryMesh = new THREE.Mesh(singleGeometry, materialRed);
+        //scene.add(singleGeometryMesh);
 
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
@@ -104,6 +116,15 @@ export class Voxelizer {
         for(let i=0;i<this.helperBoxes.length;i++){
             scene.remove(this.helperBoxes[i]);
         }
+    }
+
+    public static addCubeSizeOne(scene:THREE.Scene){
+        const halfSize=0.5;
+        const min=new THREE.Vector3(-halfSize,-halfSize,-halfSize);
+        const max=new THREE.Vector3(halfSize,halfSize,halfSize);
+        const box = new THREE.Box3(min,max);
+        const helper = new THREE.Box3Helper(box);
+        scene.add(helper);
     }
 
 }
