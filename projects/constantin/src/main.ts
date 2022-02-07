@@ -38,12 +38,15 @@ export default class Main extends Renderer {
     mesh3js?: Mesh; // three.js buffer geometry object
     normalHelper?: VertexNormalsHelper;
     wireframeHelper?: LineSegments;
+    halfedgesHelper?: LineSegments;
   };
   params: {
     import: () => void;
     export: () => void;
     showNormals: boolean;
     showWireframe: boolean;
+    showHalfedges:boolean;
+    showVoxels:boolean;
     normalMethod: NormalMethod;
     curvatureMethod: CurvatureMethod;
     laplacian: WeightType;
@@ -81,6 +84,8 @@ export default class Main extends Renderer {
       export: () => this.exportScreenshot(),
       showNormals: false,
       showWireframe: false,
+      showHalfedges:false,
+      showVoxels:false,
       normalMethod: NormalMethod.EqualWeighted,
       curvatureMethod: CurvatureMethod.None,
       laplacian: WeightType.Uniform,
@@ -113,6 +118,24 @@ export default class Main extends Renderer {
           ? this.scene.add(this.internal.wireframeHelper!)
           : this.scene.remove(this.internal.wireframeHelper!);
       });
+    this.gui
+      .add(this.params, 'showHalfedges')
+      .name('show halfedges')
+      .listen()
+      .onChange(show => {
+        show
+          ? this.scene.add(this.internal.halfedgesHelper!)
+          : this.scene.remove(this.internal.halfedgesHelper!);
+      });  
+    this.gui
+      .add(this.params, 'showVoxels')
+      .name('show voxels')
+      .listen()
+      .onChange(show => {
+        /*show
+          ? this.scene.add(this.internal.halfedgesHelper!)
+          : this.scene.remove(this.internal.halfedgesHelper!);*/
+      });  
 
     const methods = this.gui.addFolder('Methods');
 
@@ -252,6 +275,9 @@ export default class Main extends Renderer {
     if (this.internal.wireframeHelper !== null) {
       this.scene.remove(this.internal.wireframeHelper!);
     }
+    if (this.internal.halfedgesHelper !== null) {
+      this.scene.remove(this.internal.halfedgesHelper!);
+    }
     if (this.internal.mesh3js !== null) {
       this.scene.remove(this.internal.mesh3js!);
     }
@@ -316,6 +342,10 @@ export default class Main extends Renderer {
       new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 1})
     );
+    this.internal.halfedgesHelper = new LineSegments(
+      new WireframeGeometry(g),
+      new LineBasicMaterial({color: 0x000000, linewidth: 1})
+    );
 
     this.scene.add(this.internal.mesh3js);
     if (this.params.showNormals) {
@@ -323,6 +353,12 @@ export default class Main extends Renderer {
     }
     if (this.params.showWireframe) {
       this.scene.add(this.internal.wireframeHelper);
+    }
+    if(this.params.showHalfedges){
+      this.scene.add(this.internal.halfedgesHelper);
+    }
+    if(this.params.showVoxels){
+      //this.scene.add(this.internal.halfedgesHelper);
     }
 
     // add voxels loop
