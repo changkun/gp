@@ -93,8 +93,8 @@ The timeline for individual projects are as follows:
 | Proposal Submission                 | 01.01.2022 23:59:59 |
 | Project Presentation (Idea-Pitch)   | 24.01.2022 |
 | Project Presentation (Intermediate) | 07.02.2022|
-| Video Submission                    | 13.01.2022 23:59:59 |
-| Presentation                        | 13.02.2022 23:59:59 |
+| Video Submission                    | 20.01.2022 23:59:59 |
+| Presentation                        | 20.02.2022 23:59:59 |
 | Code Submission                     | 20.02.2022 23:59:59 |
 | Project Presentation (Final)        | 21.02.2022 |
 
