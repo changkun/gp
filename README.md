@@ -44,16 +44,16 @@ During the rest of the semester, students should propose a project idea througho
 
 | Date      | Topic                                            | Slides |
 |:---------:|:-------------------------------------------------|:--:|
-|           | Organization                                     | <img src="./slides/0-org.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/0-org) |
-|18.10.2021 | Introduction                                     | <img src="./slides/1-intro.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/1-intro) |
-|25.10.2021 | Discrete Differential Geometry                   | <img src="./slides/2-ddg.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/2-ddg) |
-|08.11.2021 | Smoothing                                        | <img src="./slides/3-smooth.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/3-smooth) |
-|15.11.2021 | Parameterization                                 | <img src="./slides/4-param.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/4-param) |
-|22.11.2021 | Remeshing                                        | <img src="./slides/5-remesh.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/5-remesh) |
-|29.11.2021 | Deformation                                      | <img src="./slides/6-deform.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/6-deform) |
-|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | <img src="./slides/extra-nanite.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
-|10.01.2021 | Data-driven Approach I | <img src="./slides/7-dda1.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/7-dda) |
-|24.01.2022 | Data-driven Approach II | <img src="./slides/8-dda2.png" width="200"/> </br> [Link](https://changkun.de/s/gp/ws21/8-dda2) |
+|           | Organization                                     | [<img src="./slides/0-org.png" width="200"/>](https://changkun.de/s/gp/ws21/0-org) |
+|18.10.2021 | Introduction                                     | [<img src="./slides/1-intro.png" width="200"/>](https://changkun.de/s/gp/ws21/1-intro) |
+|25.10.2021 | Discrete Differential Geometry                   | [<img src="./slides/2-ddg.png" width="200"/>](https://changkun.de/s/gp/ws21/2-ddg) |
+|08.11.2021 | Smoothing                                        | [<img src="./slides/3-smooth.png" width="200"/>](https://changkun.de/s/gp/ws21/3-smooth) |
+|15.11.2021 | Parameterization                                 | [<img src="./slides/4-param.png" width="200"/>](https://changkun.de/s/gp/ws21/4-param) |
+|22.11.2021 | Remeshing                                        | [<img src="./slides/5-remesh.png" width="200"/>](https://changkun.de/s/gp/ws21/5-remesh) |
+|29.11.2021 | Deformation                                      | [<img src="./slides/6-deform.png" width="200"/>](https://changkun.de/s/gp/ws21/6-deform) |
+|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [<img src="./slides/extra-nanite.png" width="200"/>](https://changkun.de/s/gp/ws21/extra1-nanite) |
+|10.01.2021 | Data-driven Approach I | [<img src="./slides/7-dda1.png" width="200"/>](https://changkun.de/s/gp/ws21/7-dda) |
+|24.01.2022 | Data-driven Approach II | [<img src="./slides/8-dda2.png" width="200"/>](https://changkun.de/s/gp/ws21/8-dda2) |
 
 ## Grading
 
@@ -93,10 +93,10 @@ The timeline for individual projects are as follows:
 | Proposal Submission                 | 01.01.2022 23:59:59 |
 | Project Presentation (Idea-Pitch)   | 24.01.2022 |
 | Project Presentation (Intermediate) | 07.02.2022|
-| Video Submission                    | 20.01.2022 23:59:59 |
-| Presentation                        | 20.02.2022 23:59:59 |
-| Code Submission                     | 20.02.2022 23:59:59 |
-| Project Presentation (Final)        | 21.02.2022 |
+| Video Submission                    | 23.01.2022 23:59:59 |
+| Presentation                        | 23.02.2022 23:59:59 |
+| Code Submission                     | 23.02.2022 23:59:59 |
+| Project Presentation (Final)        | 24.02.2022 14:00:00 |
 
 Note that the individual project can be conducted in parallel with the coding projects,
 meaning the individual projects can be submitted anytime before the deadline; Individual
