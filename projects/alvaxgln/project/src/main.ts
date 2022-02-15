@@ -282,6 +282,8 @@ export default class Main extends Renderer {
     this.internal.meshLeftNormalHelper!.update();
   }
   prepareBuf() {
+    //debugger;
+    console.log("about to prepare buffer:")
     // prepare threejs buffer data
     const v = this.internal.mesh!.verts!.length;
     this.bufpos = new Float32Array(v * 3);
@@ -298,9 +300,13 @@ export default class Main extends Renderer {
       max.y = Math.max(max.y, v!.pos.y);
       max.z = Math.max(max.z, v!.pos.z);
     });
+
+    console.log("prepare buffer: 0")
+
     const center = min.add(max).scale(1 / 2);
     const radius = max.sub(min).len() / 2;
     this.internal.mesh!.verts.forEach(v => {
+
       const i = v!.idx;
       // use AABB and rescale to viewport center
       const p = v!.pos.sub(center).scale(1 / radius);
@@ -308,16 +314,28 @@ export default class Main extends Renderer {
       this.bufpos[3 * i + 1] = p.y;
       this.bufpos[3 * i + 2] = p.z;
 
+      //debug
+      //console.log("prepare buffer: 2 at vert:" + i)
+
       // default GP blue color
       this.bufcolors[3 * i + 0] = 0;
       this.bufcolors[3 * i + 1] = 0.5;
       this.bufcolors[3 * i + 2] = 1;
 
+      //debug
+      //console.log("prepare buffer: 3 at vert:" + i)
+
       const n = v!.normal(this.params.normalMethod);
+      //debug
+      //console.log("prepare buffer: 4 at vert:" + i)
+
       this.bufnormals[3 * i + 0] = n.x;
       this.bufnormals[3 * i + 1] = n.y;
       this.bufnormals[3 * i + 2] = n.z;
+
+
     });
+    console.log("buffer prepared")
   }
   renderMeshLeft() {
     // clear old instances

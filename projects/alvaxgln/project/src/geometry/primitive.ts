@@ -59,7 +59,6 @@ export class Halfedge {
     //TODO: Check for boundary and skip if edge is on boundary
     if (this.onBoundary) return false;
 
-
     //verts of this face
     const v0 = this.vert!;
     const v1 = this.next!.vert!;
@@ -74,7 +73,8 @@ export class Halfedge {
     const f1 = v3.halfedge!.face!;
     const face_angle = f0.normal().angle(f1.normal())+Math.PI;
 
-    console.log("Winkel: "+ face_angle);
+    //Print angle for debug
+    //console.log("Winkel: "+ face_angle);
     if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)) return false;
 
     //calculates error of degree for current connectivity
@@ -282,15 +282,22 @@ export class Vertex {
     return n;
   }
 
-  //return error of degree (difference from optimum)
-  deg_error(deg: number){
-
+  //returns true if an edge connecting to the vertex lies on a boundary
+  onBoundary() :boolean{
     let onBoundary = false;
 
     //check if any of the verts halfedges are on a boundary and set it to true if so
     this.halfedges(h=>{
       if (h.onBoundary || h.twin!.onBoundary) onBoundary = true;
     })
+    
+    return onBoundary;
+  }
+
+  //return error of degree (difference from optimum)
+  deg_error(deg: number){
+
+    let onBoundary = this.onBoundary();
 
     //optimal degree for boundary verts is 4
     if (onBoundary) {
@@ -318,6 +325,9 @@ export class Vertex {
    * TODO: remove console logs for debugging
    */
   angle_smooth(): Vector{
+
+    //if the vertex is on a boundary it should not move
+    if(this.onBoundary()) return this.pos;
 
     let count = 0;
     let sum = new Vector(0,0,0,0);
@@ -359,7 +369,7 @@ export class Vertex {
 
 
       //debugging
-      console.log("Position of the vertices: v, p0, p1, p2");
+/*       console.log("Position of the vertices: v, p0, p1, p2");
       console.log(v);
       console.log(p0);
       console.log(p1);
@@ -368,21 +378,21 @@ export class Vertex {
       console.log("Angles: a, b");
       console.log(a);
       console.log(b);
-
+ */
       
       //new position on the edge after shifting
       let pos = v.add(vec_shift.scale(ratio));
 
       //debugging
-      console.log("new position on halfedge:");
+/*       console.log("new position on halfedge:");
       console.log(pos);
-
+ */
       //Find the new position by constructing a vector from p1 to pos, and then scale (p1->pos) to the original length of the edge
       pos = p1.add(pos.sub(p1).unit().scale(vec.len()));
 
-      console.log("new position 2:");
+/*       console.log("new position 2:");
       console.log(pos);
-      
+ */      
 
       //For weighted version find the new angle
       let ab = (a+b)/2
@@ -398,8 +408,9 @@ export class Vertex {
     //multiply results
     let res = sum.scale(1/count);
 
-    console.log("summe:");
+/*     console.log("summe:");
     console.log(res);
+ */
 
     //return new position vector
     return res;

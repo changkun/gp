@@ -303,28 +303,61 @@ export class HalfedgeMesh {
   }
 
 
+  basicEdgeFlip(){
+    //Step 1 basic edge flips:
+    let l = this.edges.length;
+
+    //set flipped true if an edge was flipped during that round
+    let flipped = 0;
+    
+    do{
+      flipped = 0;
+    //do rounds of flipping until no further improvement of regularity
+    for (let i = 0; i<l; i++){
+      let e = this.edges[i]!;
+      //console.log(e);
+      let flip = e.halfedge!.detectFlip();
+      if(flip) {
+        flipped = flipped + this.flip(e);
+        //debug
+        //console.log("Halfedge number " + i + ": " + flip + "!");
+      }
+  
+    }
+
+      console.log(flipped + " Edges were flipped!");
+    }while (flipped > 0);
+    //this.resetIndices();
+  }
+
   //Regularize the halfedge mesh
   //TODO: everything
   regularize(){
 
   console.log("regular!");
 
+  this.basicEdgeFlip();
 
-/*   for (let i = 0; i <600; i++){
+/* 
+   for (let i = 0; i <1000; i++){
     let h = this.halfedges[i]!;
     let flip = h.detectFlip();
     
     if(flip) {
-      this.flip(h);
+      this.flip(h.edge!);
       console.log("Halfedge number " + i + ": " + flip + "!")
+      
     
     }
   }
- */
+
+ */ 
+
+  //maybe check he 465/466 for bad angles
 
   
-  //this.angle_smooth();
 
+/*   //Test edge operations
   const e = this.edges[1]!;
   const e2 = this.edges[14]!;
   //console.log(e);
@@ -332,8 +365,9 @@ export class HalfedgeMesh {
   //this.flip(e);
   //this.collapse(e2, e2!.halfedge!.vert!.pos.add(e2!.halfedge!.vector().scale(0.5)));
   this.resetIndices();
+ */
 
-  console.log(this.verts[this.verts.length-1]);
+  //console.log(this.verts[this.verts.length-1]);
 
 /*
 //For testing
@@ -361,7 +395,7 @@ v.pos = v.angle_smooth();
     //calculate new position for all vertices and store them
     for (let [i,v] of this.verts.entries()){
 
-      console.log(i, v);
+      //console.log(i, v);
       verts_smooth[i] = v!.angle_smooth();
     
     }
@@ -378,15 +412,14 @@ v.pos = v.angle_smooth();
 
 
   //flips the halfedge h
-  flip(e: Edge){
+  flip(e: Edge): number{
 
   //TODO: fix indices
 
   //TODO: Check for flipped faces (maybe compare normals before and after)
 
   //TODO: Handle bad angles:
-  //When angle between h4->h1 or h2->h3 is too large don't flip
-  //When angle between f0 and f1 is too large or too small don't flip
+  //check for too big/small angle between f0 and f1
 
 
   //halfedges involved
@@ -396,6 +429,24 @@ v.pos = v.angle_smooth();
   const h2 = h.prev!;
   const h3 = h_twin.next!;
   const h4 = h_twin.prev!;
+
+  //dont flip boundary edges
+  if(h.onBoundary || h_twin.onBoundary){
+    console.log("Edge on Boundary, edge was not flipped!");
+    return 0;
+  }
+
+  //When angle between h4->h1 or h2->h3 is too large don't flip
+  //When angle between f0 and f1 is too large or too small don't flip
+  //check angles:
+  const angle1 = h4.vector().scale(-1).angle(h1.vector());
+  const angle2 = h2.vector().scale(-1).angle(h3.vector());
+  
+  if(angle1>=3 || angle2>=3){
+    console.log("Bad angles, edge was not flipped!");
+    return 0;
+  }
+
 
   //vertices involved
   const v0 = h.vert!;
@@ -415,6 +466,13 @@ v.pos = v.angle_smooth();
   //set face halfedges to safe halfedges
   f0.halfedge = h1;
   f1.halfedge = h3;
+
+  //set halfedge faces correctly
+  h1.face = f0;
+  h4.face = f0;
+
+  h2.face = f1;
+  h3.face = f1;
 
   //reassign connectivity
 
@@ -445,6 +503,7 @@ v.pos = v.angle_smooth();
   h4.prev = h;
 
   console.log("flipped!");
+  return 1;
 
   }
 
