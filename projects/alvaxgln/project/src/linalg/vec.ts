@@ -160,7 +160,11 @@ export class Vector {
 
 
     //TODO: find solution without Math.abs
-    const cos = this.dot(v)/(this.len() *v.len())
+    let cos = this.dot(v)/(this.len() *v.len());
+
+    //necessary because of some Numbers going beyond 1/-1
+    cos = Math.round((cos + Number.EPSILON) * 1000) / 1000
+
     return Math.acos(cos);
 
   }

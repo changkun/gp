@@ -25,6 +25,7 @@ export class HalfedgeMesh {
   halfedges: (Halfedge | null)[]; // a list of halfedges
   boundaries: Face[]; // an array of boundary loops
 
+  
   /**
    * constructor constructs the halfedge-based mesh representation.
    *
@@ -302,8 +303,62 @@ export class HalfedgeMesh {
     const reducedFaces = Math.floor(this.faces.length * reduceRatio);
   }
 
+//TODO: sort edges by error
+categorizeEdges(){
+  
+  //reset indices before categorization
+  this.resetIndices();
+
+  let longEdges = new Array();
+  let shortEdges = new Array();
+  let driftingEdges = new Array();
+
+  //find irregular vertices
+  const l = this.edges.length;
+
+  //sort edges into arrays
+  for(let i=0; i<l; i++){
+    const e = this.edges[i]!;
+
+    //if edge was deleted continue
+    if(e == null) continue;
+
+    const h = e.halfedge!;
+    const v1 = h.vert!
+    const v2 = h.twin!.vert!
+    
+    const deg1 = v1.deg_error(v1.deg());
+    const deg2 = v2.deg_error(v2.deg());
+
+    //if the edge has two irregular vertices add it to the appropriate array
+
+    //short edge
+    if(deg1 < 0 && deg2 < 0){
+      shortEdges.push(e);
+      this.collapse(e, v1.pos.add(h.vector().scale(0.5)));
+      this.basicEdgeFlip();
+    }
+
+    //long edge
+    if(deg1 > 0 && deg2 > 0){
+      shortEdges.push(e);
+      this.split(e);
+      this.basicEdgeFlip();
+    }
+
+    //drifting edge
+    if((deg1 > 0 && deg2 < 0) || (deg1 < 0 && deg2 > 0)){
+      driftingEdges.push(e);
+    }
+
+  }
+
+}
 
   basicEdgeFlip(){
+
+    this.resetIndices();
+
     //Step 1 basic edge flips:
     let l = this.edges.length;
 
@@ -338,6 +393,17 @@ export class HalfedgeMesh {
 
   this.basicEdgeFlip();
 
+  this.categorizeEdges();
+
+  console.log("End of regular!");
+
+  //this.testOperations()
+
+
+
+  }
+  
+  testOperations(){
 /* 
    for (let i = 0; i <1000; i++){
     let h = this.halfedges[i]!;
@@ -357,15 +423,21 @@ export class HalfedgeMesh {
 
   
 
-/*   //Test edge operations
+/* //Test edge operations
   const e = this.edges[1]!;
   const e2 = this.edges[14]!;
-  //console.log(e);
-  this.split(e!);
-  //this.flip(e);
-  //this.collapse(e2, e2!.halfedge!.vert!.pos.add(e2!.halfedge!.vector().scale(0.5)));
-  this.resetIndices();
+  //this.faces[150] = null;
+  //const e3 = this.faces[150]!.halfedge!.edge!;
+  //this.resetIndices();
+  //this.split(e3);
  */
+
+  //console.log(e);
+  //this.split(e2);
+  //this.flip(e);
+  //this.newCollapse(e2, e2!.halfedge!.vert!.pos.add(e2!.halfedge!.vector().scale(0.5)));
+  //this.resetIndices();
+ 
 
   //console.log(this.verts[this.verts.length-1]);
 
@@ -381,10 +453,8 @@ v.pos = v.angle_smooth();
   //this.flip(this.halfedges[2]!);
 
 
-
-
   }
-  
+
   //applies one round of angle based smoothing to the mesh
   //TODO: Add parameters
   angle_smooth(){
@@ -408,6 +478,8 @@ v.pos = v.angle_smooth();
     
     }
     
+    console.log("Angle based smoothing finished");
+
   }
 
 
@@ -442,6 +514,8 @@ v.pos = v.angle_smooth();
   const angle1 = h4.vector().scale(-1).angle(h1.vector());
   const angle2 = h2.vector().scale(-1).angle(h3.vector());
   
+
+  //TODO: Change 3 to Math.PI
   if(angle1>=3 || angle2>=3){
     console.log("Bad angles, edge was not flipped!");
     return 0;
@@ -508,15 +582,16 @@ v.pos = v.angle_smooth();
   }
 
   //splits edge in the middle
-  split(e: Edge) {
+  newSplit(e: Edge) {
 
     //TODO: Handle Boundary
     if (e.halfedge!.onBoundary || e.halfedge!.twin!.onBoundary){
       
-      console.log("edge on boundary!")
+      console.log("edge on boundary, not split!")
       return;
 
       }
+
     //get relevant halfedges
     const h0 = e.halfedge!;
     const h1 = h0.next!;
@@ -551,8 +626,10 @@ v.pos = v.angle_smooth();
     let new_h3_t = new Halfedge();
 
     //create new edges
+    //TODO: Add third edge
     let e_v2 = new Edge();
     let e_v3 = new Edge();
+    //let e_3...
 
     //assign halfedges to new edges
     e_v2.halfedge = new_h2;
@@ -656,17 +733,168 @@ v.pos = v.angle_smooth();
     this.edges.push(e_v3);
 
 
-    console.log("edge was split!")
+    console.log("edge: " + e +" was split!")
 
   }
 
   /**
+   * splits an edge in the middle
+   * @param e: the edge to be split
+   * 
+   */
+    split(e: Edge){
+
+      const h = e.halfedge!;
+      const h_t = h.twin!;
+
+      if(h.onBoundary || h_t.onBoundary){
+        console.log("Edge on boundary, not split")
+        return;
+      }
+
+      const h1 = h.next!;
+      const h2 = h.prev!;
+      const h0 = h_t.next!;
+      const h3 = h0.next!;
+
+      //create new halfedges
+      let h_new = new Halfedge();
+      let h_t_new = new Halfedge();
+      let h_2_new = new Halfedge();
+      let h_2_t_new = new Halfedge();
+      let h_3_new = new Halfedge();
+      let h_3_t_new = new Halfedge();
+
+      const v0 = h.vert!;
+      const v1 = h1.vert!;
+      const v2 = h2.vert!;
+      const v3 = h3.vert!;
+
+      const f0 = h.face!;
+      const f2 = h_t.face!;
+
+      //create new faces
+      const f1 = new Face();
+      const f3 = new Face();
+
+
+      //create new edges
+      let e_new = new Edge();
+      let e_2_new = new Edge();
+      let e_3_new = new Edge();
+
+      //create new vertex
+      let m = new Vertex(v0.pos.add(h.vector().scale(0.5)));
+
+
+      //assign connectivity:
+      
+      //assign old stuff to correct things
+      h0.face = f1;
+      h1.face = f3;
+      
+      f1.halfedge = h0;
+      f3.halfedge = h1;
+      f0.halfedge = h2;
+      f2.halfedge = h3;
+
+      e.halfedge = h;
+
+      //assign new stuff
+
+      //assign halfedges to edges
+      e_new.halfedge = h_t;
+      e_2_new.halfedge = h_2_new;
+      e_3_new.halfedge = h_3_new;
+
+      //assign edges to halfedges
+      h_t_new.edge = e;
+      h_t.edge = e_new;
+      h_new.edge = e_new;
+      h_2_new.edge = e_2_new;
+      h_3_new.edge = e_3_new;
+      h_2_t_new.edge = e_2_new;
+      h_3_t_new.edge = e_3_new;
+
+      //assign verts to halfedges
+      h_2_new.vert = m;
+      h_3_new.vert = m;
+      h_new.vert = m;
+      h_t_new.vert = m;
+
+      h_2_t_new.vert = v2;
+      h_3_t_new.vert = v3;
+      
+      //assign faces to halfedges
+      h_new.face = f3;
+      h_t_new.face = f1;
+      h_2_new.face = f0;
+      h_2_t_new.face = f3;
+      h_3_new.face = f2;
+      h_3_t_new.face = f1;
+
+      //assign halfedge to new vert
+      m.halfedge = h_new;
+
+      //assign halfedge pointers
+
+      //f0
+      h.next = h_2_new;
+      h_2_new.next = h2;
+      h_2_new.prev = h;
+      h2.prev = h_2_new;
+
+      h.twin = h_t_new;
+      h_2_new.twin = h_2_t_new;
+
+      //f1
+      h0.next = h_3_t_new;
+      h0.prev = h_t_new;
+      h_3_t_new.next = h_t_new;
+      h_3_t_new.prev = h0;
+      h_t_new.next = h0;
+      h_t_new.prev = h_3_t_new;
+
+      h_t_new.twin = h;
+      h_3_t_new.twin = h_3_new;
+
+      //f2
+      h3.prev = h_3_new;
+      h_t.next = h_3_new;
+      h_3_new.next = h3;
+      h_3_new.prev = h_t;
+
+      h_3_new.twin = h_3_t_new;
+      h_t.twin = h_new;
+
+      //f3
+      h1.next = h_2_t_new;
+      h1.prev = h_new;
+      h_2_t_new.next = h_new;
+      h_2_t_new.prev = h1;
+      h_new.next = h1;
+      h_new.prev = h_2_t_new;
+
+      h_new.twin = h_t;
+      h_2_t_new.twin = h_2_new;
+
+      //add new elements to mesh
+      this.verts.push(m);
+      this.faces.push(f3,f1);
+      this.halfedges.push(h_new, h_2_new, h_3_new, h_t_new, h_2_t_new, h_3_t_new);
+      this.edges.push(e_new, e_2_new, e_3_new);
+
+      console.log("edge was split")
+
+    }
+
+  /**
    * collapses an edge at specified position
-   * @param h: the halfedge to be collapsed
+   * @param e: the edge to be collapsed
    * @param x: position vector of the new vertex
    * idea: "glue" together h.prev and h.next, as well as h.twin.prev and h.twin.next
    */
-   collapse(e: Edge, x: Vector){
+   newCollapse(e: Edge, x: Vector){
 
     //TODO: Check if a Vertex of edge is part of boundary and then stop
     //TODO: Check if v3 == v4;
@@ -674,10 +902,21 @@ v.pos = v.angle_smooth();
 
     const h = e.halfedge!;
 
+    //check for boundary
+    if(h.onBoundary || h.twin!.onBoundary){
+      console.log("Edge on boundary, was not collapsed");
+      return;
+    }
+
     const v1 = h.vert!;
     const v2 = h.next!.vert!;
     const v3 = h.prev!.vert!;
     const v4 = h.twin!.prev!.vert!;
+
+    if(v3 == v4){
+      console.log("V3=V4, edge was not collapsed");
+      return;
+    }
 
     const h1 = h.twin!;
     const h2 = h.next!;
@@ -693,11 +932,13 @@ v.pos = v.angle_smooth();
     const f1 = h.face;
     const f2 = h.twin!.face;
 
+
     //new Vertex
     let v_x = new Vertex(x);
 
     //set position of new vertex
     v_x.pos = x;
+    //v_x.pos = new Vector()
 
     //reassign halfedges to new vertex
     v1.halfedges((v)=>{
@@ -779,7 +1020,143 @@ v.pos = v.angle_smooth();
 
 
     this.resetIndices();
-    //console.log("indices reset");
+    console.log("edge collapsed!");
+    
+    
+  }
+
+  /**
+   * collapses an edge at specified position
+   * @param e: the edge to be collapsed
+   * @param x: position vector of the new vertex
+   * idea: "glue" together h.prev and h.next, as well as h.twin.prev and h.twin.next
+   */
+   collapse(e: Edge, x: Vector){
+
+    //TODO: Check if a Vertex of edge is part of boundary and then stop
+    //TODO: Check if v3 == v4;
+    //TODO: Check for unsafe Collapse, and skip edge if collapse is unsafe
+
+    this.resetIndices();
+
+    const h = e.halfedge!;
+
+    //check for boundary
+    if(h.onBoundary || h.twin!.onBoundary){
+      console.log("Edge on boundary, was not collapsed");
+      return;
+    }
+
+    const v1 = h.vert!;
+    const v2 = h.next!.vert!;
+    const v3 = h.prev!.vert!;
+    const v4 = h.twin!.prev!.vert!;
+
+    if(v3 == v4){
+      console.log("V3=V4, edge was not collapsed");
+      return;
+    }
+
+    const h1 = h.twin!;
+    const h2 = h.next!;
+    const h3 = h.prev!;
+    const h4 = h.twin!.next!;
+    const h5 = h.twin!.prev!;
+
+    const h2t = h2.twin!;
+    const h3t = h3.twin!;
+    const h4t = h4.twin!;
+    const h5t = h5.twin!;
+
+    const f1 = h.face!;
+    const f2 = h.twin!.face!;
+
+    //remaining edges
+    const e1 = h3t.edge!;
+    const e2 = h4t.edge!;
+
+    //edges to delete:
+    const e3 = h2.edge!;
+    const e4 = h5.edge!;
+
+    //set position of new vertex
+    v1.pos = x;
+    //v_x.pos = new Vector()
+
+
+    v2.halfedges((v)=>{
+      v.vert = v1;
+    })
+
+    
+    //set safe halfedge for new vertex
+    v1.halfedge = h3t;
+
+    // set new twins for face outer halfedges
+    h3t.twin = h2t;
+    h2t.twin = h3t;
+
+    h4t.twin = h5t;
+    h5t.twin = h4t;
+
+    //reassign halfedge of edges
+    e1.halfedge = h3t;
+    h2t.edge = e1;
+
+    e2.halfedge = h4t;
+    h5t.edge = e2;
+
+    //assign new halfedges to v3, and v4
+    v3.halfedge = h2t;
+    v4.halfedge = h4t;
+
+    
+    //halfedges to be deleted:
+    let h_del = [h.idx, h1.idx, h2.idx, h3.idx, h4.idx, h5.idx];
+
+
+    //edges to be deleted:
+    let e_del = [e.idx, e3.idx, e4.idx];
+
+    // faces to be deleted
+    let f_del = [f1.idx, f2.idx];
+
+    //console.log("Built arrays for idxs of unused geometry");
+
+    //delete unused geometry
+    for (let i of h_del){
+      this.halfedges[i] = null;
+    }
+
+    for (let i of e_del){
+      //mark edges as removed
+      this.edges[i]!.removed = true;
+      this.edges[i] = null;
+    }
+    
+
+
+    for (let i of f_del){
+      this.faces[i] = null;
+    }
+
+    this.verts[v2.idx] = null;
+
+    //console.log("deleted old geometry");
+
+    //reset error for modified edges
+    v1.halfedges((h,i)=>{
+      
+       /*  console.log("Now in Halfedges of vert:");
+        console.log(h);
+        console.log(h.twin?.next); */
+    
+      h.edge!.err = -1;
+    })
+
+
+    this.resetIndices();
+    console.log("edge collapsed!");
     
     
   }

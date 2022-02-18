@@ -51,12 +51,11 @@ export class Halfedge {
   }
 
   //Checks if edge should be flipped
-  //TODO: handle boundary
   detectFlip(){
 
-    //TODO: check for bad angles and return false if bad angles are detected
+    //TODO: check for bad angles and return false if bad angles are detected (moved to flip function)
 
-    //TODO: Check for boundary and skip if edge is on boundary
+    //Check for boundary and skip if edge is on boundary
     if (this.onBoundary) return false;
 
     //verts of this face
@@ -78,10 +77,10 @@ export class Halfedge {
     if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)) return false;
 
     //calculates error of degree for current connectivity
-    let deg_error_current = v0.deg_error(v0.deg()) + v1.deg_error(v1.deg()) + v2.deg_error(v2.deg()) + v3.deg_error(v3.deg());
+    let deg_error_current = Math.abs(v0.deg_error(v0.deg())) + Math.abs(v1.deg_error(v1.deg())) + Math.abs(v2.deg_error(v2.deg())) + Math.abs(v3.deg_error(v3.deg()));
 
     //calculates error of degree if edge was flipped
-    let deg_error_new = v0.deg_error(v0.deg()-1) + v1.deg_error(v1.deg()-1) + v2.deg_error(v2.deg()+1) + v3.deg_error(v3.deg()+1);
+    let deg_error_new = Math.abs(v0.deg_error(v0.deg()-1)) + Math.abs(v1.deg_error(v1.deg()-1)) + Math.abs(v2.deg_error(v2.deg()+1)) + Math.abs(v3.deg_error(v3.deg()+1));
 
     //returns true if the current edge error is greater then then one with edge flipped
     return deg_error_current > deg_error_new;
@@ -273,7 +272,6 @@ export class Vertex {
   }
 
   //returns the degree of a vertex
-  //TODO: handle boundary
   deg(){
     let n = 0;
     this.halfedges(()=>{
@@ -298,15 +296,16 @@ export class Vertex {
   deg_error(deg: number){
 
     let onBoundary = this.onBoundary();
+    //const deg = this.deg();
 
     //optimal degree for boundary verts is 4
     if (onBoundary) {
-      return Math.abs(deg-4);
+      return deg-4;
     }
 
     //for all other vertices optimal degree is 6
     else{
-      return Math.abs(deg-6);
+      return deg-6;
     }
 
   }
@@ -403,6 +402,20 @@ export class Vertex {
       //add value to sum
       sum = sum.add(pos.scale(a_i));
 
+      //debugging
+/*       if(sum.w == 0){
+        console.log(vec);
+        console.log(vec0);
+        console.log(vec1);
+        console.log("cosinus: " + vec.dot(vec0)/(vec.len() *vec0.len()));
+  
+        console.log("Angles: a, b");
+        console.log(a);
+        console.log(b);
+  
+      }
+  
+ */
     }); 
 
     //multiply results
@@ -411,10 +424,15 @@ export class Vertex {
 /*     console.log("summe:");
     console.log(res);
  */
-
+ 
     //return new position vector
     return res;
 
+  }
+
+  //Applies angle based smoothing to the vertex
+  apply_angle_smooth(){
+    this.pos = this.angle_smooth();
   }
 
   /**
