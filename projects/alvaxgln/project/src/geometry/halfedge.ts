@@ -303,62 +303,391 @@ export class HalfedgeMesh {
     const reducedFaces = Math.floor(this.faces.length * reduceRatio);
   }
 
-//TODO: sort edges by error
-categorizeEdges(){
-  
-  //reset indices before categorization
-  this.resetIndices();
-
-  let longEdges = new Array();
-  let shortEdges = new Array();
-  let driftingEdges = new Array();
-
-  //find irregular vertices
-  const l = this.edges.length;
-
-  //sort edges into arrays
-  for(let i=0; i<l; i++){
-    const e = this.edges[i]!;
-
-    //if edge was deleted continue
-    if(e == null) continue;
+  handleEasyEdge(e: Edge): number{
 
     const h = e.halfedge!;
+
+    //if edge is on boundary skip
+    if(h.onBoundary|| h.twin!.onBoundary) return 0;
+    
     const v1 = h.vert!
     const v2 = h.twin!.vert!
     
     const deg1 = v1.deg_error(v1.deg());
     const deg2 = v2.deg_error(v2.deg());
 
-    //if the edge has two irregular vertices add it to the appropriate array
-
     //short edge
     if(deg1 < 0 && deg2 < 0){
-      shortEdges.push(e);
+      const v3 = h.prev!.vert!;
+      const v4 = h.twin!.next!.twin!.vert!;
+
       this.collapse(e, v1.pos.add(h.vector().scale(0.5)));
-      this.basicEdgeFlip();
+      //TODO: Check for problems with leftover verts
+      //console.log("collapsed!");
+      this.localEdgeflip([v1, v3, v4]);
+      //this.basicEdgeFlip();
+      return 1;
     }
 
     //long edge
     if(deg1 > 0 && deg2 > 0){
-      shortEdges.push(e);
       this.split(e);
-      this.basicEdgeFlip();
+      const m = h.next!.vert!;
+      const v3 = h.prev!.vert!;
+      const v4 = h.twin!.next!.twin!.vert!;
+      //console.log("split!");
+      this.localEdgeflip([m, v1, v2, v3, v4]);
+      //this.basicEdgeFlip();
+      return 1;
     }
+    
+    return 0;
+  }
 
-    //drifting edge
-    if((deg1 > 0 && deg2 < 0) || (deg1 < 0 && deg2 > 0)){
-      driftingEdges.push(e);
+  easyEdges(){
+    let l = this.edges.length;
+    let operations = 1;
+
+    //Repeat as long as there are easy edges
+    while(operations > 0){
+      operations = 0;
+      let l = this.edges.length;
+
+      for(let i=0; i<l; i++){
+
+        const e = this.edges[i]!;
+
+        //if edge was deleted continue
+        if(e == null) continue;
+
+        //handle easy edge
+      operations += this.handleEasyEdge(e);
+
+      }
+    }
+  }
+
+  driftingEdges(){
+
+    const l = this.edges.length;
+    //sort edges into arrays
+    for(let i=0; i<l; i++){
+      const e = this.edges[i]!;
+
+      //if edge was deleted continue
+      if(e == null) continue;
+
+      const h = e.halfedge!;
+
+      //if edge is on boundary skip
+      if(h.onBoundary|| h.twin!.onBoundary) continue;
+      
+      const v1 = h.vert!
+      const v2 = h.twin!.vert!
+      
+      const deg1 = v1.deg_error(v1.deg());
+      const deg2 = v2.deg_error(v2.deg());
+
+      //drifting edge
+      if((deg1 > 0 && deg2 < 0) || (deg1 < 0 && deg2 > 0)){
+
+        //get appropriate halfedge for search:
+        //(it is the Halfedge going out from the vert with higher than optimal degree)
+        let drift = h;
+        if(deg2 > 0){
+          drift = h.twin!;
+          //nextVert = h.twin!.prev!.vert!;
+        }
+
+        const flips = this.checkDrift(drift);
+        console.log("Drifting edge needs " + flips + "flips!");
+        
+        //move drifting edge
+        for(let i = 0; i<flips; i++){
+
+          //indicates if flips will be succesfull
+          let canflip = true;
+
+          //edge to be flipped
+          const e_flip = drift.prev!.edge!;
+          //next position of drifting edge
+          drift = drift.prev!.twin!.next!.twin!
+
+          canflip = e_flip.halfedge!.detectFlip();
+
+          if(!canflip){
+            console.log("Can't flip drifting edge!");
+            break;
+          }
+
+          //check if flip was succesfull
+          if(this.flip(e_flip) != 1) break;
+
+          //TODO: reverse flips if one of them was unsuccesfull
+          
+        }
+
+        //There should now be a long edge or short edge adjacent to the drifting edge (or a basic edge flip possible)
+        //this.basicEdgeFlip();
+        this.localEdgeflip([drift.vert!, drift.twin!.vert!]);
+
+        //console.log("drifting edge pos2");
+
+        //TODO: check if edge collapse/split can interfere with Vertex.halfedges() returning
+        
+        let toCheck = new Array();
+
+        drift.vert!.halfedges(h=>{
+          toCheck.push(h);
+          //this.handleEasyEdge(h.edge!);
+        })
+
+        drift.twin!.vert!.halfedges(h=>{
+          toCheck.push(h);
+          //this.handleEasyEdge(h.edge!);
+        })
+
+        //TODO: this could contain deleted verts/edges after collapse
+        for(let h of toCheck){
+          if(h.edge!.removed){
+            continue;
+          }
+          this.handleEasyEdge(h.edge!);
+        }
+
+        //TODO: check if flipping was successful
+        //TODO: Check if edge is on boundary
+
+        //Check if edge met irregular vertex
+
+        //repeat until edge becomes easy
+
+      }
+      
+      if(i == l-1){
+        console.log("almost done with drifting edges")
+      }
+
     }
 
   }
 
-}
+  //TODO: sort edges by error
+  categorizeEdges(){
+    
+    //reset indices before categorization
+    //this.resetIndices();
 
+    let longEdges = new Array();
+    let shortEdges = new Array();
+    let driftingEdges = new Array();
+
+    //find irregular vertices
+    const l = this.edges.length;
+
+    //sort edges into arrays
+    for(let i=0; i<l; i++){
+      const e = this.edges[i]!;
+
+      //if edge was deleted continue
+      if(e == null) continue;
+
+      const h = e.halfedge!;
+
+      //if edge is on boundary skip
+      if(h.onBoundary|| h.twin!.onBoundary) continue;
+      
+      const v1 = h.vert!
+      const v2 = h.twin!.vert!
+      
+      const deg1 = v1.deg_error(v1.deg());
+      const deg2 = v2.deg_error(v2.deg());
+
+      //if the edge has two irregular vertices add it to the appropriate array
+
+      //short edge
+      if(deg1 < 0 && deg2 < 0){
+        shortEdges.push(e);
+        this.collapse(e, v1.pos.add(h.vector().scale(0.5)));
+        this.basicEdgeFlip();
+      }
+
+      //long edge
+      if(deg1 > 0 && deg2 > 0){
+        shortEdges.push(e);
+        this.split(e);
+        this.basicEdgeFlip();
+      }
+
+      //drifting edge
+      if((deg1 > 0 && deg2 < 0) || (deg1 < 0 && deg2 > 0)){
+        driftingEdges.push(e);
+
+        //get appropriate halfedge for search:
+        //(it is the Halfedge going from the vert with higher than optimal degree)
+        let drift = h;
+        if(deg2 > 0){
+          drift = h.twin!;
+          //nextVert = h.twin!.prev!.vert!;
+        }
+
+        const flips = this.checkDrift(h);
+        console.log("Drifting edge needs " + flips + "flips!");
+        
+        //move drifting edge
+        for(let i = 0; i<flips; i++){
+          //edge to be flipped
+          const e_flip = drift.prev!.edge!;
+          //next position of drifting edge
+          drift = drift.prev!.twin!.next!.twin!
+
+          //check if flip was succesfull
+          //if(this.flip(e_flip) != 1) break;
+          
+        }
+
+        //There should now be a long edge or short edge adjacent to the drifting edge (or a basic edge flip possible)
+
+
+
+        //TODO: check if flipping was successful
+        //TODO: Check if edge is on boundary
+
+        //Check if edge met irregular vertex
+
+        //repeat until edge becomes easy
+
+      }
+
+    }
+
+  }
+
+  //find number of flips required to meet an irregular vertex
+  //returns numer of flips the drifting edge needs to make until it meets another irregular vertex
+  //TODO: Check movement to other side
+  checkDrift(h: Halfedge): number{
+
+    if(h.onBoundary || h.twin!.onBoundary) return 0;
+
+    const initialHe = h;
+    //next drifting halfedge after flip
+    let nextHe = h;
+    //number of flips until irregular vertex is reached
+    let num_flips = 1;
+
+    //TODO: check for boundary
+    //TODO: assign nextHe one before, so initial vertices wont count as found
+    //only check neighbours for first iteration, since other edges would have been detected and resolved already 
+
+    nextHe = nextHe.prev!.twin!.next!.twin!;
+    //only look at neighbours for initial iteration
+    let white = nextHe.vert!;
+    let black = nextHe.twin!.vert!;
+    let deg_white = white.deg_error(white.deg());
+    let deg_black = black.deg_error(black.deg());
+    let found = false;
+
+    //console.log("Checking for flips of drifting edge");
+
+    white.halfedges(h=>{
+      const v = h.next!.vert!;
+      if(v != initialHe.vert! && v.deg_error(v.deg()) > 0) found = true;
+    })
+
+    black.halfedges(h=>{
+      const v = h.next!.vert!;
+      if(v!= initialHe.twin!.vert! && v.deg_error(v.deg()) < 0) found = true;
+    })
+
+    if(found) return num_flips;
+
+    //TODO: change loop condition
+    //Can loop any number of times, is just there to prevent endless looping
+    for(let i=0; i< 200; i++){
+
+      if(nextHe.onBoundary || nextHe.twin!.onBoundary) break;
+
+      //update edge we are looking at:
+      nextHe = nextHe.prev!.twin!.next!.twin!;
+      
+      //check next edge vertices
+      white = nextHe.vert!;
+      black = nextHe.twin!.vert!;
+      const deg_white = white.deg_error(white.deg());
+      const deg_black = black.deg_error(black.deg());
+      
+      /*
+      if white is lower than optimal degree: perfect, can be solved with basic edge flip
+      if white is higher than optimal degree -> long edge appears
+      if black is  higher than optimal degree: perfect, can be solved with basic edge flip
+      if black is lower than optimal degree -> short edge appears
+      -> if black or white are irregular drifting edge can be resolved
+      -> in those cases no more flips are necessary
+      */
+      if(deg_black != 0 || deg_white != 0) return num_flips;
+
+      //else:
+      num_flips++;
+
+      //next: check surrounding verts:
+      //if white has a neighbour with higher than optimal degree: a long edge will appear
+      //if black has a neighbour with lower than optimal degree: a short edge will appear
+      
+      white.halfedges(h=>{
+        const v = h.next!.vert!;
+        if(v.deg_error(v.deg()) > 0) found = true;
+      })
+
+      black.halfedges(h=>{
+        const v = h.next!.vert!;
+        if(v.deg_error(v.deg()) < 0) found = true;
+      })
+
+      if(found) return num_flips;
+
+    }
+
+    //no irregular verts found
+    return 0;
+
+  }
+
+  //checks Array of verts for basic edge flips and executes them
+  localEdgeflip(verts: Vertex[]){
+
+    for(let v of verts){
+
+      const neighbours = new Array();
+      v.halfedges(h=>{
+        //console.log("initial loop");
+        neighbours.push(h);
+      })
+
+      for(let h of neighbours){
+        if(h.edge!.removed) continue;
+        //console.log("2nd loop");
+        let flip = h.detectFlip();
+        if(flip){
+          const vNext = h.next!.vert!;
+          const flipped = this.flip(h.edge!);
+          if(flipped==1){
+            this.localEdgeflip([h.vert!, h.twin.vert!, v, vNext]);
+          }
+          
+        }
+      }
+
+    }
+
+  }
+
+  //look for basic edgeflips in the mesh and executes them
   basicEdgeFlip(){
 
-    this.resetIndices();
+    //this.resetIndices();
 
+    let num_flips = 0;
     //Step 1 basic edge flips:
     let l = this.edges.length;
 
@@ -379,9 +708,12 @@ categorizeEdges(){
       }
   
     }
-
-      console.log(flipped + " Edges were flipped!");
+    num_flips += flipped;
+    //console.log(flipped + " Edges were flipped!");
     }while (flipped > 0);
+
+    console.log(num_flips + " Edges were flipped!");
+   
     //this.resetIndices();
   }
 
@@ -391,9 +723,27 @@ categorizeEdges(){
 
   console.log("regular!");
 
+  //this.angle_smooth();
+
+  this.basicEdgeFlip();
+  console.log("1st Round of edgeflips done");
+
+  this.angle_smooth();
+
+  this.easyEdges();
+  console.log("Easy Edges handled");
+
+  //this.basicEdgeFlip();
+
+  this.angle_smooth();
+
+  this.driftingEdges();
+
   this.basicEdgeFlip();
 
-  this.categorizeEdges();
+  //this.angle_smooth();
+
+  //this.categorizeEdges();
 
   console.log("End of regular!");
 
@@ -455,11 +805,35 @@ v.pos = v.angle_smooth();
 
   }
 
+smoothVerts(verts: (Vertex | null)[]){
+
+  //create array for updated vertex positions
+  let verts_smooth = [];
+
+  //calculate new position for all vertices and store them
+  for (let [i,v] of verts.entries()){
+
+    //console.log(i, v);
+    verts_smooth[i] = v!.angle_smooth();
+  
+  }
+  
+  //Apply new positions to mesh vertices
+  //note: two loops are necessary because we need to use unmodified vertex positions for all the calculations
+  for (let [i,v] of verts_smooth.entries()){
+  
+    verts[i]!.pos! = v;
+  
+  }
+
+}
+
+
   //applies one round of angle based smoothing to the mesh
   //TODO: Add parameters
-  angle_smooth(){
-
-    //create array for updated vertex positions
+angle_smooth(){
+    this.smoothVerts(this.verts);
+/*     //create array for updated vertex positions
     let verts_smooth = [];
 
     //calculate new position for all vertices and store them
@@ -479,8 +853,8 @@ v.pos = v.angle_smooth();
     }
     
     console.log("Angle based smoothing finished");
-
-  }
+ */
+}
 
 
   //flips the halfedge h
@@ -576,7 +950,14 @@ v.pos = v.angle_smooth();
   h4.next = h1;
   h4.prev = h;
 
-  console.log("flipped!");
+
+  //apply smoothing to verts
+  this.smoothVerts([v0,v1,v2,v3]);
+  //apply smoothing to verts
+  this.smoothVerts([v0,v1,v2,v3]);
+
+
+  //console.log("flipped!");
   return 1;
 
   }
@@ -884,7 +1265,12 @@ v.pos = v.angle_smooth();
       this.halfedges.push(h_new, h_2_new, h_3_new, h_t_new, h_2_t_new, h_3_t_new);
       this.edges.push(e_new, e_2_new, e_3_new);
 
-      console.log("edge was split")
+      //give new elements an idx
+      this.resetIndices();
+
+      //smooth affected verts
+      this.smoothVerts([v0,v1,v2,v3,m]);
+      //console.log("edge was split")
 
     }
 
@@ -1037,7 +1423,7 @@ v.pos = v.angle_smooth();
     //TODO: Check if v3 == v4;
     //TODO: Check for unsafe Collapse, and skip edge if collapse is unsafe
 
-    this.resetIndices();
+    //this.resetIndices();
 
     const h = e.halfedge!;
 
@@ -1154,9 +1540,12 @@ v.pos = v.angle_smooth();
       h.edge!.err = -1;
     })
 
-
+    //reset indices after elements werde deleted
     this.resetIndices();
-    console.log("edge collapsed!");
+
+    //smooth affected verts
+    this.smoothVerts([v1,v3,v4]);
+    //console.log("edge collapsed!");
     
     
   }

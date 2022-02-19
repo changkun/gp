@@ -56,7 +56,7 @@ export class Halfedge {
     //TODO: check for bad angles and return false if bad angles are detected (moved to flip function)
 
     //Check for boundary and skip if edge is on boundary
-    if (this.onBoundary) return false;
+    if (this.onBoundary || this.twin!.onBoundary) return false;
 
     //verts of this face
     const v0 = this.vert!;
@@ -66,6 +66,19 @@ export class Halfedge {
     //vert of twins face
     const v3 = this.twin!.prev!.vert!;
 
+    const h1 = this.next!.vector();
+    const h2 = this.prev!.twin!.vector();
+    const h3 = this.twin!.next!.vector();
+    const h4 = this.twin!.prev!.twin!.vector();
+
+    //calculate angle between h4h1 and h2h3
+    const right_angle = h4.angle(h1);
+    const left_angle = h2.angle(h3);
+
+    if(right_angle > 3 || left_angle > 3){
+      console.log("Bad angles, cant flip!")
+      return false;
+    }
 
     //Calculate angle of faces
     const f0 = v0.halfedge!.face!;
@@ -75,6 +88,9 @@ export class Halfedge {
     //Print angle for debug
     //console.log("Winkel: "+ face_angle);
     if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)) return false;
+
+    //calculate angle between other sides
+
 
     //calculates error of degree for current connectivity
     let deg_error_current = Math.abs(v0.deg_error(v0.deg())) + Math.abs(v1.deg_error(v1.deg())) + Math.abs(v2.deg_error(v2.deg())) + Math.abs(v3.deg_error(v3.deg()));
@@ -325,6 +341,7 @@ export class Vertex {
    */
   angle_smooth(): Vector{
 
+    
     //if the vertex is on a boundary it should not move
     if(this.onBoundary()) return this.pos;
 
@@ -424,10 +441,10 @@ export class Vertex {
 /*     console.log("summe:");
     console.log(res);
  */
- 
+    res = new Vector(res.x, res.y, res.z, 1);
     //return new position vector
     return res;
-
+ 
   }
 
   //Applies angle based smoothing to the vertex
