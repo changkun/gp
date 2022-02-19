@@ -13,14 +13,32 @@ from mathutils.geometry import (
         distance_point_to_plane,
         closest_point_on_tri,
         normal)
-from math import pi, acos, inf
+from math import pi, acos, inf, sqrt, exp
+from numpy import log as ln
 
-# Determines whether point is inside mesh
+# Determines whether point is inside mesh (deprecated, too many false positives)
 def insideMesh(point, mesh):
     _, closest, normal, _ = mesh.closest_point_on_mesh(point)
     p2 = closest-point
     v = p2.dot(normal)
     return not(v < 0.0)
+
+# Determines whether point is inside mesh
+def is_inside(point,ob):
+    axes = [ Vector((1,0,0)) , Vector((0,1,0)), Vector((0,0,1))  ]
+    outside = False
+    for axis in axes:
+        orig = point
+        count = 0
+        while True:
+            _,location,normal,index = ob.ray_cast(orig,orig+axis*10000.0)
+            if index == -1: break
+            count += 1
+            orig = location + axis*0.00001
+        if count%2 == 0:
+            outside = True
+            break
+    return not outside
 
 # Converts from global to obj local coordinates
 def localC(point, obj):
@@ -48,22 +66,110 @@ def getIslands(verts):
         islands_i.append(island_indices)
     return islands_i
                     
-        
+# Determines all the inside verts that are connected to outside verts
+def determineBoundaryVerts(insideVerts, outsideVerts, edges):
+    boundaryVerts = []
+    searchEdges = [e for e in edges if e.vertices[0] in insideVerts or e.vertices[1] in insideVerts]
+    for edge in searchEdges:
+        if edge.vertices[0] in outsideVerts:
+            boundaryVerts.append(edge.vertices[1])
+        elif edge.vertices[1] in outsideVerts:
+            boundaryVerts.append(edge.vertices[0])
+    return boundaryVerts
+
+# Depresses all verts in overlap_verts_s (in softObject) onto the verts in overlap_verts_h (in hardObject)
+def depressVerts(overlap_verts_s, softObject, overlap_verts_h, hardObject, delta_initial):
+    dist_total = 0
+    for vert1_index in overlap_verts_s:
+        # Calculate the average normal of all hard object vertices that are inside the soft object
+        len_delta = 0
+        delta = delta_initial
+        average_displace = Vector((0.0, 0.0, 0.0))
+        while len_delta < 1:
+            # TODO: Only look at vertices of inside_vert_ho that are actually part of an island which pierces through the island of vert1. This would eliminate a lot of issues of setting a high delta value
+            for vert2_index in inside_vert_ho:
+                if (verts2[vert2_index] - verts1[vert1_index]).length < delta:
+                    normal = hardObject.data.vertices[vert2_index].normal
+                    average_displace = average_displace + normal
+                    len_delta = len_delta + 1
+            if len_delta < 1:
+                # Delta was not high enough
+                delta = delta + delta_increase
+            if delta > 100:
+                print("Error: no overlapping vertices. Aborting.")
+                break
+        if len_delta > 0:
+            average_displace = average_displace * (1 / len_delta)
+            
+            # Use this average to displace all soft object vertices inside the hard object
+            vert1_global = verts1[vert1_index]
+            vert1_local_ho = localC(vert1_global, hardObject)
+            hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, average_displace)
+            if hit:
+                hitloc_local = localC(globalC(hitloc, hardObject), softObject)
+                hitloc_local = hitloc_local + displace_increase * normal
+                dist = (hitloc_local - sk.data[vert1_index].co ).length
+                dist_total = dist_total + dist
+                #softObject.data.vertices[vert1_index].co = hitloc_local
+                sk.data[vert1_index].co = hitloc_local
+    return dist_total
+
+# Finds the mininum distances between each vert from verts1_i and verts2_i
+def minimumDistances(verts1_i, verts2_i, verts, object):
+    minDist = {}
+    for vert1_index in verts1_i:
+        vert1 = localC(verts[vert1_index], object)
+        dist_min = inf
+        closest_vert = vert1_index
+        for vert2_index in verts2_i:
+            vert2 = localC(verts[vert2_index], object)
+            dist = (vert1 - vert2).length
+            if dist < dist_min:
+                dist_min = dist
+                closest_vert = vert2_index
+        minDist[vert1_index] = dist_min
+    return minDist  
+
+# Function to describe the indentation. 
+# Goes from 1 at x = 0, to 0 at x = indentRange
+# Almost linear for b values above 2, but very smooth for small b.
+def indentFunction(x, indentRange, smoothness):
+    b = -2.999 * smoothness + 3 # Maps values from 0 to 1 to values from 3 to 0.001
+    #b = 0.01
+    a = 1 + b
+    return a * exp( ln(b/a) * x / indentRange ) - b
+
+#Function to describe the volume distribution
+# Goes smoothly from 0 at x = 0, to 1 at x = volumeRamp, then remains constant
+def volumeFunction(x, volumeRamp):
+    a = - 1 / (volumeRamp * volumeRamp)
+    if x < volumeRamp:
+        return a * (x - volumeRamp) * (x - volumeRamp) + 1
+    else:
+        return 1
+
 # Variables
 displace_increase = 0.02
-delta_initial = 3.0
+delta_initial = 5.0
 delta_increase = 0.1
 delta = delta_initial
 
-elasticity = 0.3
-elasticity_factor = 0.5
+elasticity = 0.8
+elasticity_factor = 1.0
 
-volume_preservation = 1
+volume_preservation = 1.0
+indent_smoothness = 0.95
+indent_range = 1.2
+volume_ramp = 0.8
+add_overlap = False
+calculate_indent_range = True
 # TODO: Multiple hard objects
 
 softObject = bpy.context.object
 hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop()
-
+decimate = hardObject.modifiers.new("TEMP", "DECIMATE")
+decimate.decimate_type = "DISSOLVE"
+decimate.angle_limit = 0.017453
 
 print("Creating shape keys")
 if softObject.data.shape_keys is None or len(softObject.data.shape_keys.key_blocks) < 1:
@@ -81,127 +187,151 @@ sk.value = 1.0
 
 # FIXME: Not enough objects selected
 
-# STEP 1: Find overlapping faces, and displace vertices so that they no longer overlap
-
 # Get the verts and faces in world coordinates
 print("Getting object data.")
 
 mat1 = softObject.matrix_world
 mat2 = hardObject.matrix_world
 
-verts1 = [mat1 @ v.co for v in sk.data] 
+verts1 = [mat1 @ v.co for v in sk.data]
 poly1 = [p.vertices for p in softObject.data.polygons]
 
-verts2 = [mat2 @ v.co for v in hardObject.data.vertices] 
+ho_mesh = hardObject.to_mesh()
+print(ho_mesh)
+
+verts2 = [mat2 @ v.co for v in hardObject.data.vertices]
 poly2 = [p.vertices for p in hardObject.data.polygons]
 
 # Vertices of soft object inside hard object
-inside_verts = [i for i in range(len(verts1)) if insideMesh( localC(verts1[i], hardObject), hardObject)]
-average_displace = Vector((0.0, 0.0, 0.0))
+inside_verts = set([i for i in range(len(verts1)) if is_inside( localC(verts1[i], hardObject), hardObject)])
+inside_vert_ho = set([i for i in range(len(verts2)) if insideMesh( localC(verts2[i], softObject), softObject)])
 
-inside_vert_ho = [i for i in range(len(verts2)) if insideMesh( localC(verts2[i], softObject), softObject)]
+# Create the BVH trees
+depsgraph = bpy.context.evaluated_depsgraph_get()
+bvh1 = BVHTree.FromPolygons( verts1, poly1 )
+bvh2 = BVHTree.FromPolygons( verts2, poly2 )
+
+# Overlapping vertices (list of index pairs, first belongs to the soft object, the other to the hard object)
+if add_overlap:
+    overlap = bvh1.overlap(bvh2)
+    for [v,_] in overlap:
+        inside_verts.add(v)
+        
+print(inside_verts)
+    
+inside_verts_new = inside_verts.copy()
+
+outside_verts = set([i for i in range(len(verts1)) if i not in inside_verts])
+
+boundaryVerts_so = set(determineBoundaryVerts(inside_verts, outside_verts, softObject.data.edges))
+
+boundaryVerts_so_copy = boundaryVerts_so.copy()
+
 
 dist_total = 0
+"""
+print(inside_verts_new)
+print(boundaryVerts_so)
+for vert2_index in inside_vert_ho:
+    if len(boundaryVerts_so_copy) > 0:
+        vert2 = localC(verts2[vert2_index], softObject)
+        dist_min = inf
+        closest_vert = vert2
+        for vert1_index in boundaryVerts_so_copy:
+            vert1 = localC(verts1[vert1_index], softObject)
+            dist = (vert1 - vert2).length
+            if dist < dist_min:
+                dist_min = dist # TODO: Save these for later
+                closest_vert = vert1_index
+        sk.data[closest_vert].co = localC(verts2[vert2_index], softObject)
+        dist_total = dist_total + dist_min
+        inside_verts_new.remove(closest_vert)
+        boundaryVerts_so_copy.remove(closest_vert)
+
+    
+print(inside_verts_new)
+"""
+
+
+
+
+
+# STEP 1: Find overlapping faces, and displace vertices so that they no longer overlap
 
 print("Displacing verts")
-for vert1_index in inside_verts:
-    # Calculate the average normal of all hard object vertices that are inside the soft object
-    len_delta = 0
-    while len_delta < 1:
-        # TODO: Only look at vertices of inside_vert_ho that are actually part of an island which pierces through the island of vert1. This would eliminate a lot of issues of setting a high delta value
-        for vert2_index in inside_vert_ho:
-            if (verts2[vert2_index] - verts1[vert1_index]).length < delta:
-                normal = hardObject.data.vertices[vert2_index].normal
-                average_displace = average_displace + normal
-                len_delta = len_delta + 1
-        if len_delta < 1:
-            # Delta was not high enough
-            delta = delta + delta_increase
-        if delta > 100:
-            print("Error: no overlapping vertices. Aborting.")
-            break
-    if len_delta > 0:
-        average_displace = average_displace * (1 / len_delta)
+dist_total = dist_total + depressVerts(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial)
         
-        # Use this average to displace all soft object vertices inside the hard object
-        vert1_global = verts1[vert1_index]
-        vert1_local_ho = localC(vert1_global, hardObject)
-        hit, hitloc, normal, index = hardObject.ray_cast(vert1_local_ho, average_displace)
-        if hit:
-            hitloc_local = localC(globalC(hitloc, hardObject), softObject)
-            hitloc_local = hitloc_local + displace_increase * normal
-            dist = (hitloc_local - sk.data[vert1_index].co ).length
-            dist_total = dist_total + dist
-            #softObject.data.vertices[vert1_index].co = hitloc_local
-            sk.data[vert1_index].co = hitloc_local
-    delta = delta_initial
-        
+#inside_vert_ho_after = set([i for i in range(len(verts2)) if insideMesh( localC(verts2[i], softObject), softObject)])
+#outside_verts_ho_after = set([i for i in range(len(verts2)) if i not in inside_vert_ho_after])
+#boundaryVerts_ho = determineBoundaryVerts(inside_vert_ho_after, outside_verts_ho_after, hardObject.data.edges)
+#print(boundaryVerts_so)
+#print(boundaryVerts_ho)
 
 # FIXME: objects don't overlap
 # FIXME: all vertices overlap
 
 
 # STEP 2: Add the lost volume back
-outside_verts = [i for i in range(len(verts1)) if i not in inside_verts]
 
 # Calculate shortest distance between an inside and an outside vert
 print("Getting the shortest distance")
-shortest_dist = inf
-for vert1_index in inside_verts:
-    vert1 = localC(verts1[vert1_index], softObject)
-    for vert2_index in outside_verts:
-        vert2 = localC(verts1[vert2_index], softObject)
-        dist = (vert1 - vert2).length
+minDist = minimumDistances(outside_verts, boundaryVerts_so, verts1, softObject)
 
-        if dist < shortest_dist:
+shortest_dist = inf
+for dist in minDist.values():
+    if dist < shortest_dist:
             shortest_dist = dist
+print(shortest_dist)
+
+if calculate_indent_range:
+    indent_range = sqrt(dist_total / len(inside_verts_new) )
+
 print("Getting inverse square factor and adding elasticity")
 inverse_square_sum = 0
-for vert1_index in outside_verts:
+for vert1_index in outside_verts.copy():
     vert1 = localC(verts1[vert1_index], softObject)
     dist_min = inf
     closest_vert = vert1_index
-    for vert2_index in inside_verts:
+    for vert2_index in boundaryVerts_so:
         vert2 = localC(verts1[vert2_index], softObject)
         dist = (vert1 - vert2).length
         if dist < dist_min:
             dist_min = dist # TODO: Save these for later
             closest_vert = vert2_index
-    if dist_min < elasticity:
-        closest_vert_move = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co).length
-        move_dist = elasticity_factor * closest_vert_move * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
+    if dist_min <= indent_range:
+        closest_vert_move = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co)
+        #a = 1 / (dist_min * dist_min)
+        #b = 1 / (dist_min * dist_min) + 1 / ( (elasticity-dist_min) * (elasticity-dist_min) )
+        move_dist = indentFunction(dist_min,indent_range, indent_smoothness) 
+        
+        #move_dist = elasticity_factor * closest_vert_move * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
         #move_dist = elasticity_factor * 1 / (shortest_dist + dist_min * dist_min)
-        normal = softObject.data.vertices[vert1_index].normal
-        newPos = sk.data[vert1_index].co  - move_dist * normal
+        #normal = softObject.data.vertices[vert1_index].normal
+        newPos = sk.data[vert1_index].co  + move_dist * closest_vert_move
         #softObject.data.vertices[vert1_index].co = newPos
         sk.data[vert1_index].co = newPos
-        dist_total = dist_total + move_dist
-        print(closest_vert_move)
-        #outside_verts.remove(vert1_index)
+        #dist_total = dist_total + move_dist
+        outside_verts.remove(vert1_index)
         
     else:
-        inverse_square_sum += 1 / ( 1 + (dist_min-shortest_dist) * (dist_min-shortest_dist) )
+        #inverse_square_sum += 1 / ( 1 + (dist_min-shortest_dist) * (dist_min-shortest_dist) )
+        inverse_square_sum += volumeFunction(dist_min-indent_range, volume_ramp)
         #inverse_square_sum += 1 / (shortest_dist + dist_min * dist_min)
 dist_total = dist_total * volume_preservation
-x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
-print("Adding back volume")
+if volume_preservation > 0:
+    x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
+    print("Adding back volume")
+    print(dist_total)
+    print(x_fac)
 
-test = 0
-for vert1_index in outside_verts:
-    vert1_global = verts1[vert1_index]
-    vert1 = localC(verts1[vert1_index], softObject)
-    dist_min = inf
-    for vert2_index in inside_verts:
-        vert2 = localC(verts1[vert2_index], softObject)
-        dist = (vert1 - vert2).length
-        if dist < dist_min:
-            dist_min = dist # TODO: Save these for later
-    #print(dist_min)
-    move_dist = x_fac * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
-    #move_dist = x_fac * 1 / (shortest_dist + dist_min * dist_min)
-    test += move_dist
-    #print(move_dist)
-    normal = softObject.data.vertices[vert1_index].normal
-    newPos = sk.data[vert1_index].co + move_dist * normal
-    sk.data[vert1_index].co = newPos
-    #softObject.data.vertices[vert1_index].co = newPos
+    for vert1_index in outside_verts:
+        vert1_global = verts1[vert1_index]
+        vert1 = localC(verts1[vert1_index], softObject)
+        dist_min = minDist[vert1_index]
+        #move_dist = x_fac * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
+        move_dist = x_fac * volumeFunction(dist_min-indent_range, volume_ramp)
+        #move_dist = x_fac * 1 / (shortest_dist + dist_min * dist_min)
+        normal = softObject.data.vertices[vert1_index].normal
+        newPos = sk.data[vert1_index].co + move_dist * normal
+        sk.data[vert1_index].co = newPos
+        #softObject.data.vertices[vert1_index].co = newPos

@@ -83,6 +83,5 @@ This can be a problem if the hard object intersects with the soft object multipl
 - Fix issue 4 by handling each overlapping area separately.
 - Turn this into an addon.
 - Support various shapekey settings.
-- Fix issue 5 by displacing faces, or additionally displace vertices attached to overlapping faces.
-- Fix issue 1 through interpolation of the displacement directions (results may vary).
+- Fix issue 5 by displacing faces, or additionally displace vertices attached to overlapping faces, or even better: first displace along important features of the hard object (convex hull + planar decimate)
 - Fix issue 2 by approximating the volume (not sure if this will actually improve the quality much).
