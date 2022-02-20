@@ -369,8 +369,14 @@ export class HalfedgeMesh {
 
   driftingEdges(){
 
+    
+    let resolved = 1;
+
+    while(resolved){
+
+    resolved = 0;
     const l = this.edges.length;
-    //sort edges into arrays
+
     for(let i=0; i<l; i++){
       const e = this.edges[i]!;
 
@@ -401,31 +407,71 @@ export class HalfedgeMesh {
 
         const flips = this.checkDrift(drift);
         console.log("Drifting edge needs " + flips + "flips!");
+        let canflip = true;
         
-        //move drifting edge
-        for(let i = 0; i<flips; i++){
+        //drifting edge cant be resolved
+        if(flips==0) continue;
 
-          //indicates if flips will be succesfull
-          let canflip = true;
 
-          //edge to be flipped
-          const e_flip = drift.prev!.edge!;
-          //next position of drifting edge
-          drift = drift.prev!.twin!.next!.twin!
+        //check if it needs to flip left or right
+        if(flips>0){
 
-          canflip = e_flip.halfedge!.detectFlip();
+          //move drifting edge
+          for(let i = 0; i<flips; i++){
 
-          if(!canflip){
-            console.log("Can't flip drifting edge!");
-            break;
-          }
+              //indicates if flips will be succesfull
+              //let canflip = true;
 
-          //check if flip was succesfull
-          if(this.flip(e_flip) != 1) break;
+              //edge to be flipped
+              const e_flip = drift.prev!.edge!;
+              //next position of drifting edge
+              drift = drift.prev!.twin!.next!.twin!
 
-          //TODO: reverse flips if one of them was unsuccesfull
-          
+              canflip = e_flip.halfedge!.canFlip();
+
+              if(canflip!=true){
+                console.log("Can't flip drifting edge!");
+                break;
+              }
+
+              //check if flip was succesfull
+              if(this.flip(e_flip) != 1) break;
+
+              //smooth involved verts
+              //this.smoothVerts([e_flip.halfedge!.vert!, e_flip.halfedge!.next!.vert!]);
+              //TODO: reverse flips if one of them was unsuccesfull
+              
+            }
         }
+        else if(flips<0){
+          //move drifting edge
+          for(let i = 0; i<(-flips); i++){
+
+            //indicates if flips will be succesfull
+            //let canflip = true;
+
+            //edge to be flipped
+            const e_flip = drift.twin!.next!.edge!;
+            //next position of drifting edge
+            drift = drift.twin!.next!.twin!.prev!;
+
+            canflip = e_flip.halfedge!.canFlip();
+
+            if(!canflip){
+              console.log("Can't flip drifting edge!");
+              break;
+            }
+
+            //check if flip was succesfull
+            if(this.flip(e_flip) != 1) break;
+
+            //TODO: reverse flips if one of them was unsuccesfull
+            
+          }
+        
+        }
+
+        if(!canflip) continue;
 
         //There should now be a long edge or short edge adjacent to the drifting edge (or a basic edge flip possible)
         //this.basicEdgeFlip();
@@ -455,6 +501,7 @@ export class HalfedgeMesh {
           this.handleEasyEdge(h.edge!);
         }
 
+        resolved++;
         //TODO: check if flipping was successful
         //TODO: Check if edge is on boundary
 
@@ -463,13 +510,10 @@ export class HalfedgeMesh {
         //repeat until edge becomes easy
 
       }
-      
-      if(i == l-1){
-        console.log("almost done with drifting edges")
-      }
 
     }
 
+    }
   }
 
   //TODO: sort edges by error
@@ -648,6 +692,79 @@ export class HalfedgeMesh {
 
     }
 
+    //check other side
+    nextHe = h;
+    num_flips = -1;
+
+    nextHe = nextHe.twin!.next!.twin!.prev!;
+
+    //only look at neighbours for initial iteration
+    white = nextHe.vert!;
+    black = nextHe.twin!.vert!;
+    deg_white = white.deg_error(white.deg());
+    deg_black = black.deg_error(black.deg());
+    found = false;
+    
+    white.halfedges(h=>{
+      const v = h.next!.vert!;
+      if(v != initialHe.vert! && v.deg_error(v.deg()) > 0) found = true;
+    })
+
+    black.halfedges(h=>{
+      const v = h.next!.vert!;
+      if(v!= initialHe.twin!.vert! && v.deg_error(v.deg()) < 0) found = true;
+    })
+
+    if(found) return num_flips;
+
+    //TODO: change loop condition
+    //Can loop any number of times, is just there to prevent endless looping
+    for(let i=0; i< 200; i++){
+
+      if(nextHe.onBoundary || nextHe.twin!.onBoundary) break;
+
+      //update edge we are looking at:
+      nextHe = nextHe.twin!.next!.twin!.prev!;
+      
+      //check next edge vertices
+      white = nextHe.vert!;
+      black = nextHe.twin!.vert!;
+      const deg_white = white.deg_error(white.deg());
+      const deg_black = black.deg_error(black.deg());
+      
+      /*
+      if white is lower than optimal degree: perfect, can be solved with basic edge flip
+      if white is higher than optimal degree -> long edge appears
+      if black is  higher than optimal degree: perfect, can be solved with basic edge flip
+      if black is lower than optimal degree -> short edge appears
+      -> if black or white are irregular drifting edge can be resolved
+      -> in those cases no more flips are necessary
+      */
+      if(deg_black != 0 || deg_white != 0) return num_flips;
+
+      //else:
+      num_flips--;
+
+      //next: check surrounding verts:
+      //if white has a neighbour with higher than optimal degree: a long edge will appear
+      //if black has a neighbour with lower than optimal degree: a short edge will appear
+      
+      white.halfedges(h=>{
+        const v = h.next!.vert!;
+        if(v.deg_error(v.deg()) > 0) found = true;
+      })
+
+      black.halfedges(h=>{
+        const v = h.next!.vert!;
+        if(v.deg_error(v.deg()) < 0) found = true;
+      })
+
+      if(found) return num_flips;
+
+    }
+
+
+
     //no irregular verts found
     return 0;
 
@@ -733,12 +850,12 @@ export class HalfedgeMesh {
   this.easyEdges();
   console.log("Easy Edges handled");
 
-  //this.basicEdgeFlip();
+  this.basicEdgeFlip();
 
-  this.angle_smooth();
+  //this.angle_smooth();
 
   this.driftingEdges();
-
+  this.easyEdges();
   this.basicEdgeFlip();
 
   //this.angle_smooth();
@@ -962,161 +1079,6 @@ angle_smooth(){
 
   }
 
-  //splits edge in the middle
-  newSplit(e: Edge) {
-
-    //TODO: Handle Boundary
-    if (e.halfedge!.onBoundary || e.halfedge!.twin!.onBoundary){
-      
-      console.log("edge on boundary, not split!")
-      return;
-
-      }
-
-    //get relevant halfedges
-    const h0 = e.halfedge!;
-    const h1 = h0.next!;
-    const h2 = h0.prev!;
-    const h0_t = h0.twin!;
-    const h3 = h0_t.next!;
-    const h4 = h0_t.prev!;
-
-    //get faces
-    const f0 = h0.face!;
-    const f1 = new Face();
-    const f2 = h0_t.face!;
-    const f3 = new Face();
-
-    //set safe halfedges for faces
-    f0.halfedge = h2;
-    f1.halfedge = h3;
-    f2.halfedge = h4;
-    f3.halfedge = h1;
-
-    //get position of new vertex, and create it
-    const pos = h0.vert!.pos!.add(h0.vector().scale(0.5));
-    let v = new Vertex(pos);
-
-    //create new halfedges
-    let new_h0 = new Halfedge();
-    let new_h1 = new Halfedge();
-    let new_h2 = new Halfedge();
-    let new_h3 = new Halfedge();
-
-    let new_h2_t = new Halfedge();
-    let new_h3_t = new Halfedge();
-
-    //create new edges
-    //TODO: Add third edge
-    let e_v2 = new Edge();
-    let e_v3 = new Edge();
-    //let e_3...
-
-    //assign halfedges to new edges
-    e_v2.halfedge = new_h2;
-    e_v3.halfedge = new_h3;
-
-    //assign edges to new halfedges
-    new_h0.edge = h0.edge;
-    new_h1.edge = h0_t.edge;
-
-    new_h2.edge = e_v2;
-    new_h3.edge = e_v3;
-    new_h2_t.edge = e_v2;
-    new_h3_t.edge = e_v3;
-
-    //assign faces to new halfedges
-    new_h0.face = f1;
-    new_h1.face = f3;
-    new_h2.face = f0;
-    new_h3.face = f2;
-
-    new_h2_t.face = f3;
-    new_h3_t.face = f1;
-
-    //assign vert to new halfedges
-    new_h0.vert = v;
-    new_h1.vert = v;
-    new_h2.vert = v;
-    new_h3.vert = v;
-
-    new_h2_t.vert = h2.vert!;
-    new_h3_t.vert = h4.vert!;
-
-
-    //set twins
-    new_h0.twin = h0;
-    h0.twin = new_h0;
-
-    new_h1.twin = h0_t;
-    h0_t.twin = new_h1;
-
-    new_h2.twin = new_h2_t;
-    new_h2_t.twin = new_h2;
-
-    new_h3.twin = new_h3_t;
-    new_h3_t.twin = new_h3;
-
-    //set next and prev
-    h0.next = new_h2;
-
-    new_h2.next = h2;
-    new_h2.prev = h0;
-    
-    h1.next = new_h2_t;
-    h1.prev = new_h1;
-
-    h2.prev = new_h2;
-
-    new_h2_t.next = new_h1;
-    new_h2_t.prev = h1;
-
-    new_h1.next = h1;
-    new_h1.prev = new_h2_t;
-
-    h3.next = new_h3_t;
-    h3.prev = new_h0;
-
-    new_h3_t.next = new_h0;
-    new_h3_t.prev = h3;
-
-    new_h0.next = h3;
-    new_h0.prev = new_h3_t;
-
-    h0_t.next = new_h3;
-
-    new_h3.next = h4;
-    new_h3.prev = h0_t;
-
-    h4.prev = new_h3;
-
-    //set halfedge for new vertex
-    v.halfedge = new_h1;
-    
-    //TODO: Fix indices
-
-    //add new connectivity to mesh
-    //TODO: Use fewer push calls
-    this.verts.push(v);
-
-    this.halfedges.push(new_h0);
-    this.halfedges.push(new_h1);
-    this.halfedges.push(new_h2);
-    this.halfedges.push(new_h3);
-
-    this.halfedges.push(new_h2_t);
-    this.halfedges.push(new_h3_t);
-
-    this.faces.push(f1);
-    this.faces.push(f3);
-
-    this.edges.push(e_v2);
-    this.edges.push(e_v3);
-
-
-    console.log("edge: " + e +" was split!")
-
-  }
 
   /**
    * splits an edge in the middle
@@ -1274,142 +1236,6 @@ angle_smooth(){
 
     }
 
-  /**
-   * collapses an edge at specified position
-   * @param e: the edge to be collapsed
-   * @param x: position vector of the new vertex
-   * idea: "glue" together h.prev and h.next, as well as h.twin.prev and h.twin.next
-   */
-   newCollapse(e: Edge, x: Vector){
-
-    //TODO: Check if a Vertex of edge is part of boundary and then stop
-    //TODO: Check if v3 == v4;
-    //TODO: Check for unsafe Collapse, and skip edge if collapse is unsafe
-
-    const h = e.halfedge!;
-
-    //check for boundary
-    if(h.onBoundary || h.twin!.onBoundary){
-      console.log("Edge on boundary, was not collapsed");
-      return;
-    }
-
-    const v1 = h.vert!;
-    const v2 = h.next!.vert!;
-    const v3 = h.prev!.vert!;
-    const v4 = h.twin!.prev!.vert!;
-
-    if(v3 == v4){
-      console.log("V3=V4, edge was not collapsed");
-      return;
-    }
-
-    const h1 = h.twin!;
-    const h2 = h.next!;
-    const h3 = h.prev!;
-    const h4 = h.twin!.next!;
-    const h5 = h.twin!.prev!;
-
-    const h2t = h2.twin!;
-    const h3t = h3.twin!;
-    const h4t = h4.twin!;
-    const h5t = h5.twin!;
-
-    const f1 = h.face;
-    const f2 = h.twin!.face;
-
-
-    //new Vertex
-    let v_x = new Vertex(x);
-
-    //set position of new vertex
-    v_x.pos = x;
-    //v_x.pos = new Vector()
-
-    //reassign halfedges to new vertex
-    v1.halfedges((v)=>{
-      v.vert = v_x;
-    });
-
-    v2.halfedges((v)=>{
-      v.vert = v_x;
-    })
-
-    
-    //set safe halfedge for new vertex
-    v_x.halfedge = h3t;
-
-    // set new twins for face outer halfedges
-    h3t.twin = h2t;
-    h2t.twin = h3t;
-
-    h4t.twin = h5t;
-    h5t.twin = h4t;
-
-    //reassign halfedge of edges
-    h3t.edge!.halfedge = h3t;
-    h2t.edge! = h3t.edge!;
-
-    h4t.edge!.halfedge = h4t;
-    h5t.edge! = h4t.edge!;
-
-    //assign new halfedges to v3, and v4
-    v3.halfedge = h2t;
-    v4.halfedge = h4t;
-
-    
-    //halfedges to be deleted:
-    let h_del = [h.idx, h1.idx, h2.idx, h3.idx, h4.idx, h5.idx];
-
-
-    //edges to be deleted:
-    let e_del = [h.edge!.idx, h2.edge!.idx, h5.edge!.idx];
-
-    // faces to be deleted
-    let f_del = [f1!.idx, f2!.idx];
-
-    //console.log("Built arrays for idxs of unused geometry");
-
-    //delete unused geometry
-    for (let i of h_del){
-      this.halfedges[i] = null;
-    }
-
-    for (let i of e_del){
-      //mark edges as removed
-      this.edges[i]!.removed = true;
-      this.edges[i] = null;
-    }
-    
-
-
-    for (let i of f_del){
-      this.faces[i] = null;
-    }
-
-    this.verts[v2.idx] = null;
-    this.verts[v1.idx] = null;
-
-    //console.log("deleted old geometry");
-
-    this.verts[v1.idx] = v_x;
-
-    //reset error for modified edges
-    v_x.halfedges((h,i)=>{
-      
-       /*  console.log("Now in Halfedges of vert:");
-        console.log(h);
-        console.log(h.twin?.next); */
-    
-      h.edge!.err = -1;
-    })
-
-
-    this.resetIndices();
-    console.log("edge collapsed!");
-    
-    
-  }
 
   /**
    * collapses an edge at specified position

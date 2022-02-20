@@ -50,6 +50,49 @@ export class Halfedge {
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))));
   }
 
+  //checks if an edge CAN be flipped
+  canFlip(): boolean{
+    //Check for boundary and skip if edge is on boundary
+    if (this.onBoundary || this.twin!.onBoundary) return false;
+
+    //verts of this face
+    const v0 = this.vert!;
+    const v1 = this.next!.vert!;
+    const v2 = this.prev!.vert!;
+
+    //vert of twins face
+    const v3 = this.twin!.prev!.vert!;
+
+    const h1 = this.next!.vector();
+    const h2 = this.prev!.twin!.vector();
+    const h3 = this.twin!.next!.vector();
+    const h4 = this.twin!.prev!.twin!.vector();
+
+    //calculate angle between h4h1 and h2h3
+    const right_angle = h4.angle(h1);
+    const left_angle = h2.angle(h3);
+
+    if(right_angle > 3 || left_angle > 3){
+      console.log("Bad angles, cant flip!")
+      return false;
+    }
+
+    //Calculate angle of faces
+    const f0 = v0.halfedge!.face!;
+    const f1 = v3.halfedge!.face!;
+    const face_angle = f0.normal().angle(f1.normal())+Math.PI;
+
+    //Print angle for debug
+    //console.log("Winkel: "+ face_angle);
+    if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)){
+      console.log("Bad face angles, can't flip");
+      return false;
+    }
+
+    //no problems found
+    return true;
+  }
+
   //Checks if edge should be flipped
   detectFlip(){
 
