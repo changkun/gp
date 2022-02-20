@@ -3,33 +3,6 @@
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
-
-// API Usage about @penrose/linear-algebra:
-//
-//   - There are two types of matrices: SparseMatrix and DenseMatrix
-//   - SparseMatrix.identity(n, n) gives you a identity matrix with
-//     n x n dimension
-//   - Triplet represents a small structure to hold non-zero entries in
-//     SparseMatrix, each entry is (x, i, j). To construct a SparseMatrix,
-//     here is an example:
-//
-//       let A = new Triplet(2, 2)          // Triplet for 2x2 SparseMatrix
-//       A.addEntry(1, 0, 0)                // A(0, 0) += 1
-//       A.addEntry(2, 1, 1)                // A(1, 1) += 2
-//       return SparseMatrix.fromTriplet(T) // Construct SparseMatrix
-//
-//   - A.timesSparse(B) returns A*B where A and B are SparseMatrix.
-//   - A.plus(B) returns A+B where A and B are SparseMatrix.
-//   - A.timesReal(s) returns sA where A is SparseMatrix and s is a real number.
-//   - A.chol() returns a sparse Cholesky decomposition.
-//   - A.solvePositiveDefinite(b) solves linear equation Ax=b where
-//     A is a Cholesky decomposition, and b is a DenseMatrix, and x is the solution.
-//   - For a DenseMatrix A, one can use A.set(x, i, j) for A(i,j)=x,
-//     and A.get(i, j) returns A(i,j).
-//
-// Further APIs regarding @penrose/linear-algebra can be found
-// in node_modules/@penrose/linear-algebra/docs/*.html, but the above
-// information are all the APIs you need for this project.
 import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
 import { Vertex, Edge, Face, Halfedge } from './primitive';
 import { Vector } from '../linalg/vec';
@@ -40,6 +13,7 @@ import * as THREE from 'three'
 import { Vector3 } from 'three';
 import {AABB} from './aabb';
 import { Voxelizer } from '../voxelizer';
+import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 
 export enum WeightType {
   Uniform = 'Uniform',
@@ -56,6 +30,13 @@ export class HalfedgeMesh {
   edges: Edge[]; // a list of edges
   faces: Face[]; // a list of faces
   halfedges: Halfedge[]; // a list of halfedges
+  // These variables are only used by the underlying Three.js renderer
+  // create them after construction via the proper methods below or after updating the
+  // halfedge data structure
+  halfedgeHelpers:Array<THREE.ArrowHelper>=[];
+  mesh3js?: THREE.Mesh; // three.js buffer geometry object
+  normalHelper?: VertexNormalsHelper;
+  wireframeHelper?: THREE.LineSegments;
 
   /**
    * constructor constructs the halfedge-based mesh representation.
@@ -286,24 +267,18 @@ export class HalfedgeMesh {
   // The underlying Three.js renderer does not natively support halfedges.
   // these hlper methods fix this issue by converting the data structure into (Helper)
   // that can be rendered by Three.js
+  createRenderableMeshAndWireframe(){
+    
+  }
+
 
   //Create an Array of Three.ArrowHelper to draw the halfedges using Three.js
-  createRenderableHalfedges():Array<THREE.ArrowHelper>{
-    //const materialLineEdgeNoBoundary = new LineBasicMaterial({color: 'green'});
-    //const materialLineEdgeBoundary = new LineBasicMaterial({color: 'red'});
-    /*for(let i=0;i<this.internal.mesh!.edges.length;i++){
-      const edge=this.internal.mesh!.edges[i];
-      if(edge.halfedge){
-        const edgeHe=edge.halfedge!;
-        const origin = edgeHe.vert!.position.convertT();
-        const dir=edgeHe.vector().convertT().normalize();
-        const len=edgeHe.vector().convertT().length();
-        const arrowHelper = new ArrowHelper( dir, origin, len,0xffff00);
-        this.scene.add(arrowHelper);
-      }
-    }*/
-    let ret:Array<THREE.ArrowHelper>=[];
-    // draw halfedges using arrows
+  //Call this after construction or after the halfegde mesh has been updated
+  // the halfedges are represented by Arrows, yellow if not on a boundary, red otherwise
+  createRenderableHalfedgeHelpers(){
+    // clear, don't forget to remove from scene before recalculation
+    this.halfedgeHelpers=[];
+    // create Arrows for all the halfedges
     for(let i=0;i<this.halfedges!.length;i++){
       const edgeHe=this.halfedges![i];
       const origin = edgeHe.vert!.position.convertT();
@@ -313,8 +288,17 @@ export class HalfedgeMesh {
       const headLength=0.01;
       const headWidth=headLength*0.5;
       const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
-      ret.push(arrowHelper);
+      this.halfedgeHelpers.push(arrowHelper);
     }
-    return ret;
+  }
+  // add/remove all the halfedge helper arrows to/from the scene
+  addOrRemoveAllHalfedgeHelpersToScene(scene:THREE.Scene,remove:boolean){
+    for(let i=0;i<this.halfedgeHelpers.length;i++){
+      if(remove){
+        scene.remove(this.halfedgeHelpers![i]);
+      }else{
+        scene.add(this.halfedgeHelpers![i]);
+      }
+    }
   }
 }

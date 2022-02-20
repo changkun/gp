@@ -34,7 +34,6 @@ export class Voxelizer {
     }
 
     
-
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
         this.helperBoxes=[];

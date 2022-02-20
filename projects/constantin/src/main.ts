@@ -41,7 +41,6 @@ export default class Main extends Renderer {
     voxelizer?:Voxelizer; // Consti10 handle to voxels
     normalHelper?: VertexNormalsHelper;
     wireframeHelper?: LineSegments;
-    halfedgesHelper?: Array<ArrowHelper>; // the halfedges are represented by Arrows, yellow if not on a boundary, red otherwise
   };
   params: {
     import: () => void;
@@ -51,25 +50,12 @@ export default class Main extends Renderer {
     showHalfedges:boolean;
     showVoxels:boolean;
     normalMethod: NormalMethod;
-    curvatureMethod: CurvatureMethod;
-    laplacian: WeightType;
     nVoxelsPerAxis: number;
     computationTime:number;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
   bufcolors: Float32Array;
-  // Consti10:
-  // add/remove all the halfedge helper arrows to the scene
-  addOrRemoveAllHalfedgeHelpersToScene(remove:boolean){
-    for(let i=0;i<this.internal.halfedgesHelper!.length;i++){
-      if(remove){
-        this.scene.remove(this.internal.halfedgesHelper![i]);
-      }else{
-        this.scene.add(this.internal.halfedgesHelper![i]);
-      }
-    }
-  }
   /**
    * constroctor creates the objects needed for rendering
    */
@@ -92,7 +78,6 @@ export default class Main extends Renderer {
     document.body.appendChild(this.input);
 
     this.internal = {};
-    this.internal.halfedgesHelper=[];
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
@@ -101,8 +86,6 @@ export default class Main extends Renderer {
       showHalfedges:false,
       showVoxels:false,
       normalMethod: NormalMethod.EqualWeighted,
-      curvatureMethod: CurvatureMethod.None,
-      laplacian: WeightType.Uniform,
       nVoxelsPerAxis: 5,
       computationTime:0,
     };
@@ -138,8 +121,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.addOrRemoveAllHalfedgeHelpersToScene(false)
-          : this.addOrRemoveAllHalfedgeHelpersToScene(true);
+          ? this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,false)
+          : this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,true);
       });  
     this.gui
       .add(this.params, 'showVoxels')
@@ -149,33 +132,7 @@ export default class Main extends Renderer {
         show
           ? this.internal.voxelizer!.addToScene(this.scene)
           :  this.internal.voxelizer!.removeFromScene(this.scene);
-      });  
-
-    /*const methods = this.gui.addFolder('Methods');
-    methods
-      .add(this.params, 'normalMethod', [
-        NormalMethod.EqualWeighted,
-        NormalMethod.AreaWeighted,
-        NormalMethod.AngleWeighted,
-      ])
-      .listen()
-      .onChange(() => this.updateNormals());
-    methods
-      .add(this.params, 'curvatureMethod', [
-        CurvatureMethod.None,
-        CurvatureMethod.Mean,
-        CurvatureMethod.Gaussian,
-        CurvatureMethod.Kmin,
-        CurvatureMethod.Kmax,
-      ])
-      .listen()
-      .onChange(() => this.updateCurvature());
-
-    methods
-      .add(this.params, 'laplacian', [WeightType.Uniform, WeightType.Cotan]);
-      //.onChange(() => this.updateSmoothing());
-    methods.open();*/
-
+      });
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
       .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
@@ -220,59 +177,7 @@ export default class Main extends Renderer {
     this.internal.mesh3js!.geometry.attributes.normal.needsUpdate = true;
     this.internal.normalHelper!.update();
   }
-  updateCurvature() {
-    const msettings = {
-      vertexColors: true,
-      polygonOffset: true,
-      polygonOffsetFactor: 1,
-      polygonOffsetUnits: 1,
-      side: DoubleSide,
-    };
 
-    const curvatures = new Array<number>(this.internal.mesh!.verts.length);
-    this.internal.mesh!.verts.forEach(v => {
-      const c = v.curvature(this.params.curvatureMethod);
-      curvatures[v.idx] = c;
-    });
-
-    const quartiles = (v: number[], fac = 1.5): [number, number] => {
-      const values = v.slice().sort((a: number, b: number) => a - b); //copy array fast and sort
-      let q1 = 0;
-      let q3 = 0;
-      if ((values.length / 4) % 1 === 0) {
-        //find quartiles
-        q1 = 0.5 * (values[values.length / 4] + values[values.length / 4 + 1]);
-        q3 =
-          0.5 *
-          (values[values.length * 0.75] + values[values.length * 0.75 + 1]);
-      } else {
-        q1 = values[Math.floor(values.length / 4 + 1)];
-        q3 = values[Math.ceil(values.length * (3 / 4) + 1)];
-      }
-      const iqr = q3 - q1;
-      const maxValue = q3 + iqr * fac;
-      const minValue = q1 - iqr * fac;
-      return [minValue, maxValue];
-    };
-
-    // Eliminate outliers.
-    const [min, max] = quartiles(curvatures, 15);
-
-    this.internal.mesh!.verts.forEach(v => {
-      let color = new Vector();
-      if (this.params.curvatureMethod === CurvatureMethod.None) {
-        this.internal.mesh3js!.material = new MeshPhongMaterial(msettings);
-        color = new Vector(0, 0.5, 1);
-      } else {
-        this.internal.mesh3js!.material = new MeshBasicMaterial(msettings);
-        color = colormap(curvatures[v.idx], min, max);
-      }
-      this.bufcolors[3 * v.idx + 0] = color.x;
-      this.bufcolors[3 * v.idx + 1] = color.y;
-      this.bufcolors[3 * v.idx + 2] = color.z;
-    });
-    this.internal.mesh3js!.geometry.attributes.color.needsUpdate = true;
-  }
   updateVoxelizer(){
     this.internal.voxelizer!.removeFromScene(this.scene);
     this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
@@ -290,9 +195,8 @@ export default class Main extends Renderer {
     if (this.internal.wireframeHelper !== null) {
       this.scene.remove(this.internal.wireframeHelper!);
     }
-    if (this.internal.halfedgesHelper!.length>0) {
-      this.addOrRemoveAllHalfedgeHelpersToScene(true);
-      this.internal.halfedgesHelper=[];
+    if (this.internal.mesh) {
+      this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,true);
     }
     if (this.internal.mesh3js !== null) {
       this.scene.remove(this.internal.mesh3js!);
@@ -358,32 +262,7 @@ export default class Main extends Renderer {
       new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 1})
     );
-    //const materialLineEdgeNoBoundary = new LineBasicMaterial({color: 'green'});
-    //const materialLineEdgeBoundary = new LineBasicMaterial({color: 'red'});
-    /*for(let i=0;i<this.internal.mesh!.edges.length;i++){
-      const edge=this.internal.mesh!.edges[i];
-      if(edge.halfedge){
-        const edgeHe=edge.halfedge!;
-        const origin = edgeHe.vert!.position.convertT();
-        const dir=edgeHe.vector().convertT().normalize();
-        const len=edgeHe.vector().convertT().length();
-        const arrowHelper = new ArrowHelper( dir, origin, len,0xffff00);
-        this.scene.add(arrowHelper);
-      }
-    }*/
-     // draw halfedges using arrows
-    for(let i=0;i<this.internal.mesh!.halfedges.length;i++){
-      const edgeHe=this.internal.mesh!.halfedges[i];
-      const origin = edgeHe.vert!.position.convertT();
-      const dir=edgeHe.vector().convertT().normalize();
-      const len=edgeHe.vector().convertT().length();
-      const color = edgeHe.onBoundary ? 0xFF0000 : 0xffff00;
-      const headLength=0.01;
-      const headWidth=headLength*0.5;
-      const arrowHelper = new ArrowHelper( dir, origin, len,color,headLength,headWidth);
-      //this.scene.add(arrowHelper);
-      this.internal.halfedgesHelper?.push(arrowHelper);
-    }
+    this.internal.mesh!.createRenderableHalfedgeHelpers();
 
     this.scene.add(this.internal.mesh3js);
     if (this.params.showNormals) {
@@ -393,9 +272,8 @@ export default class Main extends Renderer {
       this.scene.add(this.internal.wireframeHelper);
     }
     if(this.params.showHalfedges){
-      this.addOrRemoveAllHalfedgeHelpersToScene(false);
+      this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,false);
     }
-
 
     this.internal.mesh3js!.geometry.computeBoundingBox();
     //let box = new Box3();
