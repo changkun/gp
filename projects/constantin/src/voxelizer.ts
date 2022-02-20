@@ -63,31 +63,15 @@ export class Voxelizer {
                 const z1=z*VOXEL_SIZE;
                 const alignedCube=new AlignedCube(x1,y1,z1,VOXEL_SIZE);
     
-                //const min=new THREE.Vector3(x1,y1,z1);
-                //const max=new THREE.Vector3(x1+VOXEL_SIZE,y1+VOXEL_SIZE,z1+VOXEL_SIZE);
-    
-                //const box = new THREE.Box3(min,max);
                 let intersectsAny=false;
                 for(let f of originalMesh.faces){
                     const triangleData=f.asTriangle();
                     const triangle=this.convertToThreeJs(triangleData);
-                    //if(box.intersectsTriangle(triangle)){
-                    //    intersectsAny=true;
-                    //    break;
-                    //}
                     if(alignedCube.intersect(triangle)){
                         intersectsAny=true;
                         break;
                     }
                 }
-                //const geometry=new THREE.BoxBufferGeometry()
-                //const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
-                //const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
-                //const mesh = new THREE.Mesh(geometry,materialGreen);
-                //const VOXEL_SIZE_HALF=VOXEL_SIZE/2.0;
-                //mesh.position.set(x1+VOXEL_SIZE_HALF,y1+VOXEL_SIZE_HALF,z1+VOXEL_SIZE_HALF);
-
-                //const helper = new THREE.Box3Helper(box);
     
                 if(intersectsAny){
                     //scene.add(helper);
@@ -129,10 +113,10 @@ export class Voxelizer {
 
     removeFromScene(scene:THREE.Scene){
         for(let i=0;i<this.helperBoxes.length;i++){
-            scene.remove(this.helperBoxes[i]);
+            //scene.remove(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
-            scene.remove(this.testMeshes[i]);
+            //scene.remove(this.testMeshes[i]);
         }
     }
 
