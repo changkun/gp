@@ -88,12 +88,12 @@ export default class Main extends Renderer {
       melaxSim: 0.0,
       //smooth: () => console.log("GUI test!")
       smooth: () => {
-        this.internal!.mesh!.angle_smooth()
+        this.internal!.mesh!.angle_smooth(1,1);
         this.prepareBuf();
         this.renderMeshLeft();
       },
       regularize: () => {
-        this.internal!.mesh!.regularize()
+        this.internal!.mesh!.regularize();
         this.prepareBuf();
         this.renderMeshLeft();
       }

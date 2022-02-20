@@ -380,10 +380,10 @@ export class Vertex {
    * It is described for 2D meshes in the paper and thus had to be modified for 3D models.
    * I decided rather then rotating the edges around the connecting vertices as described i would shift the vertex, (that should get smoothed) on the respective neighbouring edge to equalize the angles.
    * 
-   * TODO: remove console logs for debugging
    */
-  angle_smooth(): Vector{
+  angle_smooth(intensity: number): Vector{
 
+    //let intensity = 1;
     
     //if the vertex is on a boundary it should not move
     if(this.onBoundary()) return this.pos;
@@ -426,32 +426,12 @@ export class Vertex {
       //ratio between shift and max_angle determines how far the vertex will be moved on the edge
       let ratio = shift/max_angle;
 
-
-      //debugging
-/*       console.log("Position of the vertices: v, p0, p1, p2");
-      console.log(v);
-      console.log(p0);
-      console.log(p1);
-      console.log(p2);
-
-      console.log("Angles: a, b");
-      console.log(a);
-      console.log(b);
- */
       
       //new position on the edge after shifting
       let pos = v.add(vec_shift.scale(ratio));
 
-      //debugging
-/*       console.log("new position on halfedge:");
-      console.log(pos);
- */
       //Find the new position by constructing a vector from p1 to pos, and then scale (p1->pos) to the original length of the edge
       pos = p1.add(pos.sub(p1).unit().scale(vec.len()));
-
-/*       console.log("new position 2:");
-      console.log(pos);
- */      
 
       //For weighted version find the new angle
       let ab = (a+b)/2
@@ -462,29 +442,17 @@ export class Vertex {
       //add value to sum
       sum = sum.add(pos.scale(a_i));
 
-      //debugging
-/*       if(sum.w == 0){
-        console.log(vec);
-        console.log(vec0);
-        console.log(vec1);
-        console.log("cosinus: " + vec.dot(vec0)/(vec.len() *vec0.len()));
-  
-        console.log("Angles: a, b");
-        console.log(a);
-        console.log(b);
-  
-      }
-  
- */
     }); 
 
     //multiply results
     let res = sum.scale(1/count);
 
-/*     console.log("summe:");
-    console.log(res);
- */
     res = new Vector(res.x, res.y, res.z, 1);
+
+    //factor in intensity
+    let current = this.pos;
+    res = current.add(res.sub(current).scale(intensity));
+
     //return new position vector
     return res;
  
@@ -492,7 +460,7 @@ export class Vertex {
 
   //Applies angle based smoothing to the vertex
   apply_angle_smooth(){
-    this.pos = this.angle_smooth();
+    this.pos = this.angle_smooth(1);
   }
 
   /**

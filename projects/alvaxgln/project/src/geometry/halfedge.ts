@@ -16,6 +16,8 @@ export enum WeightType {
 export class HalfedgeMesh {
   color: Vector;
   wireframe: Vector;
+  smooth_intensity: number;
+  smooth_rounds: number;
 
   // The following four fields are the key fields to represent half-edge based
   // meshes.
@@ -24,6 +26,7 @@ export class HalfedgeMesh {
   faces: (Face | null)[]; // a list of faces
   halfedges: (Halfedge | null)[]; // a list of halfedges
   boundaries: Face[]; // an array of boundary loops
+
 
   
   /**
@@ -34,6 +37,10 @@ export class HalfedgeMesh {
   constructor(data: string) {
     this.color = new Vector(0, 128, 255, 1);
     this.wireframe = new Vector(125, 125, 125, 1);
+    this.smooth_intensity = 1;
+    this.smooth_rounds = 1;
+  
+  
 
     // load .obj file
     const indices: number[] = [];
@@ -733,6 +740,9 @@ export class HalfedgeMesh {
   //Regularize the halfedge mesh with the scheme
   regularize(){
 
+  const intensity = 1;
+  const rounds = 1
+
   //console.log("regular!");
 
   //this.angle_smooth();
@@ -740,7 +750,7 @@ export class HalfedgeMesh {
   this.basicEdgeFlip();
   console.log("1st Round of edgeflips done");
 
-  this.angle_smooth();
+  this.angle_smooth(intensity, rounds);
 
   this.easyEdges();
   console.log("Easy Edges handled");
@@ -815,11 +825,11 @@ v.pos = v.angle_smooth();
 
   //Applies one round of angle based smoothing to the input array of vertices
   //TODO: Add parameters for intensity and rounds
-  smoothVerts(verts: (Vertex | null)[]){
+  smoothVerts(verts: (Vertex | null)[], intensity: number, rounds: number){
 
-    let n = 1;
+    //let n = 1;
 
-    for(let i=0; i<n; i++){
+    for(let i=0; i<rounds; i++){
 
       //create array for updated vertex positions
       let verts_smooth = [];
@@ -828,7 +838,7 @@ v.pos = v.angle_smooth();
       for (let [i,v] of verts.entries()){
 
         //console.log(i, v);
-        verts_smooth[i] = v!.angle_smooth();
+        verts_smooth[i] = v!.angle_smooth(1);
       
       }
       
@@ -845,8 +855,8 @@ v.pos = v.angle_smooth();
 
   //applies one round of angle based smoothing to the whole mesh
   //TODO: Add parameters
-  angle_smooth(){
-      this.smoothVerts(this.verts);
+  angle_smooth(intensity: number, rounds: number){
+      this.smoothVerts(this.verts, intensity, rounds);
   }
 
 
@@ -939,9 +949,9 @@ v.pos = v.angle_smooth();
 
   //TODO: Change to 2 Rounds
   //apply smoothing to verts
-  this.smoothVerts([v0,v1,v2,v3]);
+  this.smoothVerts([v0,v1,v2,v3], this.smooth_intensity, this.smooth_rounds);
   //apply smoothing to verts
-  this.smoothVerts([v0,v1,v2,v3]);
+  this.smoothVerts([v0,v1,v2,v3], this.smooth_intensity, this.smooth_rounds);
 
 
   //console.log("flipped!");
@@ -1105,7 +1115,7 @@ v.pos = v.angle_smooth();
     m.vertices(v=>{
       toSmooth.push(v);
     })
-    this.smoothVerts(toSmooth);
+    this.smoothVerts(toSmooth, this.smooth_intensity, this.smooth_rounds);
     
 
     //smooth affected verts
@@ -1244,7 +1254,7 @@ v.pos = v.angle_smooth();
     v1.vertices(v=>{
       toSmooth.push(v);
     })
-    this.smoothVerts(toSmooth);
+    this.smoothVerts(toSmooth, this.smooth_intensity, this.smooth_rounds);
 
     //this.smoothVerts([v1,v3,v4]);
     //console.log("edge collapsed!");
