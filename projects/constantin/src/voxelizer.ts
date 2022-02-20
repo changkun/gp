@@ -77,6 +77,8 @@ export class Voxelizer {
                     //scene.add(helper);
                     this.helperBoxes.push(alignedCube.createBox3Helper());
                     this.testMeshes.push(alignedCube.createMesh());
+
+                    alignedCube.createMesh2(scene);
                     //scene.add(mesh);
 
                     //mesh.updateMatrix();
@@ -107,13 +109,13 @@ export class Voxelizer {
             scene.add(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
-            scene.add(this.testMeshes[i]);
+            //scene.add(this.testMeshes[i]);
         }
     }
 
     removeFromScene(scene:THREE.Scene){
         for(let i=0;i<this.helperBoxes.length;i++){
-            //scene.remove(this.helperBoxes[i]);
+            scene.remove(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
             //scene.remove(this.testMeshes[i]);
