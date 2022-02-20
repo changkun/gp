@@ -160,12 +160,30 @@ export class Vector {
   convertT():THREE.Vector3{
     return new THREE.Vector3(this.x,this.y,this.z);
   }
-
+  static createF(input:THREE.Vector3):Vector{
+    return new Vector(input.x,input.y,input.z);
+  } 
   min():number{
     return Math.min(this.x,this.y,this.z);
   }
   max():number{
     return Math.max(this.x,this.y,this.z);
+  }
+  static convArray(input:THREE.Vector3[]):Vector[]{
+    let ret=new Array<Vector>();
+    for(let i=0;i<input.length;i++){
+      let tmp=Vector.createF(input[i]);
+      ret.push(tmp);
+    }
+    return ret;
+  }
+  static convArray2(input:Vector[]):THREE.Vector3[]{
+    let ret=new Array<THREE.Vector3>();
+    for(let i=0;i<input.length;i++){
+      let tmp=input[i].convertT();
+      ret.push(tmp);
+    }
+    return ret;
   }
 }
 

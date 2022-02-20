@@ -16,10 +16,19 @@ export class Voxelizer {
 
     lastVoxelConstructionTime:number;
 
+    testMeshes2: Array<THREE.LineSegments>;
+    //
+    verticesBuff:THREE.Vector3[];
+    indicesBuff:number[];
+    bigTestMesh?:THREE.LineSegments;
+
     constructor(){
         this.helperBoxes=[];
         this.testMeshes=[];
+        this.testMeshes2=[];
         this.lastVoxelConstructionTime=0;
+        this.verticesBuff=[];
+        this.indicesBuff=[];
     }
 
     getRandomInt(max:number):number {
@@ -38,6 +47,9 @@ export class Voxelizer {
         this.removeFromScene(scene);
         this.helperBoxes=[];
         this.testMeshes=[];
+        this.testMeshes2=[];
+        this.verticesBuff=[];
+        this.indicesBuff=[];
         const start = new Date().getTime();
 
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
@@ -78,7 +90,17 @@ export class Voxelizer {
                     this.helperBoxes.push(alignedCube.createBox3Helper());
                     this.testMeshes.push(alignedCube.createMesh());
 
-                    alignedCube.createMesh2(scene);
+                    this.testMeshes2.push(alignedCube.createMesh2(scene));
+
+                    /*let [vertices,indices]= alignedCube.createVerticesIndices();
+                    for(let i=0;i<vertices.length;i++){
+                        this.verticesBuff.push(vertices[i]);
+                    }
+                    const idxOffset=this.indicesBuff.length;
+                    for(let i=0;i<indices.length;i++){
+                        this.indicesBuff.push(idxOffset+indices[i]);
+                    }*/
+
                     //scene.add(mesh);
 
                     //mesh.updateMatrix();
@@ -102,6 +124,7 @@ export class Voxelizer {
         //tmp[0]=mesh;
         //return tmp;
         //return ret;
+        //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
     }
 
     addToScene(scene:THREE.Scene){
@@ -111,6 +134,12 @@ export class Voxelizer {
         for(let i=0;i<this.testMeshes.length;i++){
             //scene.add(this.testMeshes[i]);
         }
+        for(let i=0;i<this.testMeshes2.length;i++){
+            scene.add(this.testMeshes2[i]);
+        }
+        if(this.bigTestMesh){
+            scene.add(this.bigTestMesh!);
+        }
     }
 
     removeFromScene(scene:THREE.Scene){
@@ -118,7 +147,13 @@ export class Voxelizer {
             scene.remove(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
-            //scene.remove(this.testMeshes[i]);
+            scene.remove(this.testMeshes[i]);
+        }
+        for(let i=0;i<this.testMeshes2.length;i++){
+            scene.remove(this.testMeshes2[i]);
+        }
+        if(this.bigTestMesh){
+            scene.remove(this.bigTestMesh!);
         }
     }
 

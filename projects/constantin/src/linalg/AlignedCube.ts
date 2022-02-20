@@ -2,6 +2,7 @@
 
 import { Vector } from "./vec";
 import * as THREE from 'three'
+import { LineSegments } from "three";
 
 // a aligned cube is defined by
 // 1) min: Vector3 representing the lower left (x,y,z) corner of the box
@@ -41,7 +42,7 @@ export class AlignedCube {
     }
 
 
-    createMeshFromVertsIndices(scene:THREE.Scene,vertices:number[],indices:number[]):THREE.Mesh{
+    static createMeshFromVertsIndices(vertices:number[],indices:number[]):THREE.Mesh{
         const vertices2 = new Float32Array(vertices);
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices2, 3 ) );
@@ -51,7 +52,7 @@ export class AlignedCube {
         return mesh;
     }
 
-    createWireframeMeshFromVertsIndices(scene:THREE.Scene,vertices:number[],indices:number[]): THREE.LineSegments{
+    static createWireframeMeshFromVertsIndices(vertices:number[],indices:number[]): THREE.LineSegments{
         const vertices2 = new Float32Array(vertices);
         const geometry = new THREE.BufferGeometry();
         // itemSize = 3 because there are 3 values (components) per vertex
@@ -65,7 +66,6 @@ export class AlignedCube {
         return segments;
     }
 
-
     testAddSimpleFace(scene:THREE.Scene){
         // create a simple square shape.
         const vertices = [
@@ -77,19 +77,40 @@ export class AlignedCube {
         const indices=[
             0,1,2,0,2,3
         ];
-        scene.add(this.createMeshFromVertsIndices(scene,vertices,indices));
-        scene.add(this.createWireframeMeshFromVertsIndices(scene,vertices,indices));
+        scene.add(AlignedCube.createMeshFromVertsIndices(vertices,indices));
+        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(vertices,indices));
     }
 
-    // https://catonif.github.io/cube/
-    createMesh2(scene:THREE.Scene){
-        const l = this.size;
+    static convertVertices(vertices:THREE.Vector3[]):number[]{
+        let ret=new Array<number>(vertices.length);
+        let count=0;
+        for(let i=0;i<vertices.length;i++){
+            const vert=vertices[i];
+            ret[count++]=vert.x;
+            ret[count++]=vert.y;
+            ret[count++]=vert.z;
+        }
+        return ret;
+        /*let ret=new Array<number>();
+        for(let i=0;i<vertices.length;i++){
+            const vert=vertices[i];
+            ret.push(vert.x);
+            ret.push(vert.y);
+            ret.push(vert.z);
+        }
+        return ret;*/
+    }
+
+    createVerticesIndices():[vertices:THREE.Vector3[],indices:number[]]{
+        const l = this.size/2;
+        let begin=new THREE.Vector3(this.lowerLeftCorner.x,this.lowerLeftCorner.y,this.lowerLeftCorner.z);
+        begin.add(new THREE.Vector3(this.size/2,this.size/2,this.size/2));
         let verts = new Array<THREE.Vector3>(8);
         for (let i = 0; i < 8; i++) {
 	        verts[i] = new THREE.Vector3(
 		        (i & 4) != 0 ? l : -l,
 		        (i & 2) != 0 ? l : -l,
-		        (i & 1) != 0 ? l : -l).add(this.lowerLeftCorner);
+		        (i & 1) != 0 ? l : -l).add(begin);
         }
         let indices=new Array<number>();
         let AddVert= (one: number, two: number,three:number) => {
@@ -104,21 +125,19 @@ export class AlignedCube {
             AddVert(v1 + v2, v2, v1);
             AddVert(7, 7 - v2, 7 - v1);
             AddVert(7 - (v1 + v2), 7 - v1, 7 - v2);
-            // i'm using [7 - ] instead of [~] because the only bits
-            // that need to be affected are the least relevant three
-            // and in C#, that' s the only way to do that.
         }
-       
-        let vertices=new Array<number>();
-        for(let i=0;i<verts.length;i++){
-            const vert=verts[i];
-            vertices.push(vert.x);
-            vertices.push(vert.y);
-            vertices.push(vert.z);
-        }
-        ///this.addMeshFromVertsIndices(scene,vertices,indices);
-        //this.addWireframeMeshFromVertsIndices(scene,vertices,indices);
-        this.testAddSimpleFace(scene);
+        return [verts,indices];
+    }
+
+    // https://catonif.github.io/cube/
+    createMesh2(scene:THREE.Scene):THREE.LineSegments{
+        
+        let [vertices,indices]= this.createVerticesIndices();
+
+        //scene.add(this.createMeshFromVertsIndices(scene,vertices,indices));
+        //scene.add(this.createWireframeMeshFromVertsIndices(scene,vertices,indices));
+        //this.testAddSimpleFace(scene);
+        return AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(vertices),indices);
     }
    
 }
