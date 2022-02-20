@@ -150,7 +150,8 @@ export default class Main extends Renderer {
     if(this.internal.mesh){
       this.internal.mesh!.removeAllIfAdded(this.scene);
     }
-    this.internal.mesh = new HalfedgeMesh(data);
+    let [indices,positions]=HalfedgeMesh.loadObj(data);
+    this.internal.mesh = new HalfedgeMesh(indices,positions);
     this.internal.voxelizer = new Voxelizer();
     this.renderMesh();
   }

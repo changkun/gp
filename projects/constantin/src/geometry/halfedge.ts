@@ -3,12 +3,10 @@
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
-import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
 import { Vertex, Edge, Face, Halfedge, NormalMethod } from './primitive';
 import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
-import { Cube } from '../linalg/cube';
 import * as THREE from 'three'
 import { Vector3 } from 'three';
 import {AABB} from './aabb';
@@ -38,42 +36,45 @@ export class HalfedgeMesh {
   normalHelper?: VertexNormalsHelper;
   wireframeHelper?: THREE.LineSegments;
 
+  // parse a text string from an .obj file into arrays of indices and positions
+  static loadObj(data: string):[number[],Vector[]]{
+     // load .obj file
+     const indices: number[] = [];
+     const positions: Vector[] = [];
+     const lines = data.split('\n');
+     for (let line of lines) {
+       line = line.trim();
+       const tokens = line.split(' ');
+       switch (tokens[0].trim()) {
+         case 'v':
+           positions.push(
+             new Vector(
+               parseFloat(tokens[1]),
+               parseFloat(tokens[2]),
+               parseFloat(tokens[3]),
+               1
+             )
+           );
+           break;
+         case 'f':
+           // only load indices of vertices
+           for (let i = 1; i < tokens.length; i++) {
+             const vv = tokens[i].split('/');
+             indices.push(parseInt(vv[0]) - 1);
+           }
+           break;
+       }
+     }
+     return [indices,positions];
+  }
+
   /**
    * constructor constructs the halfedge-based mesh representation.
-   *
-   * @param {string} data is a text string from an .obj file
+   * 
    */
-  constructor(data: string) {
+  constructor(indices: number[],positions:Vector[]) {
     this.color = new Vector(0, 128, 255, 1);
     this.wireframe = new Vector(125, 125, 125, 1);
-
-    // load .obj file
-    const indices: number[] = [];
-    const positions: Vector[] = [];
-    const lines = data.split('\n');
-    for (let line of lines) {
-      line = line.trim();
-      const tokens = line.split(' ');
-      switch (tokens[0].trim()) {
-        case 'v':
-          positions.push(
-            new Vector(
-              parseFloat(tokens[1]),
-              parseFloat(tokens[2]),
-              parseFloat(tokens[3]),
-              1
-            )
-          );
-          break;
-        case 'f':
-          // only load indices of vertices
-          for (let i = 1; i < tokens.length; i++) {
-            const vv = tokens[i].split('/');
-            indices.push(parseInt(vv[0]) - 1);
-          }
-          break;
-      }
-    }
     this.verts = [];
     this.edges = [];
     this.faces = [];

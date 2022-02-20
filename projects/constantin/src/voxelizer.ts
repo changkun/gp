@@ -3,7 +3,7 @@ import { Vertex, Edge, Face, Halfedge } from './geometry/primitive';
 import { Vector } from './linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
-import { Cube } from './linalg/cube';
+import { AlignedCube } from './linalg/AlignedCube';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
 
@@ -61,33 +61,38 @@ export class Voxelizer {
                 const x1=x*VOXEL_SIZE;
                 const y1=y*VOXEL_SIZE;
                 const z1=z*VOXEL_SIZE;
+                const alignedCube=new AlignedCube(x1,y1,z1,VOXEL_SIZE);
     
-                const min=new THREE.Vector3(x1,y1,z1);
-                const max=new THREE.Vector3(x1+VOXEL_SIZE,y1+VOXEL_SIZE,z1+VOXEL_SIZE);
+                //const min=new THREE.Vector3(x1,y1,z1);
+                //const max=new THREE.Vector3(x1+VOXEL_SIZE,y1+VOXEL_SIZE,z1+VOXEL_SIZE);
     
-                const box = new THREE.Box3(min,max);
+                //const box = new THREE.Box3(min,max);
                 let intersectsAny=false;
                 for(let f of originalMesh.faces){
                     const triangleData=f.asTriangle();
                     const triangle=this.convertToThreeJs(triangleData);
-                    if(box.intersectsTriangle(triangle)){
+                    //if(box.intersectsTriangle(triangle)){
+                    //    intersectsAny=true;
+                    //    break;
+                    //}
+                    if(alignedCube.intersect(triangle)){
                         intersectsAny=true;
                         break;
                     }
                 }
                 //const geometry=new THREE.BoxBufferGeometry()
-                const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
+                //const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
                 //const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
-                const mesh = new THREE.Mesh(geometry,materialGreen);
-                const VOXEL_SIZE_HALF=VOXEL_SIZE/2.0;
-                mesh.position.set(x1+VOXEL_SIZE_HALF,y1+VOXEL_SIZE_HALF,z1+VOXEL_SIZE_HALF);
+                //const mesh = new THREE.Mesh(geometry,materialGreen);
+                //const VOXEL_SIZE_HALF=VOXEL_SIZE/2.0;
+                //mesh.position.set(x1+VOXEL_SIZE_HALF,y1+VOXEL_SIZE_HALF,z1+VOXEL_SIZE_HALF);
 
-                const helper = new THREE.Box3Helper(box);
+                //const helper = new THREE.Box3Helper(box);
     
                 if(intersectsAny){
                     //scene.add(helper);
-                    this.helperBoxes.push(helper);
-                    this.testMeshes.push(mesh);
+                    this.helperBoxes.push(alignedCube.createBox3Helper());
+                    this.testMeshes.push(alignedCube.createMesh());
                     //scene.add(mesh);
 
                     //mesh.updateMatrix();
@@ -118,7 +123,7 @@ export class Voxelizer {
             scene.add(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
-            //scene.add(this.testMeshes[i]);
+            scene.add(this.testMeshes[i]);
         }
     }
 
@@ -127,7 +132,7 @@ export class Voxelizer {
             scene.remove(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
-            //scene.remove(this.testMeshes[i]);
+            scene.remove(this.testMeshes[i]);
         }
     }
 
@@ -141,8 +146,7 @@ export class Voxelizer {
     }
 
 
-
-    appendNewCubeTohalfedgeMesh(cube:Cube){
+    appendNewCubeTohalfedgeMesh(){
         // if mesh empty, add cube and return
         // else
         // find any already added cubes that "touch" the new cube
