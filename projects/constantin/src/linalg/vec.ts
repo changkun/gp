@@ -170,7 +170,6 @@ export class Vector {
 }
 
 
-
 // https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox.txt
 
 export class Vector3 {

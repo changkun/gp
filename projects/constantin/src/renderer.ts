@@ -45,7 +45,7 @@ export default class Renderer {
     this.camera = new PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
-      0.1,
+      1,
       1000
     );
     this.camera.position.z = 2.5;
@@ -69,6 +69,8 @@ export default class Renderer {
     // controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.rotateSpeed = 2.0;
+    //this.controls.minDistance=1;
+    //this.controls.maxDistance=100;
   }
 
   /**

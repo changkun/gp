@@ -11,10 +11,14 @@ import { HalfedgeMesh } from './geometry/halfedge';
 export class Voxelizer {
 
     helperBoxes: Array<THREE.Box3Helper>;
+
+    testMeshes: Array<THREE.Mesh>;
+
     lastVoxelConstructionTime:number;
 
     constructor(){
         this.helperBoxes=[];
+        this.testMeshes=[];
         this.lastVoxelConstructionTime=0;
     }
 
@@ -28,11 +32,13 @@ export class Voxelizer {
         const v3=new THREE.Vector3(vertices[2].x,vertices[2].y,vertices[2].z);
         return new THREE.Triangle(v1,v2,v3);
     }
+
     
 
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
         this.helperBoxes=[];
+        this.testMeshes=[];
         const start = new Date().getTime();
 
         let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
@@ -40,7 +46,7 @@ export class Voxelizer {
         let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
 
         var singleGeometry = new THREE.BufferGeometry();
-        //const tmpCube=new THREE.BoxBufferGeometry(1,1,1);
+        const tmpCube=new THREE.BoxBufferGeometry(1,1,1);
         //THREE.GeometryUtils.merge(singleGeometry,tmpCube);
     
         const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
@@ -63,24 +69,26 @@ export class Voxelizer {
                 const box = new THREE.Box3(min,max);
                 let intersectsAny=false;
                 for(let f of originalMesh.faces){
-                const triangleData=f.asTriangle();
-                const triangle=this.convertToThreeJs(triangleData);
-                if(box.intersectsTriangle(triangle)){
-                    intersectsAny=true;
-                    break;
-                }
+                    const triangleData=f.asTriangle();
+                    const triangle=this.convertToThreeJs(triangleData);
+                    if(box.intersectsTriangle(triangle)){
+                        intersectsAny=true;
+                        break;
+                    }
                 }
                 //const geometry=new THREE.BoxBufferGeometry()
                 const geometry=new THREE.BoxBufferGeometry(VOXEL_SIZE,VOXEL_SIZE,VOXEL_SIZE);
                 //const mesh = new THREE.Mesh(geometry,this.getRandomInt(2) % 2 ? materialGreen : materialRed);
                 const mesh = new THREE.Mesh(geometry,materialGreen);
-                mesh.position.set(x1,y1,z1);
+                const VOXEL_SIZE_HALF=VOXEL_SIZE/2.0;
+                mesh.position.set(x1+VOXEL_SIZE_HALF,y1+VOXEL_SIZE_HALF,z1+VOXEL_SIZE_HALF);
 
                 const helper = new THREE.Box3Helper(box);
     
                 if(intersectsAny){
                     //scene.add(helper);
                     this.helperBoxes.push(helper);
+                    this.testMeshes.push(mesh);
                     //scene.add(mesh);
 
                     //mesh.updateMatrix();
@@ -110,11 +118,17 @@ export class Voxelizer {
         for(let i=0;i<this.helperBoxes.length;i++){
             scene.add(this.helperBoxes[i]);
         }
+        for(let i=0;i<this.testMeshes.length;i++){
+            //scene.add(this.testMeshes[i]);
+        }
     }
 
     removeFromScene(scene:THREE.Scene){
         for(let i=0;i<this.helperBoxes.length;i++){
             scene.remove(this.helperBoxes[i]);
+        }
+        for(let i=0;i<this.testMeshes.length;i++){
+            //scene.remove(this.testMeshes[i]);
         }
     }
 
@@ -125,6 +139,15 @@ export class Voxelizer {
         const box = new THREE.Box3(min,max);
         const helper = new THREE.Box3Helper(box);
         scene.add(helper);
+    }
+
+
+
+    appendNewCubeTohalfedgeMesh(cube:Cube){
+        // if mesh empty, add cube and return
+        // else
+        // find any already added cubes that "touch" the new cube
+        // add new vertices (if needed), update connectvities
     }
 
 }

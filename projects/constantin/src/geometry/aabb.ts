@@ -120,7 +120,6 @@ export class AABB {
     let v2=new THREE.Vector3();
     box.getSize(v1);
     box.getCenter(v2);
-
     console.log("Box:Center("+v2.x+","+v2.y+","+v2.z+")"+"Size("+v1.x+","+v1.y+","+v1.z+")");
 
   }

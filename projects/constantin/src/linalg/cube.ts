@@ -4,12 +4,16 @@ import { Vector } from "./vec";
 
 // a cube is defined by its middle point and a size
 export class Cube {
-    middle:Vector;
+    lowerLeft:Vector;
     size: number;
   
     constructor(x: number, y: number, z: number, size:number) {
-        this.middle=new Vector(x,y,z);
+        this.lowerLeft=new Vector(x,y,z);
         this.size=size;
+    }
+
+    generateVertices(){
+        
     }
 }
 

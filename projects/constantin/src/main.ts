@@ -20,7 +20,8 @@ import {
   MeshBasicMaterial,
   BoxBufferGeometry,
   Box3,
-  Box3Helper
+  Box3Helper,
+  ArrowHelper
 } from 'three';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {Vector} from './linalg/vec';
@@ -40,7 +41,7 @@ export default class Main extends Renderer {
     voxelizer?:Voxelizer; // Consti10 handle to voxels
     normalHelper?: VertexNormalsHelper;
     wireframeHelper?: LineSegments;
-    halfedgesHelper?: LineSegments;
+    halfedgesHelper?: Array<ArrowHelper>; // the halfedges are represented by Arrows, yellow if not on a boundary, red otherwise
   };
   params: {
     import: () => void;
@@ -58,7 +59,17 @@ export default class Main extends Renderer {
   bufpos: Float32Array;
   bufnormals: Float32Array;
   bufcolors: Float32Array;
-
+  // Consti10:
+  // add/remove all the halfedge helper arrows to the scene
+  addOrRemoveAllHalfedgeHelpersToScene(remove:boolean){
+    for(let i=0;i<this.internal.halfedgesHelper!.length;i++){
+      if(remove){
+        this.scene.remove(this.internal.halfedgesHelper![i]);
+      }else{
+        this.scene.add(this.internal.halfedgesHelper![i]);
+      }
+    }
+  }
   /**
    * constroctor creates the objects needed for rendering
    */
@@ -81,6 +92,7 @@ export default class Main extends Renderer {
     document.body.appendChild(this.input);
 
     this.internal = {};
+    this.internal.halfedgesHelper=[];
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
@@ -126,8 +138,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.scene.add(this.internal.halfedgesHelper!)
-          : this.scene.remove(this.internal.halfedgesHelper!);
+          ? this.addOrRemoveAllHalfedgeHelpersToScene(false)
+          : this.addOrRemoveAllHalfedgeHelpersToScene(true);
       });  
     this.gui
       .add(this.params, 'showVoxels')
@@ -278,8 +290,9 @@ export default class Main extends Renderer {
     if (this.internal.wireframeHelper !== null) {
       this.scene.remove(this.internal.wireframeHelper!);
     }
-    if (this.internal.halfedgesHelper !== null) {
-      this.scene.remove(this.internal.halfedgesHelper!);
+    if (this.internal.halfedgesHelper!.length>0) {
+      this.addOrRemoveAllHalfedgeHelpersToScene(true);
+      this.internal.halfedgesHelper=[];
     }
     if (this.internal.mesh3js !== null) {
       this.scene.remove(this.internal.mesh3js!);
@@ -345,11 +358,32 @@ export default class Main extends Renderer {
       new WireframeGeometry(g),
       new LineBasicMaterial({color: 0x000000, linewidth: 1})
     );
-
-    this.internal.halfedgesHelper = new LineSegments(
-      new WireframeGeometry(g),
-      new LineBasicMaterial({color: 0x000000, linewidth: 1})
-    );
+    //const materialLineEdgeNoBoundary = new LineBasicMaterial({color: 'green'});
+    //const materialLineEdgeBoundary = new LineBasicMaterial({color: 'red'});
+    /*for(let i=0;i<this.internal.mesh!.edges.length;i++){
+      const edge=this.internal.mesh!.edges[i];
+      if(edge.halfedge){
+        const edgeHe=edge.halfedge!;
+        const origin = edgeHe.vert!.position.convertT();
+        const dir=edgeHe.vector().convertT().normalize();
+        const len=edgeHe.vector().convertT().length();
+        const arrowHelper = new ArrowHelper( dir, origin, len,0xffff00);
+        this.scene.add(arrowHelper);
+      }
+    }*/
+     // draw halfedges using arrows
+    for(let i=0;i<this.internal.mesh!.halfedges.length;i++){
+      const edgeHe=this.internal.mesh!.halfedges[i];
+      const origin = edgeHe.vert!.position.convertT();
+      const dir=edgeHe.vector().convertT().normalize();
+      const len=edgeHe.vector().convertT().length();
+      const color = edgeHe.onBoundary ? 0xFF0000 : 0xffff00;
+      const headLength=0.01;
+      const headWidth=headLength*0.5;
+      const arrowHelper = new ArrowHelper( dir, origin, len,color,headLength,headWidth);
+      //this.scene.add(arrowHelper);
+      this.internal.halfedgesHelper?.push(arrowHelper);
+    }
 
     this.scene.add(this.internal.mesh3js);
     if (this.params.showNormals) {
@@ -359,8 +393,9 @@ export default class Main extends Renderer {
       this.scene.add(this.internal.wireframeHelper);
     }
     if(this.params.showHalfedges){
-      this.scene.add(this.internal.halfedgesHelper);
+      this.addOrRemoveAllHalfedgeHelpersToScene(false);
     }
+
 
     this.internal.mesh3js!.geometry.computeBoundingBox();
     //let box = new Box3();

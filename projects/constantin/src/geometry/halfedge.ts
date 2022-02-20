@@ -98,7 +98,7 @@ export class HalfedgeMesh {
     this.faces = [];
     this.halfedges = [];
     // Here we scale the vertices of the input mesh such that
-    // they are inside a bounding box of size [-1,1] (3D)
+    // they are inside a bounding box of fixed size
     const aabb = new AABB(positions);
     for(let i=0;i<positions.length;i++){
       positions[i]=aabb.transformToFit(positions[i]);
@@ -106,8 +106,6 @@ export class HalfedgeMesh {
     aabb.debug();
     aabb.checkTransformSuccessfull(positions);
     this.buildMesh(indices, positions);
-
-    let vox=new Voxelizer();
   }
 
 
@@ -285,6 +283,38 @@ export class HalfedgeMesh {
     this.halfedges.forEach(h => { h.idx = index++ })
   }
 
+  // The underlying Three.js renderer does not natively support halfedges.
+  // these hlper methods fix this issue by converting the data structure into (Helper)
+  // that can be rendered by Three.js
 
-
+  //Create an Array of Three.ArrowHelper to draw the halfedges using Three.js
+  createRenderableHalfedges():Array<THREE.ArrowHelper>{
+    //const materialLineEdgeNoBoundary = new LineBasicMaterial({color: 'green'});
+    //const materialLineEdgeBoundary = new LineBasicMaterial({color: 'red'});
+    /*for(let i=0;i<this.internal.mesh!.edges.length;i++){
+      const edge=this.internal.mesh!.edges[i];
+      if(edge.halfedge){
+        const edgeHe=edge.halfedge!;
+        const origin = edgeHe.vert!.position.convertT();
+        const dir=edgeHe.vector().convertT().normalize();
+        const len=edgeHe.vector().convertT().length();
+        const arrowHelper = new ArrowHelper( dir, origin, len,0xffff00);
+        this.scene.add(arrowHelper);
+      }
+    }*/
+    let ret:Array<THREE.ArrowHelper>=[];
+    // draw halfedges using arrows
+    for(let i=0;i<this.halfedges!.length;i++){
+      const edgeHe=this.halfedges![i];
+      const origin = edgeHe.vert!.position.convertT();
+      const dir=edgeHe.vector().convertT().normalize();
+      const len=edgeHe.vector().convertT().length();
+      const color = edgeHe.onBoundary ? 0xFF0000 : 0xffff00;
+      const headLength=0.01;
+      const headWidth=headLength*0.5;
+      const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
+      ret.push(arrowHelper);
+    }
+    return ret;
+  }
 }
