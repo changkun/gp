@@ -37,10 +37,7 @@ export default class Main extends Renderer {
   input: HTMLInputElement;
   internal: {
     mesh?: HalfedgeMesh; // internal mesh object
-    mesh3js?: Mesh; // three.js buffer geometry object
     voxelizer?:Voxelizer; // Consti10 handle to voxels
-    normalHelper?: VertexNormalsHelper;
-    wireframeHelper?: LineSegments;
   };
   params: {
     import: () => void;
@@ -103,8 +100,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.scene.add(this.internal.normalHelper!)
-          : this.scene.remove(this.internal.normalHelper!);
+          ? this.internal.mesh!.addNormalHelperToScene(this.scene,false)
+          : this.internal.mesh!.addNormalHelperToScene(this.scene,true);
       });
     this.gui
       .add(this.params, 'showWireframe')
@@ -112,8 +109,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.scene.add(this.internal.wireframeHelper!)
-          : this.scene.remove(this.internal.wireframeHelper!);
+          ? this.internal.mesh!.addWireframeHelperToScene(this.scene,false)
+          : this.internal.mesh!.addWireframeHelperToScene(this.scene,true);
       });
     this.gui
       .add(this.params, 'showHalfedges')
@@ -121,8 +118,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,false)
-          : this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,true);
+          ? this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false)
+          : this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,true);
       });  
     this.gui
       .add(this.params, 'showVoxels')
@@ -150,8 +147,8 @@ export default class Main extends Renderer {
       .then(data => this.loadMesh(data));
   }
   loadMesh(data: string) {
-    if (this.internal.mesh3js !== null) {
-      this.scene.remove(this.internal.mesh3js!);
+    if(this.internal.mesh){
+      this.internal.mesh!.removeAllIfAdded(this.scene);
     }
     this.internal.mesh = new HalfedgeMesh(data);
     this.internal.voxelizer = new Voxelizer();
@@ -167,16 +164,6 @@ export default class Main extends Renderer {
     e.click();
     document.body.removeChild(e);
   }
-  updateNormals() {
-    this.internal.mesh!.verts.forEach(v => {
-      const n = v.normal(this.params.normalMethod);
-      this.bufnormals[3 * v.idx + 0] = n.x;
-      this.bufnormals[3 * v.idx + 1] = n.y;
-      this.bufnormals[3 * v.idx + 2] = n.z;
-    });
-    this.internal.mesh3js!.geometry.attributes.normal.needsUpdate = true;
-    this.internal.normalHelper!.update();
-  }
 
   updateVoxelizer(){
     this.internal.voxelizer!.removeFromScene(this.scene);
@@ -189,93 +176,24 @@ export default class Main extends Renderer {
 
   renderMesh() {
     // clear old instances
-    if (this.internal.normalHelper !== null) {
-      this.scene.remove(this.internal.normalHelper!);
-    }
-    if (this.internal.wireframeHelper !== null) {
-      this.scene.remove(this.internal.wireframeHelper!);
-    }
-    if (this.internal.mesh) {
-      this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,true);
-    }
-    if (this.internal.mesh3js !== null) {
-      this.scene.remove(this.internal.mesh3js!);
-    }
+    this.internal.mesh!.removeAllIfAdded(this.scene);
 
-    // prepare new data
-    const g = new BufferGeometry();
-    const v = this.internal.mesh!.verts.length;
-    this.bufpos = new Float32Array(v * 3);
-    this.bufcolors = new Float32Array(v * 3);
-    this.bufnormals = new Float32Array(v * 3);
-
-    //const aabb = new AABB(this.internal.mesh!.verts!);
-
-    this.internal.mesh!.verts.forEach(v => {
-      const i = v.idx;
-      // use AABB and rescale to viewport center
-      //const p = v.position.sub(aabb.center()).scale(1 / aabb.radius());
-      const p=v.position;
-      this.bufpos[3 * i + 0] = p.x;
-      this.bufpos[3 * i + 1] = p.y;
-      this.bufpos[3 * i + 2] = p.z;
-
-      // default GP blue color
-      this.bufcolors[3 * i + 0] = 0;
-      this.bufcolors[3 * i + 1] = 0.5;
-      this.bufcolors[3 * i + 2] = 1;
-
-      const n = v.normal(this.params.normalMethod);
-      this.bufnormals[3 * i + 0] = n.x;
-      this.bufnormals[3 * i + 1] = n.y;
-      this.bufnormals[3 * i + 2] = n.z;
-    });
-
-    const idxs = new Uint32Array(this.internal.mesh!.faces.length * 3);
-    this.internal.mesh!.faces.forEach(f => {
-      f.vertices((v, i) => {
-        idxs[3 * f.idx + i] = v.idx;
-      });
-    });
-
-    g.setIndex(new BufferAttribute(idxs, 1));
-    g.setAttribute('position', new BufferAttribute(this.bufpos, 3));
-    g.setAttribute('color', new BufferAttribute(this.bufcolors, 3));
-    g.setAttribute('normal', new BufferAttribute(this.bufnormals, 3));
-
-    this.internal.mesh3js = new Mesh(
-      g,
-      new MeshPhongMaterial({
-        vertexColors: true,
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
-        side: DoubleSide,
-      })
-    );
-    this.internal.normalHelper = new VertexNormalsHelper(
-      this.internal.mesh3js,
-      0.03,
-      0xaa0000
-    );
-    this.internal.wireframeHelper = new LineSegments(
-      new WireframeGeometry(g),
-      new LineBasicMaterial({color: 0x000000, linewidth: 1})
-    );
+    // update the instances if data has changed
+    this.internal.mesh!.createRenderableMeshAndWireframe();
     this.internal.mesh!.createRenderableHalfedgeHelpers();
 
-    this.scene.add(this.internal.mesh3js);
+    this.internal.mesh!.addMeshHelperToScene(this.scene,false);
     if (this.params.showNormals) {
-      this.scene.add(this.internal.normalHelper);
+      this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     }
     if (this.params.showWireframe) {
-      this.scene.add(this.internal.wireframeHelper);
+      this.internal.mesh!.addWireframeHelperToScene(this.scene,false);
     }
     if(this.params.showHalfedges){
-      this.internal.mesh!.addOrRemoveAllHalfedgeHelpersToScene(this.scene,false);
+      this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false);
     }
 
-    this.internal.mesh3js!.geometry.computeBoundingBox();
+    //this.internal.mesh3js!.geometry.computeBoundingBox();
     //let box = new Box3();
     //box.copy(this.internal.mesh3js!.geometry.boundingBox!);
     let box = new Box3()

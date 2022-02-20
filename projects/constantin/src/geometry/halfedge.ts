@@ -4,7 +4,7 @@
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
 import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
-import { Vertex, Edge, Face, Halfedge } from './primitive';
+import { Vertex, Edge, Face, Halfedge, NormalMethod } from './primitive';
 import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
@@ -267,10 +267,66 @@ export class HalfedgeMesh {
   // The underlying Three.js renderer does not natively support halfedges.
   // these hlper methods fix this issue by converting the data structure into (Helper)
   // that can be rendered by Three.js
-  createRenderableMeshAndWireframe(){
-    
-  }
 
+  // creates a mesh, wireframe mesh and normal helper that can be rendered by Three.js
+  createRenderableMeshAndWireframe(){
+    // prepare new data
+    const g = new THREE.BufferGeometry();
+    const v = this.verts.length;
+    let bufpos = new Float32Array(v * 3);
+    let bufcolors = new Float32Array(v * 3);
+    let bufnormals = new Float32Array(v * 3);
+
+    this.verts.forEach(v => {
+      const i = v.idx;
+      const p=v.position;
+      bufpos[3 * i + 0] = p.x;
+      bufpos[3 * i + 1] = p.y;
+      bufpos[3 * i + 2] = p.z;
+
+      // default GP blue color
+      bufcolors[3 * i + 0] = 0;
+      bufcolors[3 * i + 1] = 0.5;
+      bufcolors[3 * i + 2] = 1;
+
+      const n = v.normal(NormalMethod.EqualWeighted);
+      bufnormals[3 * i + 0] = n.x;
+      bufnormals[3 * i + 1] = n.y;
+      bufnormals[3 * i + 2] = n.z;
+    });
+
+    const idxs = new Uint32Array(this.faces.length * 3);
+    this.faces.forEach(f => {
+      f.vertices((v, i) => {
+        idxs[3 * f.idx + i] = v.idx;
+      });
+    });
+
+    g.setIndex(new THREE.BufferAttribute(idxs, 1));
+    g.setAttribute('position', new THREE.BufferAttribute(bufpos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(bufcolors, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(bufnormals, 3));
+
+    this.mesh3js = new THREE.Mesh(
+      g,
+      new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+        side: THREE.DoubleSide,
+      })
+    );
+    this.normalHelper = new VertexNormalsHelper(
+      this.mesh3js!,
+      0.03,
+      0xaa0000
+    );
+    this.wireframeHelper = new THREE.LineSegments(
+      new THREE.WireframeGeometry(g),
+      new THREE.LineBasicMaterial({color: 0x000000, linewidth: 1})
+    );
+  }
 
   //Create an Array of Three.ArrowHelper to draw the halfedges using Three.js
   //Call this after construction or after the halfegde mesh has been updated
@@ -291,8 +347,35 @@ export class HalfedgeMesh {
       this.halfedgeHelpers.push(arrowHelper);
     }
   }
+
+  // These methods add / remove the THREE.js renderables to/from the scene
+  addMeshHelperToScene(scene:THREE.Scene,remove:boolean){
+    if(!this.mesh3js)return;
+    if(remove){
+      scene.remove(this.mesh3js!);
+    }else{
+      scene.add(this.mesh3js!);
+    }
+  }
+  addWireframeHelperToScene(scene:THREE.Scene,remove:boolean){
+    if(!this.wireframeHelper)return;
+    if(remove){
+      scene.remove(this.wireframeHelper!);
+    }else{
+      scene.add(this.wireframeHelper!);
+    }
+  }
+  addNormalHelperToScene(scene:THREE.Scene,remove:boolean){
+    if(!this.normalHelper)return;
+    if(remove){
+      scene.remove(this.normalHelper!);
+    }else{
+      scene.add(this.normalHelper!);
+    }
+  }
+
   // add/remove all the halfedge helper arrows to/from the scene
-  addOrRemoveAllHalfedgeHelpersToScene(scene:THREE.Scene,remove:boolean){
+  addHalfedgeHelpersToScene(scene:THREE.Scene,remove:boolean){
     for(let i=0;i<this.halfedgeHelpers.length;i++){
       if(remove){
         scene.remove(this.halfedgeHelpers![i]);
@@ -300,5 +383,13 @@ export class HalfedgeMesh {
         scene.add(this.halfedgeHelpers![i]);
       }
     }
+  }
+
+  // remve all three.js helper renderables if they are added to the scene
+  removeAllIfAdded(scene:THREE.Scene){
+    this.addMeshHelperToScene(scene,true);
+    this.addWireframeHelperToScene(scene,true);
+    this.addNormalHelperToScene(scene,true);
+    this.addHalfedgeHelpersToScene(scene,true);
   }
 }
