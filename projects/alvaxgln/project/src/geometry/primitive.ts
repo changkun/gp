@@ -73,7 +73,7 @@ export class Halfedge {
     const left_angle = h2.angle(h3);
 
     if(right_angle > 3 || left_angle > 3){
-      console.log("Bad angles, cant flip!")
+      //console.log("Bad angles, cant flip!")
       return false;
     }
 
@@ -85,7 +85,7 @@ export class Halfedge {
     //Print angle for debug
     //console.log("Winkel: "+ face_angle);
     if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)){
-      console.log("Bad face angles, can't flip");
+      //console.log("Bad face angles, can't flip");
       return false;
     }
 
@@ -119,7 +119,7 @@ export class Halfedge {
     const left_angle = h2.angle(h3);
 
     if(right_angle > 3 || left_angle > 3){
-      console.log("Bad angles, cant flip!")
+      //console.log("Bad angles, cant flip!")
       return false;
     }
 
