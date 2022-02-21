@@ -53,7 +53,8 @@ export default class Main extends Renderer {
     initialSmooth: boolean;
     intermediateSmooth: boolean;
     smooth: () => void;
-    regularize: () => void
+    regularize: () => void;
+    mesh: string;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -74,9 +75,13 @@ export default class Main extends Renderer {
         alert('Only .OBJ files are supported');
       }
       const r = new FileReader();
-      r.onload = () => this.loadMesh(<string>r.result);
+      r.onload = () => {
+        this.params.mesh = <string>r.result;
+        this.loadMesh(<string>r.result)
+      };
       r.onerror = () => alert('Cannot import your obj mesh');
       r.readAsText(file);
+
     });
     document.body.appendChild(this.input);
 
@@ -102,15 +107,13 @@ export default class Main extends Renderer {
         this.renderMeshLeft();
       },
       regularize: () => {
-        fetch('./assets/bunny.obj')
-        .then(resp => resp.text())
-        .then(data => this.loadMesh(data))
-        .then(()=>{
+        this.loadMesh(this.params.mesh);
         this.internal!.mesh!.regularize(this.params.smoothIntensity, this.params.smoothRounds, this.params.initialSmooth, this.params.intermediateSmooth);
         this.prepareBuf();
         this.renderMeshLeft();
-        })
-      }
+        
+      },
+      mesh: ""
     };
 
     this.bufpos = new Float32Array();
@@ -280,7 +283,10 @@ export default class Main extends Renderer {
     // just for the first load
     fetch('./assets/bunny.obj')
       .then(resp => resp.text())
-      .then(data => this.loadMesh(data));
+      .then(data =>{
+        this.params.mesh = data;
+        this.loadMesh(data);
+      });
   }
   loadMesh(data: string) {
     this.internal.raw = data;
@@ -319,7 +325,7 @@ export default class Main extends Renderer {
   }
   prepareBuf() {
     //debugger;
-    console.log("about to prepare buffer:")
+    //console.log("about to prepare buffer:")
     // prepare threejs buffer data
     const v = this.internal.mesh!.verts!.length;
     this.bufpos = new Float32Array(v * 3);
@@ -337,7 +343,7 @@ export default class Main extends Renderer {
       max.z = Math.max(max.z, v!.pos.z);
     });
 
-    console.log("prepare buffer: 0")
+    //console.log("prepare buffer: 0")
 
     const center = min.add(max).scale(1 / 2);
     const radius = max.sub(min).len() / 2;
@@ -371,7 +377,7 @@ export default class Main extends Renderer {
 
 
     });
-    console.log("buffer prepared")
+    //console.log("buffer prepared")
   }
   renderMeshLeft() {
     // clear old instances
