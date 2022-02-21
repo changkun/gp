@@ -33,7 +33,7 @@ export default class Renderer {
     document.body.style.margin = '0';
     this.renderer = new WebGLRenderer({
       antialias: true,
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: false,
     });
     document.body.appendChild(this.renderer.domElement);
 

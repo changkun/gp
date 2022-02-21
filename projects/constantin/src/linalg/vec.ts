@@ -210,7 +210,7 @@ export class XVector3 {
     this.numbers[2] = z || 0;
   }
 
-  public static cross(v1:number[],v2:number[]):number[]{
+  public static CROSS(v1:number[],v2:number[]):number[]{
     let dest=new Array<number>(3);
     dest[0]=v1[1]*v2[2]-v1[2]*v2[1];
     dest[1]=v1[2]*v2[0]-v1[0]*v2[2];
@@ -218,17 +218,33 @@ export class XVector3 {
     return dest;
   }
 
-  public static dot(v1:number[],v2:number[]):number{
+  public static DOT(v1:number[],v2:number[]):number{
     return (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]);
   }
 
-  public static sub(v1:number[],v2:number[]):number[]{
+  public static SUB(v1:number[],v2:number[]):number[]{
     let dest=new Array<number>(3);
     dest[0]=v1[0]-v2[0];
     dest[1]=v1[1]-v2[1];
     dest[2]=v1[2]-v2[2];
     return dest;
   }
+  public static FINDMINMAX(x0:number,x1:number,x2:number,min:number,max:number){
+    min = max = x0;
+    if(x1<min) min=x1;
+    if(x1>max) max=x1;
+    if(x2<min) min=x2;
+    if(x2>max) max=x2;
+  }
+
+  /*======================== X-tests ========================*/
+/*  public static  AXISTEST_X01(a:any, b:any, fa:any, fb:any){			  
+p0 = a*v0[Y] - b*v0[Z];			       	   
+p2 = a*v2[Y] - b*v2[Z];			       	   \
+      if(p0<p2) {min=p0; max=p2;} else {min=p2; max=p0;} 
+rad = fa * boxhalfsize[Y] + fb * boxhalfsize[Z];   
+if(min>rad || max<-rad) return 0;
+  }*/
 
   public static planeBoxOverlap(normal:number[],d:number,maxbox:number[]):number{
     let vmin=new Array<number>(3);
@@ -242,11 +258,12 @@ export class XVector3 {
         vmax[q]=-maxbox[q];
       }
     }
-    if(XVector3.dot(normal,vmin)+d>0.0) return 0;
-    if(XVector3.dot(normal,vmax)+d>=0.0) return 1;
+    if(XVector3.DOT(normal,vmin)+d>0.0) return 0;
+    if(XVector3.DOT(normal,vmax)+d>=0.0) return 1;
     return 0;
   }
 
+  
 
   public static checkTriangleCube():boolean{
     let triangle=new THREE.Triangle();

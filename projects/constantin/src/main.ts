@@ -210,7 +210,7 @@ export default class Main extends Renderer {
     this.internal.mesh!.createAllRenderHelpers();
 
     // always add the solid mesh
-    this.internal.mesh!.addMeshHelperToScene(this.scene,false);
+    //this.internal.mesh!.addMeshHelperToScene(this.scene,false);
     //if (this.params.showNormals) {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}

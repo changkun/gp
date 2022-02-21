@@ -5,6 +5,7 @@
 // in the LICENSE file.
 
 import {Vector} from '../linalg/vec';
+import { Helper } from '../helper/Helper';
 
 export class Halfedge {
   vert?: Vertex;
@@ -42,6 +43,9 @@ export class Halfedge {
     const u = this.prev!.vector().unit();
     const v = this.next!.vector().scale(-1).unit();
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))));
+  }
+  validate(){
+    //assert(this.vert !== null);
   }
 }
 
@@ -165,9 +169,9 @@ export class Vertex {
     if(!this.halfedge){
       return new Vector();
     }else{
-      return this.halfedge!.face!.normal();
+      //return this.halfedge!.face!.normal();
     }
-    /*switch (method) {
+    switch (method) {
       case NormalMethod.EqualWeighted:
         this.faces(f => {
           n = n.add(f.normal());
@@ -185,6 +189,6 @@ export class Vertex {
           n = n.add(h.face!.normal().scale(h.next!.angle()));
         });
         return n.unit();
-    }*/
+    }
   }
 }

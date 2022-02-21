@@ -4,7 +4,7 @@ import { Vertex, Edge, Face, Halfedge } from '../geometry/primitive';
 import { Vector } from '../linalg/vec';
 import { ThreeDArray } from '../helper/3DArray';
 import { AlignedCube } from '../linalg/AlignedCube';
-import { FogExp2 } from 'three';
+import { FogExp2, Side } from 'three';
 import { HalfedgeMesh } from '../geometry/halfedge';
 import { off } from 'process';
 
@@ -27,7 +27,16 @@ export class Helper{
         geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices2, 3 ) );
         geometry.setIndex( indices );
         const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+        material.side=THREE.DoubleSide;
+        const material2=new THREE.MeshPhongMaterial({
+            vertexColors: true,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1,
+            side: THREE.DoubleSide,
+        });
         const mesh = new THREE.Mesh( geometry, material );
+        mesh.geometry.computeVertexNormals();
         return mesh;
     }
 
@@ -260,7 +269,6 @@ export class Helper{
                 }
             }*/
         }
-
         return [verticesRet,indicesRet];
     }
 

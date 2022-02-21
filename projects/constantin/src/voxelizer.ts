@@ -18,7 +18,7 @@ export class Voxelizer {
     //
     testMeshes2: Array<THREE.LineSegments>;
     //
-    bigTestMesh?:THREE.LineSegments;
+    bigTestMesh?:any;
 
     createdHalfedgeMesh?:HalfedgeMesh;
     //
@@ -70,7 +70,6 @@ export class Voxelizer {
             for(let y=0;y<VOXELS_PER_AXIS;y++){
                 for(let z=0;z<VOXELS_PER_AXIS;z++){
                     //console.log("Voxelizing:" + x +","+y+","+z);
-        
                     const x1=x*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
@@ -111,8 +110,8 @@ export class Voxelizer {
         //let [x1Vert,x1Ind]=Helper.removeIsolatedVertices(Helper.convertToThreJs2(xBuffVertices),this.yIndices);
         //this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(x1Vert),x1Ind,new THREE.Color('red'));
 
-        //this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(bigBuffVertices),bigBuffIndices,new THREE.Color('red'));
-        this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(xBuffVertices,remaining,new THREE.Color('orange'));
+        //this.bigTestMesh=Helper.createMeshFromVertsIndices(Helper.convertVertices(bigBuffVertices),bigBuffIndices,new THREE.Color('red'));
+        this.bigTestMesh=Helper.createMeshFromVertsIndices(xBuffVertices,remaining,new THREE.Color('orange'));
 
         //let [x1Vert,x1Ind]=Helper.removeIsolatedVertices(Helper.convertToThreJs2(xBuffVertices),this.yIndices);
 
@@ -123,7 +122,10 @@ export class Voxelizer {
         //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
         //scene.add(this.bigTestMesh!);
 
-        //this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
+        //this.createdHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3(xBuffVertices));
+        //this.createdHalfedgeMesh=new HalfedgeMesh(xBuffIndices,Vector.convArray3(xBuffVertices));
+        this.createdHalfedgeMesh=new HalfedgeMesh(bigBuffIndices,Vector.convArray(bigBuffVertices));
+
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(removed,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.yIndices,Vector.convArray3(xBuffVertices));
@@ -148,7 +150,8 @@ export class Voxelizer {
                 this.createdHalfedgeMesh!.removeAllIfAdded(scene);
             }else{
                 this.createdHalfedgeMesh!.createAllRenderHelpers();
-                this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
+                //this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
+                this.createdHalfedgeMesh!.addWireframeHelperToScene(scene,false);
             }
         }
     }
