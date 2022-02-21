@@ -140,7 +140,7 @@ export class Vertex {
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
-      if (h!.onBoundary) {
+      if (h==null || h!.onBoundary) {
         continue;
       }
       fn(h!.face!, i);

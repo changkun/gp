@@ -140,20 +140,10 @@ export class AlignedCube {
             [x+1,y+1,z+1],
             [x+1,y+0,z+1],
         ];
-
         for(let i=0;i<faceIndices.length;i++){
             const m=faceIndices[i];
             ret.push(map[m[0]][m[1]][m[2]]);
         }
-        /*ret.push(map[x][y][z]);
-        ret.push(map[x][y+1][z]);
-        ret.push(map[x][y+1][z+1]);
-        ret.push(map[x][y][z]);
-        ret.push(map[x][y+1][z]);
-        ret.push(map[x][y+1][z+1]);
-        ret.push(map[x][y][z]);
-        ret.push(map[x][y+1][z]);
-        ret.push(map[x][y+1][z+1]);*/
         return ret;
     }
 

@@ -10,13 +10,12 @@ import { HalfedgeMesh } from './geometry/halfedge';
 import { Helper} from './helper/Helper';
 
 export class Voxelizer {
-
-    helperBoxes: Array<THREE.Box3Helper>;
-
-    testMeshes: Array<THREE.Mesh>;
-
+    // uses the raw voxelization output 
+    testHelperBoxes: Array<THREE.Box3Helper>;
+    testHelperMeshes: Array<THREE.Mesh>;
+    // how long the voxelization step took
     lastVoxelConstructionTime:number;
-
+    //
     testMeshes2: Array<THREE.LineSegments>;
     //
     verticesBuff:THREE.Vector3[];
@@ -28,18 +27,20 @@ export class Voxelizer {
 
     mappedTriangleIndices:number[];
     completelyDiscardedTriangleIndices=new Map();
+    completelyRemovedIndices:number[];
 
     constructor(){
-        this.helperBoxes=[];
-        this.testMeshes=[];
+        this.testHelperBoxes=[];
+        this.testHelperMeshes=[];
         this.testMeshes2=[];
         this.lastVoxelConstructionTime=0;
         this.verticesBuff=[];
         this.indicesBuff=[];
         this.mappedTriangleIndices=[];
+        this.completelyRemovedIndices=[];
     }
 
-    testIndices(scene:THREE.Scene){
+    static testIndices(scene:THREE.Scene){
         let xBuffVertices=new Array<number>();
         let xBuffIndices=new Array<number>();
         const xSize=10;
@@ -73,14 +74,15 @@ export class Voxelizer {
     
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
-        this.helperBoxes=[];
-        this.testMeshes=[];
+        this.testHelperBoxes=[];
+        this.testHelperMeshes=[];
         this.testMeshes2=[];
         this.verticesBuff=[];
         this.indicesBuff=[];
         this.mappedTriangleIndices=[];
         this.triangleIndicesMap.clear();
         this.completelyDiscardedTriangleIndices.clear();
+        this.completelyRemovedIndices=[];
         const start = new Date().getTime();
 
         const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
@@ -93,7 +95,7 @@ export class Voxelizer {
             xOriginalTriangles.push(triangle);
         }
 
-        //this.testIndices(scene);
+        //Voxelizer.testIndices(scene);
     
         let xBuffVertices=new Array<number>();
         let xBuffIndices=new Array<number>();
@@ -133,9 +135,8 @@ export class Voxelizer {
                     }
                     //
                     if(intersectsAny){
-                        //scene.add(helper);
-                        this.helperBoxes.push(alignedCube.createBox3Helper());
-                        this.testMeshes.push(alignedCube.createBoxBufferGeometryMesh());
+                        this.testHelperBoxes.push(alignedCube.createBox3Helper());
+                        this.testHelperMeshes.push(alignedCube.createBoxBufferGeometryMesh());
 
                         let [vertices,indices]= alignedCube.createVerticesIndices();
                         const idxOffset=this.verticesBuff.length;
@@ -155,8 +156,12 @@ export class Voxelizer {
                 }
             }
         }
-        // remove all unneeded vertices
         //scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.mappedTriangleIndices));
+        let removeMap=new Map();
+        for(let i=0;i<this.mappedTriangleIndices.length;i++){
+            const idx=this.mappedTriangleIndices[i];
+            removeMap.set(idx,idx);
+        }
 
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
@@ -167,22 +172,23 @@ export class Voxelizer {
         //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
         //scene.add(this.bigTestMesh!);
 
-        this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
+        //this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
+        this.createdHalfedgeMesh=new HalfedgeMesh(xBuffIndices,Vector.convArray3(xBuffVertices));
     }
 
     addDebugToScene(scene:THREE.Scene,remove:boolean){
-        for(let i=0;i<this.helperBoxes.length;i++){
+        for(let i=0;i<this.testHelperBoxes.length;i++){
             if(remove){
-                scene.remove(this.helperBoxes[i]);
+                scene.remove(this.testHelperBoxes[i]);
             }else{
-                scene.add(this.helperBoxes[i]);
+                scene.add(this.testHelperBoxes[i]);
             }
         }
     }
 
     addToScene(scene:THREE.Scene){
-        for(let i=0;i<this.testMeshes.length;i++){
+        for(let i=0;i<this.testHelperMeshes.length;i++){
             //scene.add(this.testMeshes[i]);
         }
         for(let i=0;i<this.testMeshes2.length;i++){
@@ -192,14 +198,14 @@ export class Voxelizer {
             scene.add(this.bigTestMesh!);
         }
         if(this.createdHalfedgeMesh){
-            //this.createdHalfedgeMesh!.createAllRenderHelpers();
-            //this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
+            this.createdHalfedgeMesh!.createAllRenderHelpers();
+            this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
         }
     }
 
     removeFromScene(scene:THREE.Scene){
-        for(let i=0;i<this.testMeshes.length;i++){
-            scene.remove(this.testMeshes[i]);
+        for(let i=0;i<this.testHelperMeshes.length;i++){
+            scene.remove(this.testHelperMeshes[i]);
         }
         for(let i=0;i<this.testMeshes2.length;i++){
             scene.remove(this.testMeshes2[i]);
@@ -208,17 +214,17 @@ export class Voxelizer {
             scene.remove(this.bigTestMesh!);
         }
         if(this.createdHalfedgeMesh){
-            this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,true);
+            this.createdHalfedgeMesh!.removeAllIfAdded(scene);
         }
     }
 
 
     appendNewCubeTohalfedgeMesh(cubeIndices:number[]){
-        for(let i=0;i<cubeIndices.length;i+=3){
+        /*for(let i=0;i<cubeIndices.length;i+=3){
             const a=cubeIndices[i+0];
             const b=cubeIndices[i+1];
             const c=cubeIndices[i+2];
-            const e = `${a}-${b}-${c}`
+            const e = `${a}-${b}-${c}`;
             if(!this.completelyDiscardedTriangleIndices.has(e)){
                 // we have not yet removed this triangle
                 if (!this.triangleIndicesMap.has(e)) {
@@ -233,7 +239,57 @@ export class Voxelizer {
             }else{
                 console.log("Completely removed\n");
             }
+        }*/
+        for(let i=0;i<cubeIndices.length;i++){
+            this.mappedTriangleIndices.push(cubeIndices[i]);
         }
+    
+        /*for(let i=0;i<cubeIndices.length;i+=6){
+            // These vertices form a face
+            const a1=cubeIndices[i+0];
+            const b1=cubeIndices[i+1];
+            const c1=cubeIndices[i+2];
+
+            const a2=cubeIndices[i+3];
+            const b2=cubeIndices[i+4];
+            const c2=cubeIndices[i+5];
+
+            //if(a1!=a2){
+            //    console.log("Argh");
+            //}
+            //if(c1!=c2){
+                //console.log("Argh2:"+a1+","+b1+","+c1+" |"+a2+","+b2+","+c2+" |");
+            //}
+
+            const e = `${a1}-${b1}-${c1}-${a2}-${b2}-${c2}`;
+            //console.log("Hash:"+e);
+
+            //if(!this.completelyDiscardedTriangleIndices.has(e)){
+                // we have not yet removed this triangle
+                if (!this.triangleIndicesMap.has(e)) {
+                    //this.triangleIndicesMap.set(e, [a1, b1,c1])
+                    this.completelyDiscardedTriangleIndices.set(e,[a1,b1,c1]);
+                    this.mappedTriangleIndices.push(a1);
+                    this.mappedTriangleIndices.push(b1);
+                    this.mappedTriangleIndices.push(c1);
+                    //
+                    this.mappedTriangleIndices.push(a2);
+                    this.mappedTriangleIndices.push(b2);
+                    this.mappedTriangleIndices.push(c2);
+                }else{
+                    console.log("Duplicate removed\n");
+                }
+            /*}else{
+                console.log("Completely removed\n");
+                this.completelyRemovedIndices.push(a1);
+                this.completelyRemovedIndices.push(b1);
+                this.completelyRemovedIndices.push(c1);
+                //
+                this.completelyRemovedIndices.push(a2);
+                this.completelyRemovedIndices.push(b2);
+                this.completelyRemovedIndices.push(c2);
+            }*/
+        //}
     }
 
 }

@@ -299,7 +299,7 @@ export class HalfedgeMesh {
       bufcolors[3 * i + 1] = 0.5;
       bufcolors[3 * i + 2] = 1;
 
-      const n = v.normal(NormalMethod.EqualWeighted);
+      const n = v.normal(NormalMethod.AngleWeighted);
       bufnormals[3 * i + 0] = n.x;
       bufnormals[3 * i + 1] = n.y;
       bufnormals[3 * i + 2] = n.z;
@@ -387,6 +387,7 @@ export class HalfedgeMesh {
       scene.add(this.mesh3js!);
     }
   }
+  
   addWireframeHelperToScene(scene:THREE.Scene,remove:boolean){
     if(!this.wireframeHelper)return;
     if(remove){
