@@ -185,6 +185,16 @@ export class Vector {
     }
     return ret;
   }
+  static convArray3(input:number[]):Vector[]{
+    let ret=new Array<Vector>();
+    for(let i=0;i<input.length;i+=3){
+      const a=input[i+0];
+      const b=input[i+1];
+      const c=input[i+2];
+      ret.push(new Vector(a,b,c));
+    }
+    return ret;
+  }
 }
 
 

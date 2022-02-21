@@ -4,6 +4,7 @@ import { Vector } from './linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
 import { AlignedCube } from './linalg/AlignedCube';
+import { ThreeDArray } from './linalg/3DArray';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
 
@@ -22,6 +23,12 @@ export class Voxelizer {
     indicesBuff:number[];
     bigTestMesh?:THREE.LineSegments;
 
+    createdHalfedgeMesh?:HalfedgeMesh;
+    triangleIndicesMap=new Map();
+
+    mappedTriangleIndices:number[];
+    completelyDiscardedTriangleIndices=new Map();
+
     constructor(){
         this.helperBoxes=[];
         this.testMeshes=[];
@@ -29,6 +36,7 @@ export class Voxelizer {
         this.lastVoxelConstructionTime=0;
         this.verticesBuff=[];
         this.indicesBuff=[];
+        this.mappedTriangleIndices=[];
     }
 
     getRandomInt(max:number):number {
@@ -42,6 +50,37 @@ export class Voxelizer {
         return new THREE.Triangle(v1,v2,v3);
     }
 
+    testIndices(scene:THREE.Scene){
+        let xBuffVertices=new Array<number>();
+        let xBuffIndices=new Array<number>();
+        const xSize=10;
+        const xSizePlus1=xSize+1;
+        let ramba=ThreeDArray.create3DArray(xSizePlus1);
+        let countLol=0;
+        for(let x=0;x<xSizePlus1;x++){
+            for(let y=0;y<xSizePlus1;y++){
+                for(let z=0;z<xSizePlus1;z++){
+                    const x1=x*0.1;
+                    const y1=y*0.1;
+                    const z1=z*0.1;
+                    xBuffVertices.push(x1);
+                    xBuffVertices.push(y1);
+                    xBuffVertices.push(z1);
+                    ramba[x][y][z]=countLol;
+                    countLol++;
+                }
+            }
+        }
+        for(let x=0;x<xSize;x++){
+            for(let y=0;y<xSize;y++){
+                for(let z=0;z<xSize;z++){
+                    //xBuffIndices=xBuffIndices.concat(AlignedCube.createFacesIndices(x,y,z,ramba));
+                }
+            }
+        }
+        xBuffIndices=xBuffIndices.concat(AlignedCube.createFacesIndices(xSize-1,xSize-1,xSize-1,ramba));
+        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
+    }
     
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         this.removeFromScene(scene);
@@ -50,95 +89,115 @@ export class Voxelizer {
         this.testMeshes2=[];
         this.verticesBuff=[];
         this.indicesBuff=[];
+        this.mappedTriangleIndices=[];
+        this.triangleIndicesMap.clear();
         const start = new Date().getTime();
 
-        let materialGreen=new THREE.MeshPhongMaterial({color: 'green'});
-        let materialRed=new THREE.MeshPhongMaterial({color: 'red'});
-        let materialBlue=new THREE.MeshPhongMaterial({color: 'blue'});
-
-        var singleGeometry = new THREE.BufferGeometry();
-        const tmpCube=new THREE.BoxBufferGeometry(1,1,1);
-        //THREE.GeometryUtils.merge(singleGeometry,tmpCube);
-    
         const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
         const VOXELS_PER_AXIS=VOXELS_PER_HALF_AXIS*2;
         const VOXEL_SIZE=1/VOXELS_PER_AXIS;
-        let ret=new Array<THREE.Mesh>(VOXELS_PER_AXIS*VOXELS_PER_AXIS*VOXELS_PER_AXIS);
-        let idx=0;
-        for(let x=-VOXELS_PER_HALF_AXIS;x<VOXELS_PER_HALF_AXIS;x++){
-            for(let y=-VOXELS_PER_HALF_AXIS;y<VOXELS_PER_HALF_AXIS;y++){
-            for(let z=-VOXELS_PER_HALF_AXIS;z<VOXELS_PER_HALF_AXIS;z++){
-                //console.log("Voxelizing:" + x +","+y+","+z);
+        let xOriginalTriangles=new Array<THREE.Triangle>();
+        for(let f of originalMesh.faces){
+            const triangleData=f.asTriangle();
+            const triangle=this.convertToThreeJs(triangleData);
+            xOriginalTriangles.push(triangle);
+        }
+
+        //this.testIndices(scene);
     
-                const x1=x*VOXEL_SIZE;
-                const y1=y*VOXEL_SIZE;
-                const z1=z*VOXEL_SIZE;
-                const alignedCube=new AlignedCube(x1,y1,z1,VOXEL_SIZE);
-    
-                let intersectsAny=false;
-                for(let f of originalMesh.faces){
-                    const triangleData=f.asTriangle();
-                    const triangle=this.convertToThreeJs(triangleData);
-                    if(alignedCube.intersect(triangle)){
-                        intersectsAny=true;
-                        break;
-                    }
+        let xBuffVertices=new Array<number>();
+        let xBuffIndices=new Array<number>();
+        let ramba=ThreeDArray.create3DArray(VOXELS_PER_AXIS+1);
+        let countLol=0;
+        for(let x=0;x<VOXELS_PER_AXIS+1;x++){
+            for(let y=0;y<VOXELS_PER_AXIS+1;y++){
+                for(let z=0;z<VOXELS_PER_AXIS+1;z++){
+                    const x1=x*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    xBuffVertices.push(x1);
+                    xBuffVertices.push(y1);
+                    xBuffVertices.push(z1);
+                    ramba[x][y][z]=countLol;
+                    countLol++;
                 }
-    
-                if(intersectsAny){
-                    //scene.add(helper);
-                    this.helperBoxes.push(alignedCube.createBox3Helper());
-                    this.testMeshes.push(alignedCube.createMesh());
-
-                    this.testMeshes2.push(alignedCube.createMesh2(scene));
-
-                    /*let [vertices,indices]= alignedCube.createVerticesIndices();
-                    for(let i=0;i<vertices.length;i++){
-                        this.verticesBuff.push(vertices[i]);
-                    }
-                    const idxOffset=this.indicesBuff.length;
-                    for(let i=0;i<indices.length;i++){
-                        this.indicesBuff.push(idxOffset+indices[i]);
-                    }*/
-
-                    //scene.add(mesh);
-
-                    //mesh.updateMatrix();
-                    //singleGeometry.merge(mesh.geometry);
-                    //THREE.GeometryUtils.merge(singleGeometry,mesh);
-                }
-                //ret[idx]=helper;
-                idx++;
-            }
             }
         }
-        var singleGeometryMesh = new THREE.Mesh(singleGeometry, materialRed);
-        //scene.add(singleGeometryMesh);
+        let idx=0;
+        for(let x=0;x<VOXELS_PER_AXIS;x++){
+            for(let y=0;y<VOXELS_PER_AXIS;y++){
+                for(let z=0;z<VOXELS_PER_AXIS;z++){
+                    //console.log("Voxelizing:" + x +","+y+","+z);
+        
+                    const x1=x*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
+                    const alignedCube=new AlignedCube(x1,y1,z1,VOXEL_SIZE);
+                    //
+                    let intersectsAny=false;
+                    for(let tri of xOriginalTriangles){
+                        if(alignedCube.intersect(tri)){
+                            intersectsAny=true;
+                            break;
+                        }
+                    }
+                    //
+                    if(intersectsAny){
+                        //scene.add(helper);
+                        this.helperBoxes.push(alignedCube.createBox3Helper());
+                        this.testMeshes.push(alignedCube.createBoxBufferGeometryMesh());
+
+                        let [vertices,indices]= alignedCube.createVerticesIndices();
+                        const idxOffset=this.verticesBuff.length;
+                        //const idxOffset=ramba[idxX][idxY][idxZ];
+                        for(let i=0;i<vertices.length;i++){
+                            this.verticesBuff.push(vertices[i]);
+                        }
+                        for(let i=0;i<indices.length;i++){
+                            this.indicesBuff.push(idxOffset+indices[i]);
+                        }
+                        this.testMeshes2.push(AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(vertices),indices));
+                        const argh=AlignedCube.createFacesIndices(x,y,z,ramba);
+                        xBuffIndices=xBuffIndices.concat(argh);
+                        this.appendNewCubeTohalfedgeMesh(argh);
+                    }
+                    idx++;
+                }
+            }
+        }
+        // remove all unneeded vertices
+
+
+        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.mappedTriangleIndices));
 
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
         console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
-    
-        //let tmp=new Array<THREE.Mesh>(1);
-        //const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1),materialGreen);
-        //tmp[0]=mesh;
-        //return tmp;
-        //return ret;
-        //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
+
+        this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
+        //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
+        //scene.add(this.bigTestMesh!);
+
+        //this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
+        this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
     }
 
     addToScene(scene:THREE.Scene){
         for(let i=0;i<this.helperBoxes.length;i++){
-            scene.add(this.helperBoxes[i]);
+            //scene.add(this.helperBoxes[i]);
         }
         for(let i=0;i<this.testMeshes.length;i++){
             //scene.add(this.testMeshes[i]);
         }
         for(let i=0;i<this.testMeshes2.length;i++){
-            scene.add(this.testMeshes2[i]);
+            //scene.add(this.testMeshes2[i]);
         }
         if(this.bigTestMesh){
-            scene.add(this.bigTestMesh!);
+            //scene.add(this.bigTestMesh!);
+        }
+        if(this.createdHalfedgeMesh){
+            this.createdHalfedgeMesh!.createRenderableHalfedgeHelpers();
+            this.createdHalfedgeMesh!.addEdgeHelpersToScene(scene,false);
         }
     }
 
@@ -155,6 +214,9 @@ export class Voxelizer {
         if(this.bigTestMesh){
             scene.remove(this.bigTestMesh!);
         }
+        if(this.createdHalfedgeMesh){
+            this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,true);
+        }
     }
 
     public static addCubeSizeOne(scene:THREE.Scene){
@@ -167,11 +229,21 @@ export class Voxelizer {
     }
 
 
-    appendNewCubeTohalfedgeMesh(){
-        // if mesh empty, add cube and return
-        // else
-        // find any already added cubes that "touch" the new cube
-        // add new vertices (if needed), update connectvities
+    appendNewCubeTohalfedgeMesh(cubeIndices:number[]){
+        for(let i=0;i<cubeIndices.length;i+=3){
+            const a=cubeIndices[i+0];
+            const b=cubeIndices[i+1];
+            const c=cubeIndices[i+2];
+            const e = `${a}-${b}-${c}`
+            if (!this.triangleIndicesMap.has(e)) {
+                this.triangleIndicesMap.set(e, [a, b,c])
+                this.mappedTriangleIndices.push(a);
+                this.mappedTriangleIndices.push(b);
+                this.mappedTriangleIndices.push(c);
+            }else{
+                //console.log("Removed unndeeded\n");
+            }
+        }
     }
 
 }

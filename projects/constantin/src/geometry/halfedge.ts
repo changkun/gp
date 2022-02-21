@@ -31,10 +31,11 @@ export class HalfedgeMesh {
   // These variables are only used by the underlying Three.js renderer
   // create them after construction via the proper methods below or after updating the
   // halfedge data structure
-  halfedgeHelpers:Array<THREE.ArrowHelper>=[];
-  mesh3js?: THREE.Mesh; // three.js buffer geometry object
-  normalHelper?: VertexNormalsHelper;
-  wireframeHelper?: THREE.LineSegments;
+  edgeHelpers:Array<THREE.ArrowHelper>=[]; //arrows for edges
+  halfedgeHelpers:Array<THREE.ArrowHelper>=[]; // arrows for halfedges
+  mesh3js?: THREE.Mesh; // three.js 3D colored mesh
+  normalHelper?: VertexNormalsHelper; //normal arrows
+  wireframeHelper?: THREE.LineSegments; //wireframe mesh
 
   // parse a text string from an .obj file into arrays of indices and positions
   static loadObj(data: string):[number[],Vector[]]{
@@ -65,6 +66,14 @@ export class HalfedgeMesh {
            break;
        }
      }
+     // Here we scale the vertices of the input mesh such that
+    // they are inside a bounding box of fixed size
+    const aabb = new AABB(positions);
+    for(let i=0;i<positions.length;i++){
+      positions[i]=aabb.transformToFit(positions[i]);
+    }
+    aabb.debug();
+    aabb.checkTransformSuccessfull(positions);
      return [indices,positions];
   }
 
@@ -79,14 +88,6 @@ export class HalfedgeMesh {
     this.edges = [];
     this.faces = [];
     this.halfedges = [];
-    // Here we scale the vertices of the input mesh such that
-    // they are inside a bounding box of fixed size
-    const aabb = new AABB(positions);
-    for(let i=0;i<positions.length;i++){
-      positions[i]=aabb.transformToFit(positions[i]);
-    }
-    aabb.debug();
-    aabb.checkTransformSuccessfull(positions);
     this.buildMesh(indices, positions);
   }
 
@@ -269,6 +270,14 @@ export class HalfedgeMesh {
   // these hlper methods fix this issue by converting the data structure into (Helper)
   // that can be rendered by Three.js
 
+ // clears and creates all the rendering helper(s)
+  //Call this once after construction or after the halfegde mesh has been updated
+  createAllRenderHelpers(){
+    this.createRenderableMeshAndWireframe();
+    this.createRenderableEdgeHelpers();
+    this.createRenderableHalfedgeHelpers();
+  }
+
   // creates a mesh, wireframe mesh and normal helper that can be rendered by Three.js
   createRenderableMeshAndWireframe(){
     // prepare new data
@@ -330,14 +339,13 @@ export class HalfedgeMesh {
   }
 
   //Create an Array of Three.ArrowHelper to draw the halfedges using Three.js
-  //Call this after construction or after the halfegde mesh has been updated
   // the halfedges are represented by Arrows, yellow if not on a boundary, red otherwise
   createRenderableHalfedgeHelpers(){
     // clear, don't forget to remove from scene before recalculation
     this.halfedgeHelpers=[];
     // create Arrows for all the halfedges
     for(let i=0;i<this.halfedges!.length;i++){
-      const edgeHe=this.halfedges![i];
+      const edgeHe=this.halfedges![i];  
       const origin = edgeHe.vert!.position.convertT();
       const dir=edgeHe.vector().convertT().normalize();
       const len=edgeHe.vector().convertT().length();
@@ -346,6 +354,27 @@ export class HalfedgeMesh {
       const headWidth=headLength*0.5;
       const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
       this.halfedgeHelpers.push(arrowHelper);
+    }
+  }
+  // 
+  createRenderableEdgeHelpers(){
+    // clear, don't forget to remove from scene before recalculation
+    this.edgeHelpers=[];
+    // create Arrows for all the edges
+    for(let i=0;i<this.edges.length;i++){
+      const edge=this.edges[i];
+      if(!edge.halfedge){
+        break;
+      }
+      const edgeHe=edge.halfedge!;
+      const origin = edgeHe.vert!.position.convertT();
+      const dir=edgeHe.vector().convertT().normalize();
+      const len=edgeHe.vector().convertT().length();
+      const color = 0x00FF00;
+      const headLength=0.01;
+      const headWidth=headLength*0.5;
+      const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
+      this.edgeHelpers.push(arrowHelper);
     }
   }
 
@@ -374,14 +403,21 @@ export class HalfedgeMesh {
       scene.add(this.normalHelper!);
     }
   }
-
-  // add/remove all the halfedge helper arrows to/from the scene
   addHalfedgeHelpersToScene(scene:THREE.Scene,remove:boolean){
     for(let i=0;i<this.halfedgeHelpers.length;i++){
       if(remove){
         scene.remove(this.halfedgeHelpers![i]);
       }else{
         scene.add(this.halfedgeHelpers![i]);
+      }
+    }
+  }
+  addEdgeHelpersToScene(scene:THREE.Scene,remove:boolean){
+    for(let i=0;i<this.edgeHelpers.length;i++){
+      if(remove){
+        scene.remove(this.edgeHelpers![i]);
+      }else{
+        scene.add(this.edgeHelpers![i]);
       }
     }
   }

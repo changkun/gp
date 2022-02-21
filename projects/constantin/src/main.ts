@@ -42,8 +42,8 @@ export default class Main extends Renderer {
   params: {
     import: () => void;
     export: () => void;
-    showNormals: boolean;
     showWireframe: boolean;
+    showEdges:boolean;
     showHalfedges:boolean;
     showVoxels:boolean;
     normalMethod: NormalMethod;
@@ -78,8 +78,8 @@ export default class Main extends Renderer {
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
-      showNormals: false,
       showWireframe: false,
+      showEdges:false,
       showHalfedges:false,
       showVoxels:false,
       normalMethod: NormalMethod.EqualWeighted,
@@ -95,15 +95,6 @@ export default class Main extends Renderer {
     this.gui.add(this.params, 'import').name('import mesh');
     this.gui.add(this.params, 'export').name('export screenshot');
     this.gui
-      .add(this.params, 'showNormals')
-      .name('show normals')
-      .listen()
-      .onChange(show => {
-        show
-          ? this.internal.mesh!.addNormalHelperToScene(this.scene,false)
-          : this.internal.mesh!.addNormalHelperToScene(this.scene,true);
-      });
-    this.gui
       .add(this.params, 'showWireframe')
       .name('show wireframe')
       .listen()
@@ -113,14 +104,23 @@ export default class Main extends Renderer {
           : this.internal.mesh!.addWireframeHelperToScene(this.scene,true);
       });
     this.gui
-      .add(this.params, 'showHalfedges')
-      .name('show halfedges')
+      .add(this.params, 'showEdges')
+      .name('show edges')
       .listen()
       .onChange(show => {
         show
-          ? this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false)
-          : this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,true);
+          ? this.internal.mesh!.addEdgeHelpersToScene(this.scene,false)
+          : this.internal.mesh!.addEdgeHelpersToScene(this.scene,true);
       });  
+    this.gui
+    .add(this.params, 'showHalfedges')
+    .name('show halfedges')
+    .listen()
+    .onChange(show => {
+      show
+        ? this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false)
+        : this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,true);
+    });    
     this.gui
       .add(this.params, 'showVoxels')
       .name('show voxels')
@@ -180,15 +180,17 @@ export default class Main extends Renderer {
     this.internal.mesh!.removeAllIfAdded(this.scene);
 
     // update the instances if data has changed
-    this.internal.mesh!.createRenderableMeshAndWireframe();
-    this.internal.mesh!.createRenderableHalfedgeHelpers();
+    this.internal.mesh!. createAllRenderHelpers();
 
     this.internal.mesh!.addMeshHelperToScene(this.scene,false);
-    if (this.params.showNormals) {
-      this.internal.mesh!.addNormalHelperToScene(this.scene,false);
-    }
+    //if (this.params.showNormals) {
+    //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
+    //}
     if (this.params.showWireframe) {
       this.internal.mesh!.addWireframeHelperToScene(this.scene,false);
+    }
+    if(this.params.showEdges){
+      this.internal.mesh!.addEdgeHelpersToScene(this.scene,false);
     }
     if(this.params.showHalfedges){
       this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false);
