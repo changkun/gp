@@ -738,19 +738,22 @@ export class HalfedgeMesh {
   }
 
   //Regularize the halfedge mesh with the scheme
-  regularize(){
+  regularize(smoothIntensity: number, smoothRounds:number, initialSmooth: boolean, intermediateSmooth: boolean){
 
-  const intensity = 1;
-  const rounds = 1
+  //set parameters
+  this.smooth_intensity = smoothIntensity;
+  this.smooth_rounds = smoothRounds;
 
   //console.log("regular!");
 
-  //this.angle_smooth();
+  if(initialSmooth) this.angle_smooth(this.smooth_intensity, this.smooth_rounds);
 
   this.basicEdgeFlip();
   console.log("1st Round of edgeflips done");
 
-  this.angle_smooth(intensity, rounds);
+  if(intermediateSmooth) this.angle_smooth(this.smooth_intensity, this.smooth_rounds);
+
+  //this.basicEdgeFlip();
 
   this.easyEdges();
   console.log("Easy Edges handled");
@@ -838,7 +841,7 @@ v.pos = v.angle_smooth();
       for (let [i,v] of verts.entries()){
 
         //console.log(i, v);
-        verts_smooth[i] = v!.angle_smooth(1);
+        verts_smooth[i] = v!.angle_smooth(intensity);
       
       }
       

@@ -48,6 +48,10 @@ export default class Main extends Renderer {
     flatShading: boolean;
     qSim: number;
     melaxSim: number;
+    smoothIntensity: number;
+    smoothRounds: number;
+    initialSmooth: boolean;
+    intermediateSmooth: boolean;
     smooth: () => void;
     regularize: () => void
   };
@@ -86,16 +90,26 @@ export default class Main extends Renderer {
       normalMethod: NormalMethod.EqualWeighted,
       qSim: 0.0,
       melaxSim: 0.0,
+      smoothIntensity: 1,
+      smoothRounds: 1,
+      initialSmooth: false,
+      intermediateSmooth: true,
       //smooth: () => console.log("GUI test!")
       smooth: () => {
-        this.internal!.mesh!.angle_smooth(1,1);
+        //this.internal!.mesh!.smooth_intensity = this.params.smoothIntensity
+        this.internal!.mesh!.angle_smooth(this.params.smoothIntensity, this.params.smoothRounds);
         this.prepareBuf();
         this.renderMeshLeft();
       },
       regularize: () => {
-        this.internal!.mesh!.regularize();
+        fetch('./assets/bunny.obj')
+        .then(resp => resp.text())
+        .then(data => this.loadMesh(data))
+        .then(()=>{
+        this.internal!.mesh!.regularize(this.params.smoothIntensity, this.params.smoothRounds, this.params.initialSmooth, this.params.intermediateSmooth);
         this.prepareBuf();
         this.renderMeshLeft();
+        })
       }
     };
 
@@ -159,11 +173,33 @@ export default class Main extends Renderer {
     //vis.open();
 
     //add Button for regularization
-    const reg = this.gui.addFolder('Regularize');
-    reg.add(this.params, 'smooth').name('smooth');
-    reg.add(this.params, 'regularize').name('regularize');
+    const reg = this.gui.addFolder('Regularization');
+    const smooth = reg.addFolder('Smoothing');
+    smooth
+      .add(this.params, 'smoothIntensity', 0.0, 1.0, 0.001)
+      .name('Intensity')
+    smooth
+      .add(this.params, 'smoothRounds', 0.0, 10, 1)
+      .name('Rounds')
+    smooth
+      .add(this.params, 'initialSmooth')
+      .name('Initial Smooth Step')
+      .listen()
+      .onChange(show => {
+        console.log(this.params.initialSmooth);
+      });
+    smooth
+      .add(this.params, 'intermediateSmooth')
+      .name('Intermediate Smooth Step')
+      .listen()
+      .onChange(show => {
+        console.log(this.params.initialSmooth);
+      });
+    reg.add(this.params, 'smooth').name('Smooth');
+    reg.add(this.params, 'regularize').name('Start Algorithm');
     reg.open();
-  
+
+
 
     /*
     const mod = this.gui.addFolder('Reduce Ratio');
