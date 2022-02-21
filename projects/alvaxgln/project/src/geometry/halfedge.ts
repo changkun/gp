@@ -744,16 +744,12 @@ export class HalfedgeMesh {
   this.smooth_intensity = smoothIntensity;
   this.smooth_rounds = smoothRounds;
 
-  //console.log("regular!");
-
   if(initialSmooth) this.angle_smooth(this.smooth_intensity, this.smooth_rounds);
 
   this.basicEdgeFlip();
   console.log("1st Round of edgeflips done");
 
   if(intermediateSmooth) this.angle_smooth(this.smooth_intensity, this.smooth_rounds);
-
-  //this.basicEdgeFlip();
 
   this.easyEdges();
   console.log("Easy Edges handled");
@@ -768,7 +764,7 @@ export class HalfedgeMesh {
 
   //this.angle_smooth();
 
-  console.log("End of regular!");
+  console.log("End of regularization!");
 
   //this.testOperations()
 
@@ -826,9 +822,13 @@ v.pos = v.angle_smooth();
 
   }
 
-  //Applies one round of angle based smoothing to the input array of vertices
-  //TODO: Add parameters for intensity and rounds
-  smoothVerts(verts: (Vertex | null)[], intensity: number, rounds: number){
+  /**
+   * Applies angle based smoothing
+   * @param verts an array of vertices that should be smoothed
+   * @param intensity how far vertices are moved each round
+   * @param rounds how many rounds of smoothing are applied
+   */
+   smoothVerts(verts: (Vertex | null)[], intensity: number, rounds: number){
 
     //let n = 1;
 
@@ -856,16 +856,21 @@ v.pos = v.angle_smooth();
   }
 
 
-  //applies one round of angle based smoothing to the whole mesh
-  //TODO: Add parameters
-  angle_smooth(intensity: number, rounds: number){
+  /**
+   * Applies angle based smoothing to the mesh
+   * @param intensity how far vertices are moved each round
+   * @param rounds how many rounds of smoothing are applied
+   */
+   angle_smooth(intensity: number, rounds: number){
       this.smoothVerts(this.verts, intensity, rounds);
   }
 
 
-  //flips the Edge e
-  //returns 1 in case of success and 0 otherwise
-  flip(e: Edge): number{
+  /**
+   * flips an edge
+   * @param e: the edge to be flipped
+   */
+   flip(e: Edge): number{
 
   //halfedges involved
   const h = e.halfedge!
@@ -966,7 +971,6 @@ v.pos = v.angle_smooth();
   /**
    * splits an edge in the middle
    * @param e: the edge to be split
-   * 
    */
   split(e: Edge){
 
