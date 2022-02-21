@@ -48,6 +48,7 @@ export default class Main extends Renderer {
     showHalfedges:boolean;
     debugVoxels:boolean;
     showVoxels:boolean;
+    showVoxels2:boolean;
     nVoxelsPerAxis: number;
     computationTime:number;
   };
@@ -84,7 +85,8 @@ export default class Main extends Renderer {
       showHalfedges:false,
       debugVoxels:false,
       showVoxels:false,
-      nVoxelsPerAxis: 5,
+      showVoxels2:false,
+      nVoxelsPerAxis: 1,
       computationTime:0,
     };
 
@@ -128,8 +130,8 @@ export default class Main extends Renderer {
     .listen()
     .onChange(show => {
       show
-        ? this.internal.voxelizer!.addDebugToScene(this.scene,false)
-        : this.internal.voxelizer!.addDebugToScene(this.scene,true);
+        ? this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false)
+        : this.internal.voxelizer!.addBoxesDebugToScene(this.scene,true);
     });    
     this.gui
       .add(this.params, 'showVoxels')
@@ -137,9 +139,18 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.addToScene(this.scene)
-          :  this.internal.voxelizer!.removeFromScene(this.scene);
+          ? this.internal.voxelizer!.addOtherDebugToScene(this.scene,false)
+          : this.internal.voxelizer!.addOtherDebugToScene(this.scene,true);
       });
+    this.gui
+      .add(this.params, 'showVoxels2')
+      .name('show voxels2')
+      .listen()
+      .onChange(show => {
+        show
+          ? this.internal.voxelizer!.addDebug2ToScene(this.scene,false)
+          : this.internal.voxelizer!.addDebug2ToScene(this.scene,true);
+    });  
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
       .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
@@ -152,7 +163,8 @@ export default class Main extends Renderer {
     folder1.open();
 
     // just for the first load
-    fetch('./assets/bunny.obj')
+    //fetch('./assets/bunny.obj')
+    fetch('./assets/cube.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data));
   }
@@ -177,11 +189,15 @@ export default class Main extends Renderer {
   }
 
   updateVoxelizer(){
-    this.internal.voxelizer!.removeFromScene(this.scene);
-    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    this.internal.voxelizer!.removeAllFromScene(this.scene);
+    //
+    this.internal.voxelizer!.voxelizeHalfedgeMesh(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
     this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
+    if(this.params.debugVoxels){
+      this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false);
+    }
     if(this.params.showVoxels){
-      this.internal.voxelizer!.addToScene(this.scene);
+      this.internal.voxelizer!.addOtherDebugToScene(this.scene,false);
     }
   }
 
@@ -193,7 +209,7 @@ export default class Main extends Renderer {
     this.internal.mesh!.createAllRenderHelpers();
 
     // always add the solid mesh
-    this.internal.mesh!.addMeshHelperToScene(this.scene,false);
+    //this.internal.mesh!.addMeshHelperToScene(this.scene,false);
     //if (this.params.showNormals) {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}
@@ -216,12 +232,13 @@ export default class Main extends Renderer {
     Helper.debugBoundingBox(box);
     //Voxelizer.addCubeSizeOne(this.scene);
 
-    this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
-    this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
+    this.updateVoxelizer();
 
-    if(this.params.showVoxels){
-      this.internal.voxelizer!.addToScene(this.scene);
-    }
+    //this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    //this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
+    //if(this.params.showVoxels){
+    //  this.internal.voxelizer!.addToScene(this.scene);
+    //}
   }
 }
 

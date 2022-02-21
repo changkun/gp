@@ -49,7 +49,9 @@ export class Edge {
   halfedge?: Halfedge;
   idx: number;
 
-  constructor() {
+  //constructor(halfedge:Halfedge) {
+  constructor() {  
+    //this.halfedge=halfedge;
     this.idx = -1;
   }
 }
