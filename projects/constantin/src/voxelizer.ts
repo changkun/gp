@@ -7,7 +7,7 @@ import { AlignedCube } from './linalg/AlignedCube';
 import { ThreeDArray } from './linalg/3DArray';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
-
+import { Helper} from './helper/Helper';
 
 export class Voxelizer {
 
@@ -79,7 +79,7 @@ export class Voxelizer {
             }
         }
         xBuffIndices=xBuffIndices.concat(AlignedCube.createFacesIndices(xSize-1,xSize-1,xSize-1,ramba));
-        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
+        scene.add(Helper.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
     }
     
     createVoxels(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
@@ -91,6 +91,7 @@ export class Voxelizer {
         this.indicesBuff=[];
         this.mappedTriangleIndices=[];
         this.triangleIndicesMap.clear();
+        this.completelyDiscardedTriangleIndices.clear();
         const start = new Date().getTime();
 
         const VOXELS_PER_HALF_AXIS=nVoxelsPerHalfAxis ? nVoxelsPerHalfAxis : 10;
@@ -156,7 +157,7 @@ export class Voxelizer {
                         for(let i=0;i<indices.length;i++){
                             this.indicesBuff.push(idxOffset+indices[i]);
                         }
-                        this.testMeshes2.push(AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(vertices),indices));
+                        this.testMeshes2.push(Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(vertices),indices));
                         const argh=AlignedCube.createFacesIndices(x,y,z,ramba);
                         xBuffIndices=xBuffIndices.concat(argh);
                         this.appendNewCubeTohalfedgeMesh(argh);
@@ -166,15 +167,14 @@ export class Voxelizer {
             }
         }
         // remove all unneeded vertices
-
-
-        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.mappedTriangleIndices));
+        //scene.add(AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.mappedTriangleIndices));
 
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
         console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
 
-        this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
+        //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
+        this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(xBuffVertices,this.mappedTriangleIndices);
         //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
         //scene.add(this.bigTestMesh!);
 
@@ -193,7 +193,7 @@ export class Voxelizer {
             //scene.add(this.testMeshes2[i]);
         }
         if(this.bigTestMesh){
-            //scene.add(this.bigTestMesh!);
+            scene.add(this.bigTestMesh!);
         }
         if(this.createdHalfedgeMesh){
             this.createdHalfedgeMesh!.createRenderableHalfedgeHelpers();
@@ -217,15 +217,6 @@ export class Voxelizer {
         if(this.createdHalfedgeMesh){
             this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,true);
         }
-    }
-
-    public static addCubeSizeOne(scene:THREE.Scene){
-        const halfSize=0.5;
-        const min=new THREE.Vector3(-halfSize,-halfSize,-halfSize);
-        const max=new THREE.Vector3(halfSize,halfSize,halfSize);
-        const box = new THREE.Box3(min,max);
-        const helper = new THREE.Box3Helper(box);
-        scene.add(helper);
     }
 
 

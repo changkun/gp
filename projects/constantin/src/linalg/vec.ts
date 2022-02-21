@@ -156,19 +156,19 @@ export class Vector {
     u.w = 0;
     return u;
   }
-
-  convertT():THREE.Vector3{
-    return new THREE.Vector3(this.x,this.y,this.z);
-  }
-  static createF(input:THREE.Vector3):Vector{
-    return new Vector(input.x,input.y,input.z);
-  } 
   min():number{
     return Math.min(this.x,this.y,this.z);
   }
   max():number{
     return Math.max(this.x,this.y,this.z);
   }
+  // various methods to convert from/to THREE.js
+  convertT():THREE.Vector3{
+    return new THREE.Vector3(this.x,this.y,this.z);
+  }
+  static createF(input:THREE.Vector3):Vector{
+    return new Vector(input.x,input.y,input.z);
+  } 
   static convArray(input:THREE.Vector3[]):Vector[]{
     let ret=new Array<Vector>();
     for(let i=0;i<input.length;i++){
@@ -200,7 +200,7 @@ export class Vector {
 
 // https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox.txt
 
-export class Vector3 {
+export class XVector3 {
   numbers: number[];
  
   constructor(x?: number, y?: number, z?: number) {
@@ -242,8 +242,8 @@ export class Vector3 {
         vmax[q]=-maxbox[q];
       }
     }
-    if(Vector3.dot(normal,vmin)+d>0.0) return 0;
-    if(Vector3.dot(normal,vmax)+d>=0.0) return 1;
+    if(XVector3.dot(normal,vmin)+d>0.0) return 0;
+    if(XVector3.dot(normal,vmax)+d>=0.0) return 1;
     return 0;
   }
 

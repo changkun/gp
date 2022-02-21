@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { LineSegments } from "three";
 import { assert } from "console";
 import { ThreeDArray } from './3DArray';
+import { Helper} from '../helper/Helper';
 
 // a aligned cube is defined by
 // 1) its lower left corner (x,y,z)
@@ -43,59 +44,6 @@ export class AlignedCube {
         const VOXEL_SIZE_HALF=this.size/2.0;
         mesh.position.set(this.min.x+VOXEL_SIZE_HALF,this.min.y+VOXEL_SIZE_HALF,this.min.z+VOXEL_SIZE_HALF);
         return mesh;
-    }
-
-    // create a mesh from the given vertices and indices
-    static createMeshFromVertsIndices(vertices:number[],indices:number[]):THREE.Mesh{
-        const vertices2 = new Float32Array(vertices);
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices2, 3 ) );
-        geometry.setIndex( indices );
-        const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-        const mesh = new THREE.Mesh( geometry, material );
-        return mesh;
-    }
-
-    // create a wireframe mesh from the given vertices and indices
-    static createWireframeMeshFromVertsIndices(vertices:number[],indices:number[]): THREE.LineSegments{
-        const vertices2 = new Float32Array(vertices);
-        const geometry = new THREE.BufferGeometry();
-        // itemSize = 3 because there are 3 values (components) per vertex
-        geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices2, 3 ) );
-        geometry.setIndex( indices );
-        const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-        let segments = new THREE.LineSegments(
-            new THREE.WireframeGeometry(geometry),
-            new THREE.LineBasicMaterial({color: 'green', linewidth: 1})
-        );
-        return segments;
-    }
-
-    testAddSimpleFace(scene:THREE.Scene){
-        // create a simple square shape.
-        const vertices = [
-            -1.0, -1.0,  1.0,
-            1.0, -1.0,  1.0,
-            1.0,  1.0,  1.0,
-           -1.0,  1.0,  1.0,
-        ] ;
-        const indices=[
-            0,1,2,0,2,3
-        ];
-        scene.add(AlignedCube.createMeshFromVertsIndices(vertices,indices));
-        scene.add(AlignedCube.createWireframeMeshFromVertsIndices(vertices,indices));
-    }
-
-    static convertVertices(vertices:THREE.Vector3[]):number[]{
-        let ret=new Array<number>(vertices.length);
-        let count=0;
-        for(let i=0;i<vertices.length;i++){
-            const vert=vertices[i];
-            ret[count++]=vert.x;
-            ret[count++]=vert.y;
-            ret[count++]=vert.z;
-        }
-        return ret;
     }
 
     static createCubeVertices(lowerLeftCorner:THREE.Vector3,size:number):THREE.Vector3[]{
@@ -271,7 +219,7 @@ export class AlignedCube {
         //scene.add(this.createMeshFromVertsIndices(scene,vertices,indices));
         //scene.add(this.createWireframeMeshFromVertsIndices(scene,vertices,indices));
         //this.testAddSimpleFace(scene);
-        return AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(vertices),indices);
+        return Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(vertices),indices);
     }
    
 }

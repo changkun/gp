@@ -1,5 +1,5 @@
 
-
+// Why are multi dimensional arrays such a pain in .ts ?
 export class ThreeDArray {
     value:number[][][];
 
