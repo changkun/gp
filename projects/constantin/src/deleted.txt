@@ -1,0 +1,75 @@
+appendNewCubeTohalfedgeMesh(cubeIndices:number[]){
+        /*for(let i=0;i<cubeIndices.length;i+=3){
+            const a=cubeIndices[i+0];
+            const b=cubeIndices[i+1];
+            const c=cubeIndices[i+2];
+            const e = `${a}-${b}-${c}`;
+            if(!this.completelyDiscardedTriangleIndices.has(e)){
+                // we have not yet removed this triangle
+                if (!this.triangleIndicesMap.has(e)) {
+                    this.triangleIndicesMap.set(e, [a, b,c])
+                    this.completelyDiscardedTriangleIndices.set(e,[a,b,c]);
+                    this.mappedTriangleIndices.push(a);
+                    this.mappedTriangleIndices.push(b);
+                    this.mappedTriangleIndices.push(c);
+                }else{
+                    console.log("Duplicate removed\n");
+                }
+            }else{
+                console.log("Completely removed\n");
+            }
+        }*/
+        /*for(let i=0;i<cubeIndices.length;i++){
+            this.mappedTriangleIndices.push(cubeIndices[i]);
+        }*/
+        for(let i=0;i<cubeIndices.length;i++){
+            this.allIndicesArray.push(cubeIndices[i]);
+        }
+    
+        for(let i=0;i<cubeIndices.length;i+=6){
+            // These vertices form a face
+            const a1=cubeIndices[i+0];
+            const b1=cubeIndices[i+1];
+            const c1=cubeIndices[i+2];
+
+            const a2=cubeIndices[i+3];
+            const b2=cubeIndices[i+4];
+            const c2=cubeIndices[i+5];
+
+            //if(a1!=a2){
+            //    console.log("Argh");
+            //}
+            //if(c1!=c2){
+                //console.log("Argh2:"+a1+","+b1+","+c1+" |"+a2+","+b2+","+c2+" |");
+            //}
+
+            const e = `${a1}-${b1}-${c1}-${a2}-${b2}-${c2}`;
+            //console.log("Hash:"+e);
+
+            if(!this.completelyDiscardedTriangleIndices.has(e)){
+                // we have not yet removed this triangle
+                if (!this.triangleIndicesMap.has(e)) {
+                    this.triangleIndicesMap.set(e, [a1, b1,c1])
+                    this.completelyDiscardedTriangleIndices.set(e,[a1,b1,c1]);
+                    this.mappedTriangleIndices.push(a1);
+                    this.mappedTriangleIndices.push(b1);
+                    this.mappedTriangleIndices.push(c1);
+                    //
+                    this.mappedTriangleIndices.push(a2);
+                    this.mappedTriangleIndices.push(b2);
+                    this.mappedTriangleIndices.push(c2);
+                }else{
+                    console.log("Duplicate removed\n");
+                }
+            }else{
+                //console.log("Completely removed\n");
+                this.completelyRemovedIndices.push(a1);
+                this.completelyRemovedIndices.push(b1);
+                this.completelyRemovedIndices.push(c1);
+                //
+                this.completelyRemovedIndices.push(a2);
+                this.completelyRemovedIndices.push(b2);
+                this.completelyRemovedIndices.push(c2);
+            }
+        }
+    }

@@ -77,16 +77,6 @@ export class AlignedCube {
         }
         return indices;
     }
-    static createCubeVerticesX():THREE.Vector3[]{
-        const l =1;
-        let verts = new Array<THREE.Vector3>();
-        for (let i = 0; i < 8; i++) {
-            const right=(i & 4) != 0 ? 0 : 1;
-            const up= (i & 2) != 0 ? 0 : 1;
-            const back=(i & 1) != 0 ? 0 : 1;
-        }
-        return verts;
-    }
 
     // https://catonif.github.io/cube/
     createVerticesIndices():[vertices:THREE.Vector3[],indices:number[]]{

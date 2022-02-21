@@ -6,7 +6,7 @@
 
 import Renderer from './renderer';
 import {HalfedgeMesh, WeightType} from './geometry/halfedge';
-import {NormalMethod, CurvatureMethod} from './geometry/primitive';
+import {NormalMethod} from './geometry/primitive';
 import {GUI} from 'dat.gui';
 import {
   Mesh,
@@ -163,8 +163,9 @@ export default class Main extends Renderer {
     folder1.open();
 
     // just for the first load
-    //fetch('./assets/bunny.obj')
-    fetch('./assets/cube.obj')
+    fetch('./assets/bunny.obj')
+    //fetch('./assets/cube.obj')
+    //fetch('./assets/sphere.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data));
   }
@@ -209,7 +210,7 @@ export default class Main extends Renderer {
     this.internal.mesh!.createAllRenderHelpers();
 
     // always add the solid mesh
-    //this.internal.mesh!.addMeshHelperToScene(this.scene,false);
+    this.internal.mesh!.addMeshHelperToScene(this.scene,false);
     //if (this.params.showNormals) {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}

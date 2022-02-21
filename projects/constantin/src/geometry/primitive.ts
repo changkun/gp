@@ -117,14 +117,6 @@ export enum NormalMethod {
   AngleWeighted = 'Angle Weighted',
 }
 
-export enum CurvatureMethod {
-  None = 'None',
-  Mean = 'Mean',
-  Gaussian = 'Caussian',
-  Kmin = 'Kmin',
-  Kmax = 'Kmax',
-}
-
 export class Vertex {
   position: Vector;
   halfedge?: Halfedge;
@@ -170,7 +162,12 @@ export class Vertex {
     // 2. AreaWeighted
     // 3. AngleWeighted
     let n = new Vector();
-    switch (method) {
+    if(!this.halfedge){
+      return new Vector();
+    }else{
+      return this.halfedge!.face!.normal();
+    }
+    /*switch (method) {
       case NormalMethod.EqualWeighted:
         this.faces(f => {
           n = n.add(f.normal());
@@ -188,67 +185,6 @@ export class Vertex {
           n = n.add(h.face!.normal().scale(h.next!.angle()));
         });
         return n.unit();
-    }
-  }
-  curvature(method = CurvatureMethod.Mean): number {
-    // Compute curvature given different method:
-    // 1. None
-    // 2. Mean
-    // 3. Gaussian
-    // 4. Kmin
-    // 5. Kmax
-    const [k1, k2] = this.principalCurvature();
-    switch (method) {
-      case CurvatureMethod.Mean:
-        return (k1 + k2) * 0.5;
-      case CurvatureMethod.Gaussian:
-        return k1 * k2;
-      case CurvatureMethod.Kmin:
-        return k1 * 0.1;
-      case CurvatureMethod.Kmax:
-        return k2 * 0.1;
-      case CurvatureMethod.None:
-        return 0;
-    }
-  }
-  // NOTE: you can add more methods if you need here
-  principalCurvature() {
-    const n = this.meanCurvature();
-    const K = this.angleDefect();
-    const H = K > 0 ? n.len() : -n.len();
-
-    let d = H * H - K;
-    d = d <= 0 ? 0 : Math.sqrt(d);
-    return [H - d, H + d];
-  }
-  meanCurvature(): Vector {
-    const a = this.voronoiCell();
-    let sum = new Vector();
-    this.halfedges(h => {
-      if (h.onBoundary || h.twin!.onBoundary) {
-        return;
-      }
-      sum = sum.add(h.vector().scale(h.cotan() + h.twin!.cotan()));
-    });
-    return sum.scale(1 / (2 * a));
-  }
-  angleDefect(): number {
-    let sum = 0.0;
-    this.halfedges(h => {
-      if (h.onBoundary || h.twin!.onBoundary) {
-        return;
-      }
-      sum += h.next!.angle();
-    });
-    return 2 * Math.PI - sum;
-  }
-  voronoiCell(): number {
-    let a = 0;
-    this.halfedges(h => {
-      const u = h.prev!.vector().len();
-      const v = h.vector().len();
-      a += (u * u * h.prev!.cotan() + v * v * h.cotan()) / 8;
-    });
-    return a;
+    }*/
   }
 }

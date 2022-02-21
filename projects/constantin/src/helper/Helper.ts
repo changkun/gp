@@ -5,6 +5,8 @@ import { Vector } from '../linalg/vec';
 import { ThreeDArray } from '../helper/3DArray';
 import { AlignedCube } from '../linalg/AlignedCube';
 import { FogExp2 } from 'three';
+import { HalfedgeMesh } from '../geometry/halfedge';
+import { off } from 'process';
 
 // contains only static methods that are usefully for debugging and conversion between types
 export class Helper{
@@ -57,6 +59,40 @@ export class Helper{
         scene.add(Helper.createMeshFromVertsIndices(vertices,indices));
         scene.add(Helper.createWireframeMeshFromVertsIndices(vertices,indices));
     }
+
+    static createThreeJsTriangleList(heMesh:HalfedgeMesh):Array<THREE.Triangle>{
+        let ret=new Array<THREE.Triangle>();
+        for(let f of heMesh.faces){
+            const triangleData=f.asTriangle();
+            const triangle=Helper.convertToThreeJs(triangleData);
+            ret.push(triangle);
+        }
+        return ret;
+    }
+
+    // add an offset to all indices, used for simple appending
+    static addOffsetToIndices(offset:number,indices:number[]):number[]{
+        for(let i=0;i<indices.length;i++){
+            indices[i]=indices[i]+offset;
+        }
+        return indices;
+    }
+
+    // append the vertices and indices to an already existing vertices/indices list
+    // no checking for duplicate vertices is performed here
+    /*static addVerticesIndicesSimple(vertices:THREE.Vector3[],indices:number){
+        const idxOffset=vertices.length;
+        const retVertices=new Array<THREE.Vector3>();
+        const retIndices=new Array<number>();
+        for(let i=0;i<vertices.length;i++){
+            this.verticesBuff.push(vertices[i]);
+        }
+        //console.log("IndicesX");
+        for(let i=0;i<indices.length;i++){
+            //console.log("Indices:"+indices[i]);
+            this.indicesBuff.push(idxOffset+indices[i]);
+        }
+    }*/
 
     static convertVertices(vertices:THREE.Vector3[]):number[]{
         let ret=new Array<number>(vertices.length);
@@ -131,6 +167,16 @@ export class Helper{
         scene.add(Helper.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
     }
 
+    // For a triangle, the vertex order doesn't matter
+    static createKeyFromTriangle(a:number,b:number,c:number):string{
+        const tmp=[a,b,c].sort();
+        const a1=tmp[0];
+        const b1=tmp[1];
+        const c1=tmp[2];
+        const e = `${a1}-${b1}-${c1}`;
+        return e;
+    }
+
     // Loop through the indices list. If a triangle made up of 3 Vertices is duplicated,
     // we can savely remove it. Returns a list of the indices remaining and a list of the 
     // removed indices
@@ -142,7 +188,8 @@ export class Helper{
             const a1=indices[i+0];
             const b1=indices[i+1];
             const c1=indices[i+2];
-            const e = `${a1}-${b1}-${c1}`;
+            //const e = `${a1}-${b1}-${c1}`;
+            const e=this.createKeyFromTriangle(a1,b1,c1);
             if(map.has(e)){
                 if(map.get(e)!=null){
                     removedIndices.push(a1);
@@ -185,7 +232,7 @@ export class Helper{
         for(let i=0;i<used.length;i++){
             if(!used[i]){
                 unused.push(i);
-                console.log("Vert:"+i+" is unused\n");
+                //console.log("Vert:"+i+" is unused\n");
             }else{
                 //console.log("Vert:"+i+" is used\n");
             }
@@ -197,18 +244,21 @@ export class Helper{
             }
         }
         //verticesRet=verticesRet.concat(vertices);
-
-
         let indicesRet=new Array<number>();
         indicesRet=indicesRet.concat(indices);
 
         for(let i=0;i<unused.length;i++){
             const unu=unused[i];
-            for(let i=0;i<indicesRet.length;i++){
-                if(indicesRet[i]>unu){
-                    indicesRet[i]=indicesRet[i]-1;
+            for(let j=0;j<indicesRet.length;j++){
+                if(indicesRet[j]>unu){
+                    indicesRet[j]=indicesRet[j]-1;
                 }
             }
+            /*for(let j=i+1;j<unused.length;j++){
+                if(unused[j]>unu){
+                    unused[j]=unused[j]-1;
+                }
+            }*/
         }
 
         return [verticesRet,indicesRet];
