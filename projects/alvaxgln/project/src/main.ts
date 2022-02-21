@@ -48,12 +48,15 @@ export default class Main extends Renderer {
     flatShading: boolean;
     qSim: number;
     melaxSim: number;
+    easyEdges: boolean;
+    driftingEdges: boolean;
     smoothIntensity: number;
     smoothRounds: number;
     initialSmooth: boolean;
     intermediateSmooth: boolean;
     smooth: () => void;
     regularize: () => void;
+    reset: () => void;
     mesh: string;
   };
   bufpos: Float32Array;
@@ -95,6 +98,8 @@ export default class Main extends Renderer {
       normalMethod: NormalMethod.EqualWeighted,
       qSim: 0.0,
       melaxSim: 0.0,
+      easyEdges: true,
+      driftingEdges: true,
       smoothIntensity: 1,
       smoothRounds: 1,
       initialSmooth: false,
@@ -108,11 +113,12 @@ export default class Main extends Renderer {
       },
       regularize: () => {
         this.loadMesh(this.params.mesh);
-        this.internal!.mesh!.regularize(this.params.smoothIntensity, this.params.smoothRounds, this.params.initialSmooth, this.params.intermediateSmooth);
+        this.internal!.mesh!.regularize(this.params.easyEdges, this.params.driftingEdges, this.params.smoothIntensity, this.params.smoothRounds, this.params.initialSmooth, this.params.intermediateSmooth);
         this.prepareBuf();
         this.renderMeshLeft();
         
       },
+      reset: () => this.loadMesh(this.params.mesh),
       mesh: ""
     };
 
@@ -177,7 +183,7 @@ export default class Main extends Renderer {
 
     //add Button for regularization
     const reg = this.gui.addFolder('Regularization');
-    const smooth = reg.addFolder('Smoothing');
+    const smooth = this.gui.addFolder('Smoothing');
     smooth
       .add(this.params, 'smoothIntensity', 0.0, 1.0, 0.001)
       .name('Intensity')
@@ -198,10 +204,15 @@ export default class Main extends Renderer {
       .onChange(show => {
         console.log(this.params.initialSmooth);
       });
-    reg.add(this.params, 'smooth').name('Smooth');
-    reg.add(this.params, 'regularize').name('Start Algorithm');
-    reg.open();
-
+    reg
+    .add(this.params, 'easyEdges')
+    .name('Long/Short Edges');
+    reg
+    .add(this.params, 'driftingEdges')
+    .name('Drifting Edges');
+    smooth.add(this.params, 'smooth').name('Smooth');
+    this.gui.add(this.params, 'regularize').name('Start Algorithm');
+    this.gui.add(this.params, 'reset').name('Reset mesh');
 
 
     /*

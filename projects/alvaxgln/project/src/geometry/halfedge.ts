@@ -738,7 +738,7 @@ export class HalfedgeMesh {
   }
 
   //Regularize the halfedge mesh with the scheme
-  regularize(smoothIntensity: number, smoothRounds:number, initialSmooth: boolean, intermediateSmooth: boolean){
+  regularize(easyEdges:boolean, driftingEdges:boolean, smoothIntensity: number, smoothRounds:number, initialSmooth: boolean, intermediateSmooth: boolean){
 
   //set parameters
   this.smooth_intensity = smoothIntensity;
@@ -751,15 +751,19 @@ export class HalfedgeMesh {
 
   if(intermediateSmooth) this.angle_smooth(this.smooth_intensity, this.smooth_rounds);
 
-  this.easyEdges();
-  console.log("Easy Edges handled");
+  if(easyEdges){
+    this.easyEdges();
+    console.log("Easy Edges handled");
+    this.basicEdgeFlip();
+  }
 
-  this.basicEdgeFlip();
 
   //this.angle_smooth();
 
-  this.driftingEdges();
-  this.easyEdges();
+  if(driftingEdges){
+    this.driftingEdges();
+    this.easyEdges();
+}
   this.basicEdgeFlip();
 
   //this.angle_smooth();
