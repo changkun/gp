@@ -115,13 +115,4 @@ export class AABB {
     console.log("AABB:Center("+this.center().x+","+this.center().y+","+this.center().z+") radius:"+this.radius());
   }
 
-  public static debugBoundingBox(box:THREE.Box3){
-    let v1=new THREE.Vector3();
-    let v2=new THREE.Vector3();
-    box.getSize(v1);
-    box.getCenter(v2);
-    console.log("Box:Center("+v2.x+","+v2.y+","+v2.z+")"+"Size("+v1.x+","+v1.y+","+v1.z+")");
-
-  }
-
 }

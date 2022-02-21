@@ -4,7 +4,7 @@
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
 
-import {Vector} from './linalg/vec';
+import {Vector} from '../linalg/vec';
 
 export function colormap(x: number, min: number, max: number) {
   x = Math.max(Math.min(x, max), min);

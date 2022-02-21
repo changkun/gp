@@ -4,7 +4,7 @@ import { Vector } from './linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';
 import { assert } from 'console';
 import { AlignedCube } from './linalg/AlignedCube';
-import { ThreeDArray } from './linalg/3DArray';
+import { ThreeDArray } from './helper/3DArray';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
 import { Helper} from './helper/Helper';
@@ -37,17 +37,6 @@ export class Voxelizer {
         this.verticesBuff=[];
         this.indicesBuff=[];
         this.mappedTriangleIndices=[];
-    }
-
-    getRandomInt(max:number):number {
-        return Math.floor(Math.random() * max);
-    }
-    
-    convertToThreeJs(vertices:Vector[]):THREE.Triangle{
-        const v1=new THREE.Vector3(vertices[0].x,vertices[0].y,vertices[0].z);
-        const v2=new THREE.Vector3(vertices[1].x,vertices[1].y,vertices[1].z);
-        const v3=new THREE.Vector3(vertices[2].x,vertices[2].y,vertices[2].z);
-        return new THREE.Triangle(v1,v2,v3);
     }
 
     testIndices(scene:THREE.Scene){
@@ -100,7 +89,7 @@ export class Voxelizer {
         let xOriginalTriangles=new Array<THREE.Triangle>();
         for(let f of originalMesh.faces){
             const triangleData=f.asTriangle();
-            const triangle=this.convertToThreeJs(triangleData);
+            const triangle=Helper.convertToThreeJs(triangleData);
             xOriginalTriangles.push(triangle);
         }
 
@@ -178,14 +167,21 @@ export class Voxelizer {
         //this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
         //scene.add(this.bigTestMesh!);
 
-        //this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
-        this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
+        this.createdHalfedgeMesh=new HalfedgeMesh(this.indicesBuff,Vector.convArray(this.verticesBuff));
+        //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
+    }
+
+    addDebugToScene(scene:THREE.Scene,remove:boolean){
+        for(let i=0;i<this.helperBoxes.length;i++){
+            if(remove){
+                scene.remove(this.helperBoxes[i]);
+            }else{
+                scene.add(this.helperBoxes[i]);
+            }
+        }
     }
 
     addToScene(scene:THREE.Scene){
-        for(let i=0;i<this.helperBoxes.length;i++){
-            //scene.add(this.helperBoxes[i]);
-        }
         for(let i=0;i<this.testMeshes.length;i++){
             //scene.add(this.testMeshes[i]);
         }
@@ -196,15 +192,12 @@ export class Voxelizer {
             scene.add(this.bigTestMesh!);
         }
         if(this.createdHalfedgeMesh){
-            this.createdHalfedgeMesh!.createRenderableHalfedgeHelpers();
-            this.createdHalfedgeMesh!.addEdgeHelpersToScene(scene,false);
+            //this.createdHalfedgeMesh!.createAllRenderHelpers();
+            //this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
         }
     }
 
     removeFromScene(scene:THREE.Scene){
-        for(let i=0;i<this.helperBoxes.length;i++){
-            scene.remove(this.helperBoxes[i]);
-        }
         for(let i=0;i<this.testMeshes.length;i++){
             scene.remove(this.testMeshes[i]);
         }
@@ -226,13 +219,19 @@ export class Voxelizer {
             const b=cubeIndices[i+1];
             const c=cubeIndices[i+2];
             const e = `${a}-${b}-${c}`
-            if (!this.triangleIndicesMap.has(e)) {
-                this.triangleIndicesMap.set(e, [a, b,c])
-                this.mappedTriangleIndices.push(a);
-                this.mappedTriangleIndices.push(b);
-                this.mappedTriangleIndices.push(c);
+            if(!this.completelyDiscardedTriangleIndices.has(e)){
+                // we have not yet removed this triangle
+                if (!this.triangleIndicesMap.has(e)) {
+                    this.triangleIndicesMap.set(e, [a, b,c])
+                    this.completelyDiscardedTriangleIndices.set(e,[a,b,c]);
+                    this.mappedTriangleIndices.push(a);
+                    this.mappedTriangleIndices.push(b);
+                    this.mappedTriangleIndices.push(c);
+                }else{
+                    console.log("Duplicate removed\n");
+                }
             }else{
-                //console.log("Removed unndeeded\n");
+                console.log("Completely removed\n");
             }
         }
     }

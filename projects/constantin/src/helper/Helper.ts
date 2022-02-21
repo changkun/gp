@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Vertex, Edge, Face, Halfedge } from '../geometry/primitive';
 import { Vector } from '../linalg/vec';
 
+// contains only static methods that are usefully for debugging and conversion between types
 export class Helper{
 
     static addCubeSizeOne(scene:THREE.Scene){
@@ -67,5 +68,22 @@ export class Helper{
         return ret;
     }
 
+    static convertToThreeJs(vertices:Vector[]):THREE.Triangle{
+        const v1=new THREE.Vector3(vertices[0].x,vertices[0].y,vertices[0].z);
+        const v2=new THREE.Vector3(vertices[1].x,vertices[1].y,vertices[1].z);
+        const v3=new THREE.Vector3(vertices[2].x,vertices[2].y,vertices[2].z);
+        return new THREE.Triangle(v1,v2,v3);
+    }
+
+    public static debugBoundingBox(box:THREE.Box3){
+        let v1=new THREE.Vector3();
+        let v2=new THREE.Vector3();
+        box.getSize(v1);
+        box.getCenter(v2);
+        console.log("Box:Center("+v2.x+","+v2.y+","+v2.z+")"+"Size("+v1.x+","+v1.y+","+v1.z+")");
+    }
+    static getRandomInt(max:number):number {
+        return Math.floor(Math.random() * max);
+    }
 
 }

@@ -25,9 +25,10 @@ import {
 } from 'three';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {Vector} from './linalg/vec';
-import {colormap} from './colors';
+import {colormap} from './helper/colors';
 import {AABB} from './geometry/aabb';
 import { Voxelizer } from './voxelizer';
+import { Helper} from './helper/Helper';
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -45,8 +46,8 @@ export default class Main extends Renderer {
     showWireframe: boolean;
     showEdges:boolean;
     showHalfedges:boolean;
+    debugVoxels:boolean;
     showVoxels:boolean;
-    normalMethod: NormalMethod;
     nVoxelsPerAxis: number;
     computationTime:number;
   };
@@ -81,8 +82,8 @@ export default class Main extends Renderer {
       showWireframe: false,
       showEdges:false,
       showHalfedges:false,
+      debugVoxels:false,
       showVoxels:false,
-      normalMethod: NormalMethod.EqualWeighted,
       nVoxelsPerAxis: 5,
       computationTime:0,
     };
@@ -120,6 +121,15 @@ export default class Main extends Renderer {
       show
         ? this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false)
         : this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,true);
+    });
+    this.gui
+    .add(this.params, 'debugVoxels')
+    .name('debug voxels')
+    .listen()
+    .onChange(show => {
+      show
+        ? this.internal.voxelizer!.addDebugToScene(this.scene,false)
+        : this.internal.voxelizer!.addDebugToScene(this.scene,true);
     });    
     this.gui
       .add(this.params, 'showVoxels')
@@ -202,7 +212,7 @@ export default class Main extends Renderer {
     let box = new Box3()
     const helper = new Box3Helper(box);
     //this.scene.add(helper);
-    AABB.debugBoundingBox(box);
+    Helper.debugBoundingBox(box);
     //Voxelizer.addCubeSizeOne(this.scene);
 
     this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);

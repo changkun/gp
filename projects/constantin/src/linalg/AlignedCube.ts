@@ -4,7 +4,7 @@ import { Vector } from "./vec";
 import * as THREE from 'three'
 import { LineSegments } from "three";
 import { assert } from "console";
-import { ThreeDArray } from './3DArray';
+import { ThreeDArray } from '../helper/3DArray';
 import { Helper} from '../helper/Helper';
 
 // a aligned cube is defined by
@@ -93,59 +93,9 @@ export class AlignedCube {
         return [AlignedCube.createCubeVertices(this.lowerLeftCorner,this.size),AlignedCube.createCubeIndices()];
     }
 
-    //createIndices(idx:number){
-    //    const offset=idx
-    //}
-
     static createFacesIndices(x:number,y:number,z:number,map:number[][][]):number[]{
         //let indices=this.createCubeIndices();
         let ret=new Array<number>();
-        /*let ret=new Array<number>();
-        for (let i = 0; i <8; i++) {
-            const x1=(i & 4) != 0 ? 1 : 0;
-            const y1= (i & 1) != 0 ? 1 : 0;
-            const z1=(i & 9) != 0 ? 1 : 0;
-            ret.push(map[x+x1][y+y1][z+z1]);
-        }*/
-        /*for (let i = 0; i < 8; i++) {
-            const right=(i & 4) != 0 ? 0 : 1;
-            const up= (i & 2) != 0 ? 0 : 1;
-            const back=(i & 1) != 0 ? 0 : 1;
-
-        }
-
-        let indices=AlignedCube.createCubeIndices();
-        let vertices=AlignedCube.createCubeVerticesX();
-        for(let i=0;i<indices.length;i++){
-            const vert=vertices[indices[i]];
-            ret.push(map[vert.x][vert.y][vert.z]);
-        }*/
-        /*let indices2= [
-            //Top
-            1, 6, 7,
-            1, 3, 7,
-            //Bottom
-            0, 4, 5,
-            0, 1, 5,
-            //Left
-            0, 2, 6,
-            0, 4, 6,
-            //Right
-            1, 3, 7,
-            1, 5, 7,
-            //Front
-            0, 2, 3,
-            0, 1, 3,
-            //Back
-            4, 6, 7,
-            4, 5, 7
-        ];*/
-        /*for (let i = 0; i <8; i++) {
-            const x1=(i & 4) != 0 ? 1 : 0;
-            const y1= (i & 1) != 0 ? 1 : 0;
-            const z1=(i & 9) != 0 ? 1 : 0;
-            ret.push(map[x+x1][y+y1][z+z1]);
-        }*/
         let faceIndices=[
             // front
             [x,y,z],
@@ -195,23 +145,19 @@ export class AlignedCube {
             const m=faceIndices[i];
             ret.push(map[m[0]][m[1]][m[2]]);
         }
-    
         /*ret.push(map[x][y][z]);
         ret.push(map[x][y+1][z]);
         ret.push(map[x][y+1][z+1]);
-
         ret.push(map[x][y][z]);
         ret.push(map[x][y+1][z]);
         ret.push(map[x][y+1][z+1]);
-
-
         ret.push(map[x][y][z]);
         ret.push(map[x][y+1][z]);
         ret.push(map[x][y+1][z+1]);*/
-
         return ret;
     }
 
+    
     createMesh2(scene:THREE.Scene):THREE.LineSegments{
         
         let [vertices,indices]= this.createVerticesIndices();
