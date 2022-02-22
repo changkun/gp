@@ -288,6 +288,7 @@ export class Helper{
         return [remaining,removedIndices];
     }
 
+    
     static removeIsolatedVertices(vertices:THREE.Vector3[],indices:number[]):[THREE.Vector3[],number[]]{
         // mark the vertices that are actually used by indices
         let used=new Array<boolean>(vertices.length);

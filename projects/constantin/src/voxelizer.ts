@@ -40,6 +40,7 @@ export class Voxelizer {
     }
     
     voxelizeHalfedgeMesh(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
+        console.log("Voxelizing begin");
         this.removeAllFromScene(scene);
         this.testHelperBoxes=[];
         this.testHelperMeshes=[];
@@ -136,9 +137,17 @@ export class Voxelizer {
 
         //remaining=AlignedCube.fixOrder(remaining);
 
+        let argh=new Array<number>();
+        let takeSome=3*500;
+        takeSome = takeSome <= remaining.length ? takeSome : remaining.length;
+        for(let i=0;i<takeSome;i++){
+            argh.push(remaining[i]);
+        }
+
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(xBuffIndices,xBuffVertices);
-        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
-        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,xBuffVertices);
+        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
+        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,xBuffVertices);
+        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(argh,xBuffVertices);
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(AlignedCube.createFacesIndices(0,0,0,ramba),xBuffVertices);
         this.createdHalfedgeMesh.halfedgeMesh.validate();
 
@@ -147,6 +156,7 @@ export class Voxelizer {
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.yIndices,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(x1Ind,Vector.convArray(x1Vert));
         //this.createdHalfedgeMesh!.createAllRenderHelpers();
+        console.log("Voxelizing end");
 
     }
 
@@ -167,9 +177,9 @@ export class Voxelizer {
             }else{
                 this.createdHalfedgeMesh!.removeAllIfAdded(scene);
                 this.createdHalfedgeMesh!.createAllRenderHelpers();
-                //this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
+                this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
                 //this.createdHalfedgeMesh!.addWireframeHelperToScene(scene,false);
-                this.createdHalfedgeMesh!.addMeshHelperToScene(scene,false);
+                //this.createdHalfedgeMesh!.addMeshHelperToScene(scene,false);
                 //this.createdHalfedgeMesh!.addEdgeHelpersToScene(scene,false);
                 this.createdHalfedgeMesh!.addNormalHelperToScene(scene,false);
             }

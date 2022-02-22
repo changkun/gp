@@ -91,7 +91,7 @@ export default class Main extends Renderer {
       debugVoxels:false,
       showVoxels:false,
       showVoxels2:false,
-      nVoxelsPerAxis: 1,
+      nVoxelsPerAxis: 5,
       computationTime:0,
     };
 

@@ -214,8 +214,8 @@ export class Vertex {
     ) {
       max++;
       if(max>64){
-        console.log("Something wrong with faces of Vertex:"+this.idx);
-        break;
+        //console.log("Something wrong with faces of Vertex:"+this.idx);
+        //break;
       }
       if (h==null || h!.onBoundary) {
         continue;
@@ -236,8 +236,8 @@ export class Vertex {
     ) {
       max++;
       if(max>64){
-        console.log("Something wrong with halfedges of Vertex:"+this.idx);
-        break;
+        //console.log("Something wrong with halfedges of Vertex:"+this.idx);
+        //break;
       }
       fn(h!, i);
       start = false;
