@@ -175,7 +175,7 @@ export class HalfedgeMesh {
     // We assume the input mesh is a manifold mesh.
     // build the halfedge connectivity
     console.log("HE construction begin");
-    const edges = new Map()
+    const edges = new Map();
     for (let i = 0; i < indices.length; i += 3) {
       for (let j = 0; j < 3; j++) { // check a face
         var a = indices[i + j]
@@ -335,8 +335,35 @@ export class HalfedgeMesh {
     index = 0
     this.faces.forEach(f => { f.idx = index++ })
     index = 0
-    this.halfedges.forEach(h => { h.idx = index++ })
+    this.halfedges.forEach(h => { h.idx = index++ });
+    // remove unused vertices
+    let tmp=new Array<Vertex>();
+    for(let i=0;i<this.verts.length;i++){
+      const vert=this.verts[i];
+      if(vert.halfedge){
+        vert.idx=tmp.length;
+        tmp.push(vert);
+      }
+    }
+    this.verts=tmp;
     console.log("HE construction end");
+  }
+
+  validate(){
+    console.log("validate begin");
+    for(let i=0;i<this.verts.length;i++){
+      this.verts[i].validate();
+    }
+    for(let i=0;i<this.edges.length;i++){
+      this.edges[i].validate();
+    }
+    for(let i=0;i<this.faces.length;i++){
+      this.faces[i].validate();
+    }
+    for(let i=0;i<this.halfedges.length;i++){
+      this.halfedges[i].validate();
+    }
+    console.log("validate end");
   }
   
 }

@@ -126,7 +126,14 @@ export class Voxelizer {
         //this.createdHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(xBuffIndices,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(bigBuffIndices,Vector.convArray(bigBuffVertices));
+
+        //remaining=AlignedCube.fixOrder(remaining);
+
+        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(xBuffIndices,xBuffVertices);
         this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
+        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,xBuffVertices);
+        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(AlignedCube.createFacesIndices(0,0,0,ramba),xBuffVertices);
+        this.createdHalfedgeMesh.halfedgeMesh.validate();
 
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(removed,Vector.convArray3(xBuffVertices));
@@ -151,9 +158,13 @@ export class Voxelizer {
             if(remove){
                 this.createdHalfedgeMesh!.removeAllIfAdded(scene);
             }else{
+                this.createdHalfedgeMesh!.removeAllIfAdded(scene);
                 this.createdHalfedgeMesh!.createAllRenderHelpers();
                 //this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
-                this.createdHalfedgeMesh!.addWireframeHelperToScene(scene,false);
+                //this.createdHalfedgeMesh!.addWireframeHelperToScene(scene,false);
+                this.createdHalfedgeMesh!.addMeshHelperToScene(scene,false);
+                //this.createdHalfedgeMesh!.addEdgeHelpersToScene(scene,false);
+                this.createdHalfedgeMesh!.addNormalHelperToScene(scene,false);
             }
         }
     }

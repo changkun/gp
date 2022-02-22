@@ -45,6 +45,40 @@ export class Halfedge {
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))));
   }
   validate(){
+    let valid=true;
+    if(!this.vert){
+      console.log("Halfedge"+this.idx+"has no assigned vertex");
+      valid=false;
+    }
+    if(!this.edge){
+      console.log("Halfedge"+this.idx+"has no assigned edge");
+      valid=false;
+    }
+    if(!this.face){
+      console.log("Halfedge"+this.idx+"has no assigned face");
+      valid=false;
+    }
+    if(!this.prev){
+      console.log("Halfedge"+this.idx+"has no prev");
+      valid=false;
+    }
+    if(!this.next){
+      console.log("Halfedge"+this.idx+"has no next");
+      valid=false;
+    }
+    if(!this.twin){
+      console.log("Halfedge"+this.idx+"has no twin");
+      valid=false;
+    }
+    if(!valid){
+      console.log("Halfedge"+this.idx+" valid:"+(valid ? "Y":"N"));
+    }
+    this.vector();
+    this.cotan();
+    this.angle();
+    if(this.next!.next!.idx != this.prev!.idx){
+      console.log("Hmm");
+    }
     //assert(this.vert !== null);
   }
 }
@@ -58,6 +92,13 @@ export class Edge {
     //this.halfedge=halfedge;
     this.idx = -1;
   }
+
+  validate(){
+    const valid=this.halfedge!=null;
+    if(!valid){
+      console.log("Edge"+this.idx+" valid:"+(valid ? "Y":"N"));
+    }
+  }
 }
 
 export class Face {
@@ -66,6 +107,23 @@ export class Face {
 
   constructor() {
     this.idx = -1;
+  }
+  validate(){
+    const valid=this.halfedge!=null;
+    if(!valid){
+      console.log("Face"+this.idx+" valid:"+(valid ? "Y":"N"));
+    }
+    this.vertices((v, i) => {
+      if(!v){
+        console.log("X");
+      }
+    });
+    const tris=this.asTriangle();
+    if(tris.length!=3){
+      console.log("Face"+this.idx+" asTriangle() error");
+    }
+    this.normal();
+    this.area();
   }
   vertices(fn: (v: Vertex, n: number) => void) {
     let start = true;
@@ -96,6 +154,7 @@ export class Face {
   normal(): Vector {
     // Compute the face normal of this face.
     if (this.halfedge!.onBoundary) {
+      console.log("Boundary");
       return new Vector(0, 0, 0);
     }
     const h = this.halfedge!;
@@ -130,14 +189,33 @@ export class Vertex {
     this.position = position;
     this.idx = -1;
   }
+  validate(){
+    let valid=true;
+    if(!this.halfedge){
+      valid=false;
+      console.log("Vertex"+this.idx+" has no halfedge");
+    }
+    this.faces((f,i)=>{
+
+    });
+    this.halfedges((h,i)=>{
+
+    });
+  }
   faces(fn: (f: Face, i: number) => void) {
     let start = true;
     let i = 0;
+    let max=0;
     for (
       let h = this.halfedge;
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
+      max++;
+      if(max>64){
+        console.log("Something wrong with faces of Vertex:"+this.idx);
+        break;
+      }
       if (h==null || h!.onBoundary) {
         continue;
       }
@@ -149,11 +227,17 @@ export class Vertex {
   halfedges(fn: (h: Halfedge, i: number) => void) {
     let start = true;
     let i = 0;
+    let max=0;
     for (
       let h = this.halfedge;
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
+      max++;
+      if(max>64){
+        console.log("Something wrong with halfedges of Vertex:"+this.idx);
+        break;
+      }
       fn(h!, i);
       start = false;
       i++;

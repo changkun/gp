@@ -53,6 +53,10 @@ export class Helper{
         return [indices,positions];
     }
 
+    static convertToObj(vertices:number[],indices:number[]){
+
+    }
+
     static addCubeSizeOne(scene:THREE.Scene){
         const halfSize=0.5;
         const min=new THREE.Vector3(-halfSize,-halfSize,-halfSize);
@@ -218,14 +222,19 @@ export class Helper{
         scene.add(Helper.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
     }
 
+    static sortAscending(a:number,b:number,c:number):number[]{
+        return [a,b,c].sort();
+    }
+
+    static createThreeValueKey(a:number,b:number,c:number):string{
+        const e = `${a}-${b}-${c}`;
+        return e;
+    }
+
     // For a triangle, the vertex order doesn't matter
     static createKeyFromTriangle(a:number,b:number,c:number):string{
-        const tmp=[a,b,c].sort();
-        const a1=tmp[0];
-        const b1=tmp[1];
-        const c1=tmp[2];
-        const e = `${a1}-${b1}-${c1}`;
-        return e;
+        const [a1,b1,c1]=Helper.sortAscending(a,b,c);
+        return Helper.createThreeValueKey(a1,b1,c1);
     }
 
     // Loop through the indices list. If a triangle made up of 3 Vertices is duplicated,
@@ -236,11 +245,11 @@ export class Helper{
         let nRemoved=0;
         let removedIndices=new Array<number>();
         for(let i=0;i<indices.length;i+=3){
-            const a1=indices[i+0];
-            const b1=indices[i+1];
-            const c1=indices[i+2];
-            //const e = `${a1}-${b1}-${c1}`;
-            const e=this.createKeyFromTriangle(a1,b1,c1);
+            const a=indices[i+0];
+            const b=indices[i+1];
+            const c=indices[i+2];
+            const [a1,b1,c1]=Helper.sortAscending(a,b,c);
+            const e=this.createThreeValueKey(a1,b1,c1);
             if(map.has(e)){
                 if(map.get(e)!=null){
                     removedIndices.push(a1);
@@ -251,7 +260,9 @@ export class Helper{
                 nRemoved++;
                 //console.log("set to null");
             }else{
-                map.set(e, [a1,b1,c1]);
+                // NOTE: Do not store the sorted values, else the normal direction
+                // will be messed up
+                map.set(e, [a,b,c]);
                 //console.log("add value");
             }
         }

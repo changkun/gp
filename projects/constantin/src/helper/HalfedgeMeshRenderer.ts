@@ -8,7 +8,7 @@ import {AABB} from '../geometry/aabb';
 import { Voxelizer } from '../voxelizer';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {HalfedgeMesh} from '../geometry/halfedge';
-
+import { Helper} from '../helper/Helper';
 
 // The underlying Three.js renderer does not natively support halfedges.
 // This class wraps a underlying HalfedgeMesh and provides convenient
@@ -43,12 +43,20 @@ export class HalfedgeMeshRenderer {
      */
     constructor(halfedgeMesh:HalfedgeMesh){
         this.halfedgeMesh=halfedgeMesh;
-        this.createAllRenderHelpers();
+        //this.createAllRenderHelpers();
     }
 
     // Helper that constructs the halfedge mesh in place
     static createFromData(indices: number[],positions:Vector[]):HalfedgeMeshRenderer{
         return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,positions));
+    }
+
+    static createFromData2(indices: number[],positions:THREE.Vector3[]):HalfedgeMeshRenderer{
+        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Vector.convArray(positions)));
+    }
+
+    static createFromData3(indices: number[],positions:number[]):HalfedgeMeshRenderer{
+        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Vector.convArray3((positions))));
     }
 
     // clears and creates all the rendering helper(s)
@@ -61,6 +69,8 @@ export class HalfedgeMeshRenderer {
         console.log("HE createAllRenderHelpers end");
     }
 
+    
+
     // creates a mesh, wireframe mesh and normal helper that can be rendered by Three.js
     createRenderableMeshAndWireframe(){
         // prepare new data
@@ -71,21 +81,21 @@ export class HalfedgeMeshRenderer {
         let bufnormals = new Float32Array(v * 3);
 
         this.halfedgeMesh!.verts.forEach(v => {
-        const i = v.idx;
-        const p=v.position;
-        bufpos[3 * i + 0] = p.x;
-        bufpos[3 * i + 1] = p.y;
-        bufpos[3 * i + 2] = p.z;
+            const i = v.idx;
+            const p=v.position;
+            bufpos[3 * i + 0] = p.x;
+            bufpos[3 * i + 1] = p.y;
+            bufpos[3 * i + 2] = p.z;
 
-        // default GP blue color
-        bufcolors[3 * i + 0] = 0;
-        bufcolors[3 * i + 1] = 0.5;
-        bufcolors[3 * i + 2] = 1;
+            // default GP blue color
+            bufcolors[3 * i + 0] = 0;
+            bufcolors[3 * i + 1] = 0.5;
+            bufcolors[3 * i + 2] = 1;
 
-        const n = v.normal(NormalMethod.EqualWeighted);
-        bufnormals[3 * i + 0] = n.x;
-        bufnormals[3 * i + 1] = n.y;
-        bufnormals[3 * i + 2] = n.z;
+            const n = v.normal(NormalMethod.EqualWeighted);
+            bufnormals[3 * i + 0] = n.x;
+            bufnormals[3 * i + 1] = n.y;
+            bufnormals[3 * i + 2] = n.z;
         });
 
         const idxs = new Uint32Array(this.halfedgeMesh!.faces.length * 3);
@@ -98,7 +108,19 @@ export class HalfedgeMeshRenderer {
         g.setIndex(new THREE.BufferAttribute(idxs, 1));
         g.setAttribute('position', new THREE.BufferAttribute(bufpos, 3));
         g.setAttribute('color', new THREE.BufferAttribute(bufcolors, 3));
-        g.setAttribute('normal', new THREE.BufferAttribute(bufnormals, 3));
+        //g.setAttribute('normal', new THREE.BufferAttribute(bufnormals, 3));
+        g.computeVertexNormals();
+        /*let bufpos=new Float32Array();
+        let bufcolors = new Float32Array();
+
+        let tmpIndices=new Array<number>();
+        let tmVertices=new Array<Vector>();
+
+        for(let i=0;i<this.halfedgeMesh.faces.length;i++){
+            const face=this.halfedgeMesh.faces[i];
+            const triangle=face.asTriangle();
+            tmVertices=tmVertices.concat(triangle);
+        }*/
 
         this.mesh3js = new THREE.Mesh(
         g,
@@ -128,15 +150,15 @@ export class HalfedgeMeshRenderer {
         this.halfedgeHelpers=[];
         // create Arrows for all the halfedges
         for(let i=0;i<this.halfedgeMesh!.halfedges!.length;i++){
-        const edgeHe=this.halfedgeMesh!.halfedges![i];  
-        const origin = edgeHe.vert!.position.convertT();
-        const dir=edgeHe.vector().convertT().normalize();
-        const len=edgeHe.vector().convertT().length();
-        const color = edgeHe.onBoundary ? 0xFF0000 : 0xffff00;
-        const headLength=0.01;
-        const headWidth=headLength*0.5;
-        const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
-        this.halfedgeHelpers.push(arrowHelper);
+            const edgeHe=this.halfedgeMesh!.halfedges![i];  
+            const origin = edgeHe.vert!.position.convertT();
+            const dir=edgeHe.vector().convertT().normalize();
+            const len=edgeHe.vector().convertT().length();
+            const color = edgeHe.onBoundary ? 0xFF0000 : 0xffff00;
+            const headLength=0.01;
+            const headWidth=headLength*0.5;
+            const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
+            this.halfedgeHelpers.push(arrowHelper);
         }
     }
     // 
@@ -145,19 +167,19 @@ export class HalfedgeMeshRenderer {
         this.edgeHelpers=[];
         // create Arrows for all the edges
         for(let i=0;i<this.halfedgeMesh!.edges.length;i++){
-        const edge=this.halfedgeMesh!.edges[i];
-        if(!edge.halfedge){
-            break;
-        }
-        const edgeHe=edge.halfedge!;
-        const origin = edgeHe.vert!.position.convertT();
-        const dir=edgeHe.vector().convertT().normalize();
-        const len=edgeHe.vector().convertT().length();
-        const color = 0x00FF00;
-        const headLength=0.01;
-        const headWidth=headLength*0.5;
-        const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
-        this.edgeHelpers.push(arrowHelper);
+            const edge=this.halfedgeMesh!.edges[i];
+            if(!edge.halfedge){
+                break;
+            }
+            const edgeHe=edge.halfedge!;
+            const origin = edgeHe.vert!.position.convertT();
+            const dir=edgeHe.vector().convertT().normalize();
+            const len=edgeHe.vector().convertT().length();
+            const color = 0x00FF00;
+            const headLength=0.01;
+            const headWidth=headLength*0.5;
+            const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
+            this.edgeHelpers.push(arrowHelper);
         }
     }
 
@@ -212,5 +234,6 @@ export class HalfedgeMeshRenderer {
         this.addWireframeHelperToScene(scene,true);
         this.addNormalHelperToScene(scene,true);
         this.addHalfedgeHelpersToScene(scene,true);
+        this.addEdgeHelpersToScene(scene,true);
     }
 }
