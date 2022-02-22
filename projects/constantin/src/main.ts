@@ -29,6 +29,7 @@ import {colormap} from './helper/colors';
 import {AABB} from './geometry/aabb';
 import { Voxelizer } from './voxelizer';
 import { Helper} from './helper/Helper';
+import { HalfedgeMeshRenderer} from './helper/HalfedgeMeshRenderer';
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -37,7 +38,8 @@ export default class Main extends Renderer {
   gui: GUI;
   input: HTMLInputElement;
   internal: {
-    mesh?: HalfedgeMesh; // internal mesh object
+    //mesh?: HalfedgeMesh; // internal mesh object
+    halfedgeRenderer?:HalfedgeMeshRenderer; // helper to render the underlying halfege mesh
     voxelizer?:Voxelizer; // Consti10 handle to voxels
   };
   params: {
@@ -103,8 +105,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.mesh!.addWireframeHelperToScene(this.scene,false)
-          : this.internal.mesh!.addWireframeHelperToScene(this.scene,true);
+          ? this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,false)
+          : this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,true);
       });
     this.gui
       .add(this.params, 'showEdges')
@@ -112,8 +114,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.mesh!.addEdgeHelpersToScene(this.scene,false)
-          : this.internal.mesh!.addEdgeHelpersToScene(this.scene,true);
+          ? this.internal.halfedgeRenderer!.addEdgeHelpersToScene(this.scene,false)
+          : this.internal.halfedgeRenderer!.addEdgeHelpersToScene(this.scene,true);
       });  
     this.gui
     .add(this.params, 'showHalfedges')
@@ -121,8 +123,8 @@ export default class Main extends Renderer {
     .listen()
     .onChange(show => {
       show
-        ? this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false)
-        : this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,true);
+        ? this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false)
+        : this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,true);
     });
     this.gui
     .add(this.params, 'debugVoxels')
@@ -170,11 +172,12 @@ export default class Main extends Renderer {
       .then(data => this.loadMesh(data));
   }
   loadMesh(data: string) {
-    if(this.internal.mesh){
-      this.internal.mesh!.removeAllIfAdded(this.scene);
+    if(this.internal.halfedgeRenderer){
+      this.internal.halfedgeRenderer!.removeAllIfAdded(this.scene);
     }
-    let [indices,positions]=HalfedgeMesh.loadObj(data);
-    this.internal.mesh = new HalfedgeMesh(indices,positions);
+    let [indices,positions]=Helper.loadObjAndScaleTransform(data);
+    //this.internal.halfedgeRenderer = new HalfedgeMesh(indices,positions);
+    this.internal.halfedgeRenderer = HalfedgeMeshRenderer.createFromData(indices,positions);
     this.internal.voxelizer = new Voxelizer();
     this.renderMesh();
   }
@@ -192,7 +195,7 @@ export default class Main extends Renderer {
   updateVoxelizer(){
     this.internal.voxelizer!.removeAllFromScene(this.scene);
     //
-    this.internal.voxelizer!.voxelizeHalfedgeMesh(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
+    this.internal.voxelizer!.voxelizeHalfedgeMesh(this.internal.halfedgeRenderer!.halfedgeMesh!,this.scene,this.params.nVoxelsPerAxis);
     this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
     if(this.params.debugVoxels){
       this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false);
@@ -204,10 +207,10 @@ export default class Main extends Renderer {
 
   renderMesh() {
     // clear old instances
-    this.internal.mesh!.removeAllIfAdded(this.scene);
+    this.internal.halfedgeRenderer!.removeAllIfAdded(this.scene);
 
     // update the instances if data has changed
-    this.internal.mesh!.createAllRenderHelpers();
+    this.internal.halfedgeRenderer!.createAllRenderHelpers();
 
     // always add the solid mesh
     //this.internal.mesh!.addMeshHelperToScene(this.scene,false);
@@ -215,13 +218,13 @@ export default class Main extends Renderer {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}
     if (this.params.showWireframe) {
-      this.internal.mesh!.addWireframeHelperToScene(this.scene,false);
+      this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,false);
     }
     if(this.params.showEdges){
-      this.internal.mesh!.addEdgeHelpersToScene(this.scene,false);
+      this.internal.halfedgeRenderer!.addEdgeHelpersToScene(this.scene,false);
     }
     if(this.params.showHalfedges){
-      this.internal.mesh!.addHalfedgeHelpersToScene(this.scene,false);
+      this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false);
     }
 
     //this.internal.mesh3js!.geometry.computeBoundingBox();

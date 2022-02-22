@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { Vertex, Edge, Face, Halfedge } from '../geometry/primitive';
+import { AABB } from '../geometry/aabb';
 import { Vector } from '../linalg/vec';
 import { ThreeDArray } from '../helper/3DArray';
 import { AlignedCube } from '../linalg/AlignedCube';
@@ -10,6 +11,47 @@ import { off } from 'process';
 
 // contains only static methods that are usefully for debugging and conversion between types
 export class Helper{
+
+    // parse a text string from an .obj file into arrays of indices and positions
+    // NOTE: Also transforms the vertex data such that it fits into a bounding box of size 1 
+    static loadObjAndScaleTransform(data: string):[number[],Vector[]]{
+        // load .obj file
+        const indices: number[] = [];
+        const positions: Vector[] = [];
+        const lines = data.split('\n');
+        for (let line of lines) {
+            line = line.trim();
+            const tokens = line.split(' ');
+            switch (tokens[0].trim()) {
+            case 'v':
+                positions.push(
+                new Vector(
+                    parseFloat(tokens[1]),
+                    parseFloat(tokens[2]),
+                    parseFloat(tokens[3]),
+                    1
+                )
+                );
+                break;
+            case 'f':
+                // only load indices of vertices
+                for (let i = 1; i < tokens.length; i++) {
+                const vv = tokens[i].split('/');
+                indices.push(parseInt(vv[0]) - 1);
+                }
+                break;
+            }
+        }
+        // Here we scale the vertices of the input mesh such that
+        // they are inside a bounding box of fixed size
+        const aabb = new AABB(positions);
+        for(let i=0;i<positions.length;i++){
+            positions[i]=aabb.transformToFit(positions[i]);
+        }
+        aabb.debug();
+        aabb.checkTransformSuccessfull(positions);
+        return [indices,positions];
+    }
 
     static addCubeSizeOne(scene:THREE.Scene){
         const halfSize=0.5;

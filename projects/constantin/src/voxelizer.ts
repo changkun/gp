@@ -8,6 +8,7 @@ import { ThreeDArray } from './helper/3DArray';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
 import { Helper} from './helper/Helper';
+import { HalfedgeMeshRenderer} from './helper/HalfedgeMeshRenderer';
 
 export class Voxelizer {
     // uses the raw voxelization output 
@@ -20,7 +21,7 @@ export class Voxelizer {
     //
     bigTestMesh?:any;
 
-    createdHalfedgeMesh?:HalfedgeMesh;
+    createdHalfedgeMesh?:HalfedgeMeshRenderer;
     //
 
 
@@ -124,7 +125,8 @@ export class Voxelizer {
 
         //this.createdHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(xBuffIndices,Vector.convArray3(xBuffVertices));
-        this.createdHalfedgeMesh=new HalfedgeMesh(bigBuffIndices,Vector.convArray(bigBuffVertices));
+        //this.createdHalfedgeMesh=new HalfedgeMesh(bigBuffIndices,Vector.convArray(bigBuffVertices));
+        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
 
         //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
         //this.createdHalfedgeMesh=new HalfedgeMesh(removed,Vector.convArray3(xBuffVertices));
