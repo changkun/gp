@@ -73,3 +73,42 @@ appendNewCubeTohalfedgeMesh(cubeIndices:number[]){
             }
         }
     }
+
+
+
+
+let bigBuffVertices=new Array<THREE.Vector3>();
+let bigBuffIndices=new Array<number>();
+//
+const [vertices,indices]= alignedCube.createVerticesIndices();
+const idxOffset=bigBuffVertices.length;
+bigBuffVertices=bigBuffVertices.concat(vertices);
+bigBuffIndices=bigBuffIndices.concat(Helper.addOffsetToIndices(idxOffset,indices));    
+
+//let [x1Vert,x1Ind]=Helper.removeIsolatedVertices(Helper.convertToThreJs2(xBuffVertices),this.yIndices);
+//this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(x1Vert),x1Ind,new THREE.Color('red'));
+
+//this.bigTestMesh=Helper.createMeshFromVertsIndices(Helper.convertVertices(bigBuffVertices),bigBuffIndices,new THREE.Color('red'));
+//this.bigTestMesh=Helper.createMeshFromVertsIndices(xBuffVertices,remaining,new THREE.Color('orange'));
+
+//let [x1Vert,x1Ind]=Helper.removeIsolatedVertices(Helper.convertToThreJs2(xBuffVertices),this.yIndices);
+
+//this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(AlignedCube.convertVertices(this.verticesBuff),this.indicesBuff);
+//this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(xBuffVertices,this.yIndices,new THREE.Color('red'));
+//scene.add(Helper.createWireframeMeshFromVertsIndices(xBuffVertices,this.yIndices,new THREE.Color('green')));
+//scene.add(Helper.createWireframeMeshFromVertsIndices(this.yVertices,this.yIndices,new THREE.Color('green'),3));
+//this.bigTestMesh=AlignedCube.createWireframeMeshFromVertsIndices(xBuffVertices,this.indicesBuff);
+//scene.add(this.bigTestMesh!);
+
+//this.createdHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3(xBuffVertices));
+//this.createdHalfedgeMesh=new HalfedgeMesh(xBuffIndices,Vector.convArray3(xBuffVertices));
+//this.createdHalfedgeMesh=new HalfedgeMesh(bigBuffIndices,Vector.convArray(bigBuffVertices));
+
+//remaining=AlignedCube.fixOrder(remaining);
+
+  let argh=new Array<number>();
+        let takeSome=3*500;
+        takeSome = takeSome <= remaining.length ? takeSome : remaining.length;
+        for(let i=0;i<takeSome;i++){
+            argh.push(remaining[i]);
+        }

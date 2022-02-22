@@ -51,9 +51,15 @@ export default class Main extends Renderer {
     showEdges:boolean;
     showHalfedges:boolean;
     showHalfedgesOnBoundaries:boolean;
+    // voxelized
     debugVoxels:boolean;
-    showVoxels:boolean;
-    showVoxels2:boolean;
+    debugVoxelizedRemoved:boolean;
+    //
+    showVoxelizedSolid:boolean;
+    showVoxelizedEdges:boolean;
+    showVoxelizedHalfedges:boolean;
+    showVoxelizedHalfedgesOnBoundaries:boolean;
+    //
     nVoxelsPerAxis: number;
     computationTime:number;
   };
@@ -91,8 +97,11 @@ export default class Main extends Renderer {
       showHalfedges:false,
       showHalfedgesOnBoundaries:false,
       debugVoxels:false,
-      showVoxels:false,
-      showVoxels2:false,
+      debugVoxelizedRemoved:false,
+      showVoxelizedSolid:false,
+      showVoxelizedEdges:false,
+      showVoxelizedHalfedges:false,
+      showVoxelizedHalfedgesOnBoundaries:false,
       nVoxelsPerAxis: 5,
       computationTime:0,
     };
@@ -151,6 +160,14 @@ export default class Main extends Renderer {
         : this.internal.halfedgeRenderer!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,true);
     });
     folderSource.open();
+    /*debugVoxels:boolean;
+    debugVoxelizedRemoved
+    //
+    showVoxelizedSolid:boolean;
+    showVoxelizedEdges:boolean;
+    showVoxelizedHalfedges:boolean;
+    showVoxelizedHalfedgesOnBoundaries:boolean;*/
+
     const folderVoxelized = this.gui.addFolder('Voxelized Mesh');
     folderVoxelized
     .add(this.params, 'debugVoxels')
@@ -160,25 +177,52 @@ export default class Main extends Renderer {
       show
         ? this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false)
         : this.internal.voxelizer!.addBoxesDebugToScene(this.scene,true);
-    });    
+    });
     folderVoxelized
-      .add(this.params, 'showVoxels')
-      .name('show voxels')
+    .add(this.params, 'debugVoxelizedRemoved')
+    .name('vox. removed')
+    .listen()
+    .onChange(show => {
+      show
+        ? this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,false)
+        : this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,true);
+    });
+    folderVoxelized
+    .add(this.params, 'showVoxelizedSolid')
+    .name('vox. solid')
+    .listen()
+    .onChange(show => {
+      show
+        ? this.internal.voxelizer!.createdHalfedgeMesh!.addMeshHelperToScene(this.scene,false)
+        : this.internal.voxelizer!.createdHalfedgeMesh!.addMeshHelperToScene(this.scene,true);
+    });
+    folderVoxelized
+      .add(this.params, 'showVoxelizedEdges')
+      .name('vox. edges')
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,false)
-          : this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,true);
+          ? this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,false)
+          : this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,true);
       });
     folderVoxelized
-      .add(this.params, 'showVoxels2')
-      .name('show voxels2')
+      .add(this.params, 'showVoxelizedHalfedges')
+      .name('vox. halfedges')
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.addDebug2ToScene(this.scene,false)
-          : this.internal.voxelizer!.addDebug2ToScene(this.scene,true);
-    });  
+          ? this.internal.voxelizer!.createdHalfedgeMesh!.addHalfedgeHelpersToScene(this.scene,false)
+          : this.internal.voxelizer!.createdHalfedgeMesh!.addHalfedgeHelpersToScene(this.scene,true);
+    });
+    folderVoxelized
+      .add(this.params, 'showVoxelizedHalfedgesOnBoundaries')
+      .name('vox. h.e.b.')
+      .listen()
+      .onChange(show => {
+        show
+          ? this.internal.voxelizer!.createdHalfedgeMesh!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,false)
+          : this.internal.voxelizer!.createdHalfedgeMesh!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,true);
+    });    
     folderVoxelized.open();
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
@@ -190,7 +234,6 @@ export default class Main extends Renderer {
       .name("computation time_ms")
       .listen();
     folder1.open();
-
     // just for the first load
     fetch('./assets/bunny.obj')
     //fetch('./assets/cube.obj')
@@ -226,9 +269,6 @@ export default class Main extends Renderer {
     this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
     if(this.params.debugVoxels){
       this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false);
-    }
-    if(this.params.showVoxels){
-      this.internal.voxelizer!.addOtherDebugToScene(this.scene,false);
     }
   }
 

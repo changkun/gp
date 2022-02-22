@@ -77,7 +77,6 @@ export class HalfedgeMeshRenderer {
     }
 
     
-
     // creates a mesh, wireframe mesh and normal helper that can be rendered by Three.js
     createRenderableMeshAndWireframe(){
         // prepare new data
