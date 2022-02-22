@@ -50,6 +50,7 @@ export default class Main extends Renderer {
     showWireframe: boolean;
     showEdges:boolean;
     showHalfedges:boolean;
+    showHalfedgesOnBoundaries:boolean;
     debugVoxels:boolean;
     showVoxels:boolean;
     showVoxels2:boolean;
@@ -88,6 +89,7 @@ export default class Main extends Renderer {
       showWireframe: false,
       showEdges:false,
       showHalfedges:false,
+      showHalfedgesOnBoundaries:false,
       debugVoxels:false,
       showVoxels:false,
       showVoxels2:false,
@@ -138,6 +140,15 @@ export default class Main extends Renderer {
       show
         ? this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false)
         : this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,true);
+    });
+    folderSource
+    .add(this.params, 'showHalfedgesOnBoundaries')
+    .name('show b.halfedges')
+    .listen()
+    .onChange(show => {
+      show
+        ? this.internal.halfedgeRenderer!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,false)
+        : this.internal.halfedgeRenderer!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,true);
     });
     folderSource.open();
     const folderVoxelized = this.gui.addFolder('Voxelized Mesh');

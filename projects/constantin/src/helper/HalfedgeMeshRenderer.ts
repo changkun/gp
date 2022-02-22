@@ -39,6 +39,7 @@ export class HalfedgeMeshRenderer {
     mesh3js?: THREE.Mesh; // three.js 3D colored mesh
     normalHelper?: VertexNormalsHelper; //normal arrows
     wireframeHelper?: THREE.LineSegments; //wireframe mesh
+    halfEdgesOnBoundaryHelpers:Array<THREE.ArrowHelper>=[]; // additionally, we store the halfedges that are on boundaries in a seperate array
 
     /**
      * Creates the underlying halfedge mesh. Then uses the created halfedge mesh to create the renderables for THREE.js
@@ -165,6 +166,9 @@ export class HalfedgeMeshRenderer {
             const headWidth=headLength*0.5;
             const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);
             this.halfedgeHelpers.push(arrowHelper);
+            if(edgeHe.onBoundary){
+                this.halfEdgesOnBoundaryHelpers.push(arrowHelper);
+            }
         }
     }
     // 
@@ -234,6 +238,15 @@ export class HalfedgeMeshRenderer {
             }
         }
     }
+    addHalfEdgesOnBoundaryHelpersToScene(scene:THREE.Scene,remove:boolean){
+        for(let i=0;i<this.halfEdgesOnBoundaryHelpers.length;i++){
+            if(remove){
+                scene.remove(this.halfEdgesOnBoundaryHelpers[i]);
+            }else{
+                scene.add(this.halfEdgesOnBoundaryHelpers[i]);
+            }
+        }
+    }
 
     // remve all three.js helper renderables if they are added to the scene
     removeAllIfAdded(scene:THREE.Scene){
@@ -242,5 +255,6 @@ export class HalfedgeMeshRenderer {
         this.addNormalHelperToScene(scene,true);
         this.addHalfedgeHelpersToScene(scene,true);
         this.addEdgeHelpersToScene(scene,true);
+        this.addHalfEdgesOnBoundaryHelpersToScene(scene,true);
     }
 }
