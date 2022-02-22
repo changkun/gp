@@ -1,3 +1,9 @@
+//Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
+//Created by Constantin Geier <constantin.geier@campus.lmu.de>.
+//
+//Use of this source code is governed by a GNU GPLv3 license that can be found
+//in the LICENSE file.
+
 import { Vertex, Edge, Face, Halfedge, NormalMethod } from '../geometry/primitive';
 import { Vector } from '../linalg/vec';
 import { smoothstep } from 'three/src/math/MathUtils';

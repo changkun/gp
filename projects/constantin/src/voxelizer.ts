@@ -1,3 +1,10 @@
+//Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
+//Created by Constantin Geier <constantin.geier@campus.lmu.de>.
+//Modified by Constantin Geier <constantin.geier@campus.lmu.de>.
+//
+//Use of this source code is governed by a GNU GPLv3 license that can be found
+//in the LICENSE file.
+
 import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
 import { Vertex, Edge, Face, Halfedge } from './geometry/primitive';
 import { Vector } from './linalg/vec';
