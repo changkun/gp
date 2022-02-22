@@ -10,8 +10,9 @@ A detailed explanation is given in this paper: https://www.researchgate.net/publ
 * Run npm start
 
 **Explanation of GUI:**
-* Long/Short Edges: Toggles the step of the algorithm, that deals with "long" and "short" edges
-* Drifting Edges: Toggles the step of the algorithm, that deals with "drifting" edges
+* Regularization:
+    + Long/Short Edges: Toggles the step of the algorithm, that deals with "long" and "short" edges
+    + Drifting Edges: Toggles the step of the algorithm, that deals with "drifting" edges
 * Smoothing:
     + Intensity: Determines the intensity of the angle based smoothing
     + Rounds: Determines how many rounds of smoothing are applied with each smooth step
