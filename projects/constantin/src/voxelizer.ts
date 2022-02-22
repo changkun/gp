@@ -30,6 +30,9 @@ export class Voxelizer {
 
     createdHalfedgeMesh?:HalfedgeMeshRenderer;
     //
+    // A mesh constructed from the vertices that were removed from the
+    // inside of the voxelized surface (saved)
+    meshVerticesRemovedFromInside?:any;
 
 
     constructor(){
@@ -115,6 +118,7 @@ export class Voxelizer {
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
         console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
+        this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(xBuffVertices,removed,new THREE.Color('red'));
 
         //let [x1Vert,x1Ind]=Helper.removeIsolatedVertices(Helper.convertToThreJs2(xBuffVertices),this.yIndices);
         //this.bigTestMesh=Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(x1Vert),x1Ind,new THREE.Color('red'));
@@ -160,6 +164,15 @@ export class Voxelizer {
 
     }
 
+    addMeshVerticesRemovedToScene(scene:THREE.Scene,remove:boolean){
+        if(!this.meshVerticesRemovedFromInside)return;
+        if(remove){
+            scene.remove(this.meshVerticesRemovedFromInside);
+        }else{
+            scene.add(this.meshVerticesRemovedFromInside);
+        }
+    }
+
     addBoxesDebugToScene(scene:THREE.Scene,remove:boolean){
         for(let i=0;i<this.testHelperBoxes.length;i++){
             if(remove){
@@ -178,10 +191,11 @@ export class Voxelizer {
                 this.createdHalfedgeMesh!.removeAllIfAdded(scene);
                 this.createdHalfedgeMesh!.createAllRenderHelpers();
                 this.createdHalfedgeMesh!.addHalfedgeHelpersToScene(scene,false);
+                //this.createdHalfedgeMesh!.addHalfEdgesOnBoundaryHelpersToScene(scene,false);
                 //this.createdHalfedgeMesh!.addWireframeHelperToScene(scene,false);
                 //this.createdHalfedgeMesh!.addMeshHelperToScene(scene,false);
                 //this.createdHalfedgeMesh!.addEdgeHelpersToScene(scene,false);
-                this.createdHalfedgeMesh!.addNormalHelperToScene(scene,false);
+                //this.createdHalfedgeMesh!.addNormalHelperToScene(scene,false);
             }
         }
     }
@@ -214,5 +228,6 @@ export class Voxelizer {
         this.addBoxesDebugToScene(scene,true);
         this.addOtherDebugToScene(scene,true);
         this.addDebug2ToScene(scene,true);
+        this.addMeshVerticesRemovedToScene(scene,true);
     }
 }

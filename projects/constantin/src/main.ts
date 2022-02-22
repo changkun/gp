@@ -167,8 +167,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.addOtherDebugToScene(this.scene,false)
-          : this.internal.voxelizer!.addOtherDebugToScene(this.scene,true);
+          ? this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,false)
+          : this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,true);
       });
     folderVoxelized
       .add(this.params, 'showVoxels2')

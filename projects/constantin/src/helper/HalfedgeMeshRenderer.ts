@@ -115,20 +115,9 @@ export class HalfedgeMeshRenderer {
         g.setIndex(new THREE.BufferAttribute(idxs, 1));
         g.setAttribute('position', new THREE.BufferAttribute(bufpos, 3));
         g.setAttribute('color', new THREE.BufferAttribute(bufcolors, 3));
-        //g.setAttribute('normal', new THREE.BufferAttribute(bufnormals, 3));
-        g.computeVertexNormals();
-        /*let bufpos=new Float32Array();
-        let bufcolors = new Float32Array();
-
-        let tmpIndices=new Array<number>();
-        let tmVertices=new Array<Vector>();
-
-        for(let i=0;i<this.halfedgeMesh.faces.length;i++){
-            const face=this.halfedgeMesh.faces[i];
-            const triangle=face.asTriangle();
-            tmVertices=tmVertices.concat(triangle);
-        }*/
-
+        g.setAttribute('normal', new THREE.BufferAttribute(bufnormals, 3));
+        //g.computeVertexNormals();
+      
         this.mesh3js = new THREE.Mesh(
         g,
         new THREE.MeshPhongMaterial({
