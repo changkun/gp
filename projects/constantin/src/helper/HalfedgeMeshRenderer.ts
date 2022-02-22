@@ -182,6 +182,7 @@ export class HalfedgeMeshRenderer {
             const dir=edgeHe.vector().convertT().normalize();
             const len=edgeHe.vector().convertT().length();
             const color = 0x00FF00;
+            //const color = edgeHe.onBoundary ? 0xFF0000 : 0x00FF00;
             const headLength=0.01;
             const headWidth=headLength*0.5;
             const arrowHelper = new THREE.ArrowHelper( dir, origin, len,color,headLength,headWidth);

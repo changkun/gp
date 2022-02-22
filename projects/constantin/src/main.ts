@@ -46,6 +46,7 @@ export default class Main extends Renderer {
   params: {
     import: () => void;
     export: () => void;
+    showSolid:boolean;
     showWireframe: boolean;
     showEdges:boolean;
     showHalfedges:boolean;
@@ -83,6 +84,7 @@ export default class Main extends Renderer {
     this.params = {
       import: () => this.input.click(),
       export: () => this.exportScreenshot(),
+      showSolid:true,
       showWireframe: false,
       showEdges:false,
       showHalfedges:false,
@@ -100,7 +102,17 @@ export default class Main extends Renderer {
     this.gui = new GUI();
     this.gui.add(this.params, 'import').name('import mesh');
     this.gui.add(this.params, 'export').name('export screenshot');
-    this.gui
+    const folderSource = this.gui.addFolder('SourceMesh');
+    folderSource
+      .add(this.params, 'showSolid')
+      .name('show solid')
+      .listen()
+      .onChange(show => {
+        show
+          ? this.internal.halfedgeRenderer!.addMeshHelperToScene(this.scene,false)
+          : this.internal.halfedgeRenderer!.addMeshHelperToScene(this.scene,true);
+      });
+    folderSource
       .add(this.params, 'showWireframe')
       .name('show wireframe')
       .listen()
@@ -109,7 +121,7 @@ export default class Main extends Renderer {
           ? this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,false)
           : this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,true);
       });
-    this.gui
+    folderSource
       .add(this.params, 'showEdges')
       .name('show edges')
       .listen()
@@ -118,7 +130,7 @@ export default class Main extends Renderer {
           ? this.internal.halfedgeRenderer!.addEdgeHelpersToScene(this.scene,false)
           : this.internal.halfedgeRenderer!.addEdgeHelpersToScene(this.scene,true);
       });  
-    this.gui
+    folderSource
     .add(this.params, 'showHalfedges')
     .name('show halfedges')
     .listen()
@@ -127,7 +139,9 @@ export default class Main extends Renderer {
         ? this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false)
         : this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,true);
     });
-    this.gui
+    folderSource.open();
+    const folderVoxelized = this.gui.addFolder('Voxelized Mesh');
+    folderVoxelized
     .add(this.params, 'debugVoxels')
     .name('debug voxels')
     .listen()
@@ -136,7 +150,7 @@ export default class Main extends Renderer {
         ? this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false)
         : this.internal.voxelizer!.addBoxesDebugToScene(this.scene,true);
     });    
-    this.gui
+    folderVoxelized
       .add(this.params, 'showVoxels')
       .name('show voxels')
       .listen()
@@ -145,7 +159,7 @@ export default class Main extends Renderer {
           ? this.internal.voxelizer!.addOtherDebugToScene(this.scene,false)
           : this.internal.voxelizer!.addOtherDebugToScene(this.scene,true);
       });
-    this.gui
+    folderVoxelized
       .add(this.params, 'showVoxels2')
       .name('show voxels2')
       .listen()
@@ -154,6 +168,7 @@ export default class Main extends Renderer {
           ? this.internal.voxelizer!.addDebug2ToScene(this.scene,false)
           : this.internal.voxelizer!.addDebug2ToScene(this.scene,true);
     });  
+    folderVoxelized.open();
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
       .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
@@ -213,11 +228,12 @@ export default class Main extends Renderer {
     // update the instances if data has changed
     this.internal.halfedgeRenderer!.createAllRenderHelpers();
 
-    // always add the solid mesh
-    //this.internal.mesh!.addMeshHelperToScene(this.scene,false);
     //if (this.params.showNormals) {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}
+    if (this.params.showSolid) {
+      this.internal.halfedgeRenderer!.addMeshHelperToScene(this.scene,false);
+    }
     if (this.params.showWireframe) {
       this.internal.halfedgeRenderer!.addWireframeHelperToScene(this.scene,false);
     }
