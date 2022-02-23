@@ -173,8 +173,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,false)
-          : this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,true);
+          ? this.internal.voxelizer!.createdHalfedgeMesh!.addNormalHelperToScene(this.scene,false)
+          : this.internal.voxelizer!.createdHalfedgeMesh!.addNormalHelperToScene(this.scene,true);
       });
     folderVoxelized
       .add(this.params, 'showVoxelizedHalfedges')
@@ -206,9 +206,9 @@ export default class Main extends Renderer {
       .listen();
     folder1.open();
     // just for the first load
-    fetch('./assets/bunny.obj')
+    //fetch('./assets/bunny.obj')
     //fetch('./assets/cube.obj')
-    //fetch('./assets/sphere.obj')
+    fetch('./assets/sphere.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data));
   }

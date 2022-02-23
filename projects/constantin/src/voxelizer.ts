@@ -28,6 +28,14 @@ export class Voxelizer {
         this.lastVoxelConstructionTime=0;
     }
     
+    /**
+     * Voxelize the given halfedge mesh and store the voxelized mesh in a new halfedge mesh.
+     * Renderables for (debuggin) output are also created after the Voxelization process
+     * 
+     * @param originalMesh The source mesh to voxelize
+     * @param scene The scene, used to remove any already created renderable helpers
+     * @param nVoxelsPerHalfAxis How many voxels both in - and + direction. The max number of voxels created in both X,Y and Z direction is 2*nVoxelsPerHalfAxis
+     */
     voxelizeHalfedgeMesh(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
         console.log("Voxelizing begin");
         this.removeAllFromScene(scene);
@@ -40,7 +48,7 @@ export class Voxelizer {
         const xOriginalTriangles=Helper.createThreeJsTriangleList(originalMesh);
         // create a 3D grid of vertices, as well as a table to
         // find the idx of the vertex at a given x,y,z position
-        let xBuffVertices=new Array<number>((VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*3);
+        let allVoxelGridVertices=new Array<number>((VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*3);
         let tableVertexIdx=ThreeDArray.create3DArray(VOXELS_PER_AXIS+1);
         let idx=0;
         for(let x=0;x<VOXELS_PER_AXIS+1;x++){
@@ -49,9 +57,9 @@ export class Voxelizer {
                     const x1=x*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
-                    xBuffVertices[idx*3+0]=x1;
-                    xBuffVertices[idx*3+1]=y1;
-                    xBuffVertices[idx*3+2]=z1;
+                    allVoxelGridVertices[idx*3+0]=x1;
+                    allVoxelGridVertices[idx*3+1]=y1;
+                    allVoxelGridVertices[idx*3+2]=z1;
                     tableVertexIdx[x][y][z]=idx;
                     idx++;
                 }
@@ -78,38 +86,37 @@ export class Voxelizer {
                     }
                     // add the voxel if it intersects any
                     if(intersectsAny){
+                        // store for optional debugging
                         this.testHelperBoxes.push(alignedCube.createBox3Helper());
-                        //
-                        const argh=AlignedCube.createCubeIndicesFromTable(x,y,z,tableVertexIdx);
-                        xBuffIndices=xBuffIndices.concat(argh);
+                        // create the indices for this cube, where each index references a Vertex in the VoxelGridVertices array
+                        // (All neighbour cubes share the same vertices for performance)
+                        const indicesForThisCube=AlignedCube.createCubeIndicesFromTable(x,y,z,tableVertexIdx);
+                        xBuffIndices=xBuffIndices.concat(indicesForThisCube);
                     }
                     idx++;
                 }
             }
         }
+        // Here the "inner vertices" - aka vertices that are not needed for rendering / h.e.d.s are removed
         const [remaining,removed]=Helper.removeTwinTriangles(xBuffIndices);
-
+        // Measure how long the actual voxelization took (does not include the creation of rendering helpers)
         var elapsed = new Date().getTime() - start;
         this.lastVoxelConstructionTime=elapsed;
         console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
-        this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(xBuffVertices,removed,new THREE.Color('red'));
+        console.log("Voxelizer building Renderables -start");
+        this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(allVoxelGridVertices,removed,new THREE.Color('red'));
 
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(xBuffIndices,xBuffVertices);
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
-        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,xBuffVertices);
+        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,allVoxelGridVertices);
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(argh,xBuffVertices);
         //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(AlignedCube.createFacesIndices(0,0,0,ramba),xBuffVertices);
         this.createdHalfedgeMesh.halfedgeMesh.validate();
         this.createdHalfedgeMesh.createAllRenderHelpers();
-
-        //this.createdHalfedgeMesh=new HalfedgeMesh(this.mappedTriangleIndices,Vector.convArray3(xBuffVertices));
-        //this.createdHalfedgeMesh=new HalfedgeMesh(removed,Vector.convArray3(xBuffVertices));
-        //this.createdHalfedgeMesh=new HalfedgeMesh(this.yIndices,Vector.convArray3(xBuffVertices));
-        //this.createdHalfedgeMesh=new HalfedgeMesh(x1Ind,Vector.convArray(x1Vert));
-        //this.createdHalfedgeMesh!.createAllRenderHelpers();
-        console.log("Voxelizing end");
+        console.log("Voxelizer building Renderables -stop");
     }
 
+    // Debug the removed vertices after the voxelization step
     addMeshVerticesRemovedToScene(scene:THREE.Scene,remove:boolean){
         if(!this.meshVerticesRemovedFromInside)return;
         if(remove){
@@ -119,6 +126,7 @@ export class Voxelizer {
         }
     }
 
+    // Debug the raw created voxels using THREE.js
     addBoxesDebugToScene(scene:THREE.Scene,remove:boolean){
         for(let i=0;i<this.testHelperBoxes.length;i++){
             if(remove){
@@ -129,6 +137,7 @@ export class Voxelizer {
         }
     }
 
+    // Remove all debuggables from the scene if added
     removeAllFromScene(scene:THREE.Scene){
         this.addBoxesDebugToScene(scene,true);
         this.addMeshVerticesRemovedToScene(scene,true);

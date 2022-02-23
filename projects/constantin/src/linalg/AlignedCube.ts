@@ -11,9 +11,9 @@ import { assert } from "console";
 import { ThreeDArray } from '../helper/3DArray';
 import { Helper} from '../helper/Helper';
 
-// a aligned cube is defined by
+// A aligned cube is defined by
 // 1) its lower left corner (x,y,z)
-// 2) its size in both x,y, and z direction
+// 2) its size in both x,y, and z direction.
 export class AlignedCube {
     lowerLeftCorner:THREE.Vector3;
     size:number;
@@ -89,8 +89,18 @@ export class AlignedCube {
         return [AlignedCube.createCubeVertices(this.lowerLeftCorner,this.size),AlignedCube.createCubeIndices()];
     }
 
-    static createCubeIndicesFromTable(x:number,y:number,z:number,map:number[][][]):number[]{
-        let faceIndices=[
+    /**
+     * 
+     * For a cube at position x,y,z in the voxel grid, create the indices for rendering all faces of this cube, re-using corner vertices.
+     * @param x x position of the cube
+     * @param y y position of the cube
+     * @param z z position of the cube
+     * @param table 3D array once can look up the index of a vertex at a specifc x,y,z position
+     * @returns an array of the indices for this cube. The vertex order has been optimized for normal calculation
+     */
+    static createCubeIndicesFromTable(x:number,y:number,z:number,table:number[][][]):number[]{
+        // Stupid logic that needs to be implemented once, needed quite a lot of effort to get them right.
+        const faceIndices=[
             // back
             [x,y,z],
             [x,y+1,z],
@@ -134,10 +144,11 @@ export class AlignedCube {
             [x+1,y+1,z+1],
             [x+1,y+0,z+1],
         ];
+        // use the table to find the right index positions for this cube
         let ret=new Array<number>(faceIndices.length);
         for(let i=0;i<faceIndices.length;i++){
             const m=faceIndices[i];
-            ret[i]=map[m[0]][m[1]][m[2]];
+            ret[i]=table[m[0]][m[1]][m[2]];
         }
         return ret;
     }
