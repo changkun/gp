@@ -10,9 +10,7 @@ import { AABB } from '../geometry/aabb';
 import { Vector } from '../linalg/vec';
 import { ThreeDArray } from '../helper/3DArray';
 import { AlignedCube } from '../geometry/AlignedCube';
-import { FogExp2, Side } from 'three';
 import { HalfedgeMesh } from '../geometry/halfedge';
-import { off } from 'process';
 
 // contains only static methods that are usefully for debugging and conversion between types
 export class Helper{
