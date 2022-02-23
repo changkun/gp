@@ -1,5 +1,12 @@
 # Individual Project - Voxelizer
 
+![Screenshot](talks/screenshot_final_1.jpg)
+![Screenshot](talks/screenshot_final_2.jpg)
+
+|:--:|:--:|
+|<img src="./talks/screenshot_final_1.jpg" height="240"/>|<img src="./talks/screenshot_final_2.jpg" height="240"/>
+
+
 # Installation and running
 npm install & npm start
 
