@@ -30,7 +30,7 @@ The script tends to perform better on subdivided objects, though superfluous geo
 
 <img src="assets/showcase.png" width="1122" height="772">
 
-Result:
+### Result
 <img src="assets/result.png" width="603" height="553">
 
 ### Parameters:
