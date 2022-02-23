@@ -28,11 +28,10 @@ The soft object should also be convex in the overlapping area, or the resulting 
 
 The script tends to perform better on subdivided objects, though superfluous geometry on the hard object can worsen results (which is why the addon temporarily applies a Planar decimate).
 
-<img src="assets/showcase_1.png" width="400" height="400">
-<img src="assets/showcase_2.png" width="400" height="400">
-<img src="assets/showcase_3.png" width="400" height="400">
-<img src="assets/showcase_4.png" width="400" height="400">
-<img src="assets/showcase_5.png" width="400" height="400">
+<img src="assets/showcase.png" width="1122" height="772">
+
+Result:
+<img src="assets/result.png" width="603" height="553">
 
 ### Parameters:
 - **Indentation increase:** Additional displacement on the intersecting area. 
