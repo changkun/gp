@@ -16,21 +16,22 @@ export class Voxelizer {
     // the halfedge mesh we create after voxelization
     createdHalfedgeMesh?:HalfedgeMeshRenderer;
     // uses the raw voxelization output,for debugging
-    testHelperBoxes: Array<THREE.Box3Helper>;
+    testHelperBoxes: Array<THREE.Box3Helper>=[];
     // A mesh constructed from the vertices that were removed from the
     // inside of the voxelized surface (saved)
     meshVerticesRemovedFromInside?:any;
     // how long the voxelization step took
-    lastVoxelConstructionTimeMs:number;
+    lastVoxelConstructionTimeMs:number=0;
 
-    constructor(){
-        this.testHelperBoxes=[];
-        this.lastVoxelConstructionTimeMs=0;
-    }
-    
     /**
      * Voxelize the given halfedge mesh and store the voxelized mesh in a new halfedge mesh.
-     * Renderables for (debuggin) output are also created after the Voxelization process
+     * Renderables for (debugging) output are also created after the Voxelization process.
+     * This method performs the following steps:
+     * 1) Create a 3D grid of all the (shared) voxels vertices
+     * 2) Perform an intersection test against all faces of the source mesh for all voxels
+     *  -> No intersection = continue
+     *  -> Any intersection = create indices for this voxel (shared vertices), append those indices to the indices list
+     * 3) Cleanup the created mesh (indices) such that it can be efficiently represented by the h.e.d.s
      * 
      * @param originalMesh The source mesh to voxelize
      * @param scene The scene, used to remove any already created renderable helpers

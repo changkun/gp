@@ -100,6 +100,7 @@ export class AlignedCube {
      */
     static createCubeIndicesFromTable(x:number,y:number,z:number,table:number[][][]):number[]{
         // Stupid logic that needs to be implemented once, needed quite a lot of effort to get them right.
+        // Define cube by stepping 1 up,right or back from the lower left corner coordinate
         const faceIndices=[
             // back
             [x,y,z],
