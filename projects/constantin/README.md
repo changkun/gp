@@ -1,8 +1,6 @@
 # Individual Project - Voxelizer
 
-|:--:|:--:|
 |<img src="./talks/screenshot_final_1.JPG" height="240"/>|<img src="./talks/screenshot_final_2.JPG" height="240"/>|
-
 
 # About
 This project performs surface voxelization on an input mesh that is stored in an a h.e.d.s.
