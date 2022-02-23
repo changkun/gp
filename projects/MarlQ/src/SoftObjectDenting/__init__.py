@@ -1,3 +1,9 @@
+"""Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
+Created by Marcel Quanz.
+
+Use of this source code is governed by a GNU GPLv3 license that can be found
+in the LICENSE file."""
+
 bl_info = {
     "name": "(Volume-preserving) Soft Object Denting",
     "description": "",

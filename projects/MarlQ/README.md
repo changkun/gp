@@ -34,11 +34,12 @@ The script tends to perform better on subdivided objects, though superfluous geo
 <img src="assets/result.png" width="603" height="553">
 
 ### Parameters:
+- **Shape key from mix:** Creates the new shapekey from a mix of all current shape keys.
+- **Use decimate:** Applies a temporary decimate modifier on the hard object, which can help eliminate unnecessary geometry which could affect the deformation.
 - **Indentation increase:** Additional displacement on the intersecting area. 
 A positive displace increase creates a gap between the objects.
 - **Auto-calculate sink-in range:** Calculate the sink-in distance (see below) based on the root of the indentation depth (recommended).
 - **Sink-in distance:** The radius at which a sink-in effect is applied around the intersecting area.
-- **Sink-in smoothness:** How smooth the sink-in is around the indentation. A value of 0 means the sink-in is linear, while for 1, it is very rounded.
 - **Delta initial:** The distance between vertices that determines which hard object vertices a vertex of the soft object is affected by.
 Higher values create more even displacement, but can cause issues when the objects have mutliple intersections (see issue 4).
 Low values can create mesh distortion.
@@ -46,7 +47,6 @@ Low values can create mesh distortion.
 Leaving this at 0 can cause the script to run indefinitely if no neighbouring vertices are found.
 - **Volume preservation:** How much volume is conserved.
 Realistically, something with pressure (like a balloon) would have a factor of 1, while a soft ball would have a much lower factor.
-- **Volume distribution ramp:** The distance across which the volume distribution ramps up from zero displacement to constant displacement across the object.
 
 ## How does it work
 
@@ -54,43 +54,14 @@ First, all overlapping vertices of both the soft object and the hard object are 
 All overlapping vertices of the soft object are then displaced along the average normal of all overlapping vertices of the hard object (inside the delta distance parameter) until they hit the edges of the hard object.
 Sink-in creates additional displacement around the overlapping areas.
 The total displacement distance is accumulated, and then distributed across the rest of the mesh according to the volume preservation function.
-
-## Comparison to other solutions
-
-**Sculpting:** My solution takes significantly less effort and time, and provides more realistic results in terms of volume preservation.
-Detail and geometry might be better when sculpting, however.
-
-**Dynamic Paint:** Displacement using dynamic paint is not volume preserving, and can result in some artifacts. 
-It is also troublesome to use with shape keys, and slows down animation.
-My solution has none of these problems.
-
-**Shrinkwrap:** Shrinkwrap can only be used as long as the nearest surface point of the hard object is not on the other side.
-It also requires the usage of vertex groups.
-
-**Boolean**: Booleans cause major changes to the mesh geometry, adding new vertices, and generally breaking edge flow.
-Also not volume preserving.
-
-**Soft body simulation:** ...
 ## Current issues
 
-1. Since all overlapping vertices are displaced by the same vector, there can be a lot of stretching along the edges of overlap.
-Some might consider this desirable, however. 
-The sink-in counteracts this.
+1. Because the volume preservation works with displaced distance and not displaced volume, it is only accurate if the mesh geometry is somewhat even.
 
-2. Because the volume preservation works with displaced distance and not displaced volume, it is only accurate if the mesh geometry is somewhat even.
+2. Sometimes, vertex normals are not correctly calculated and so the soft object is deformed weirdly, but I'm not sure why.
+Entering and leaving Edit mode on the soft object fixes it.
 
-3. There seems to be a bug with creating shapekeys from mix, where repeatedly running the script increases its effect even when shape keys are deleted.
-Entering edit mode and immediately leaving seems to fix this.
+3. Currently, multiple overlap/indentation areas can affect each other, as they are not isolated properly.
+A smaller delta can counteract this somewhat.
 
-4. Because deformation of a vertex is currently based on all vertices around it, vertices that should not realistically affect it still can affect it.
-This can be a problem if the hard object intersects with the soft object multiple times in close proximity.
-
-5. The soft object may still overlap with the hard object because the deformation is based on overlapping vertices, not faces/edges.
-6. The auto-calculation of the sink-in is based on the average of *all* intersections.
-
-## TODO
-
-- Fix issue 4 by handling each overlapping area separately. Would also fix issue 6.
-- Support various shapekey settings.
-- Fix issue 5 by displacing faces, or additionally displace vertices attached to overlapping faces, or even better: first displace along important features of the hard object (convex hull + planar decimate)
-- Fix issue 2 by approximating the volume (not sure if this will actually improve the quality much).
+4. The soft object may still overlap with the hard object because the deformation is based on overlapping vertices, not faces/edges.
