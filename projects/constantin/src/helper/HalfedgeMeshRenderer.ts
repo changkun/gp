@@ -6,12 +6,8 @@
 
 import { Vertex, Edge, Face, Halfedge, NormalMethod } from '../geometry/primitive';
 import { Vector } from '../linalg/vec';
-import { smoothstep } from 'three/src/math/MathUtils';
-import { assert } from 'console';
 import * as THREE from 'three'
-import { Vector3 } from 'three';
 import {AABB} from '../geometry/aabb';
-import { Voxelizer } from '../voxelizer';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import {HalfedgeMesh} from '../geometry/halfedge';
 import { Helper} from '../helper/Helper';
@@ -25,7 +21,7 @@ import { Helper} from '../helper/Helper';
 // 3) Normals (VertexNormalsHelper)
 // 3) Edges debug (colored arrows)
 // 4) Halfedges debug (colored arrows)
-// 5) Connectivity graph (colored arrows)
+// 5) Halfedges on boundary debug (colored red arrows)
 export class HalfedgeMeshRenderer {
 
     // The halfedge that this renderer wraps
@@ -98,7 +94,7 @@ export class HalfedgeMeshRenderer {
             bufcolors[3 * i + 1] = 0.5;
             bufcolors[3 * i + 2] = 1;
 
-            const n = v.normal(NormalMethod.EqualWeighted);
+            const n = v.normal(NormalMethod.AngleWeighted);
             bufnormals[3 * i + 0] = n.x;
             bufnormals[3 * i + 1] = n.y;
             bufnormals[3 * i + 2] = n.z;

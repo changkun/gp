@@ -6,31 +6,10 @@
 // in the LICENSE file.
 
 import Renderer from './renderer';
-import {HalfedgeMesh, WeightType} from './geometry/halfedge';
-import {NormalMethod} from './geometry/primitive';
 import {GUI} from 'dat.gui';
-import {
-  Mesh,
-  LineSegments,
-  WireframeGeometry,
-  LineBasicMaterial,
-  BufferGeometry,
-  BufferAttribute,
-  DoubleSide,
-  MeshPhongMaterial,
-  MeshBasicMaterial,
-  BoxBufferGeometry,
-  Box3,
-  Box3Helper,
-  ArrowHelper
-} from 'three';
-import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
-import {Vector} from './linalg/vec';
-import {colormap} from './helper/colors';
-import {AABB} from './geometry/aabb';
 import { Voxelizer } from './voxelizer';
-import { Helper} from './helper/Helper';
 import { HalfedgeMeshRenderer} from './helper/HalfedgeMeshRenderer';
+import { Helper} from './helper/Helper';
 
 /**
  * Main extends the Renderer class and constructs the scene.
@@ -160,14 +139,6 @@ export default class Main extends Renderer {
         : this.internal.halfedgeRenderer!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,true);
     });
     folderSource.open();
-    /*debugVoxels:boolean;
-    debugVoxelizedRemoved
-    //
-    showVoxelizedSolid:boolean;
-    showVoxelizedEdges:boolean;
-    showVoxelizedHalfedges:boolean;
-    showVoxelizedHalfedgesOnBoundaries:boolean;*/
-
     const folderVoxelized = this.gui.addFolder('Voxelized Mesh');
     folderVoxelized
     .add(this.params, 'debugVoxels')
@@ -294,16 +265,7 @@ export default class Main extends Renderer {
     if(this.params.showHalfedges){
       this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false);
     }
-
-    //this.internal.mesh3js!.geometry.computeBoundingBox();
-    //let box = new Box3();
-    //box.copy(this.internal.mesh3js!.geometry.boundingBox!);
-    let box = new Box3()
-    const helper = new Box3Helper(box);
-    //this.scene.add(helper);
-    Helper.debugBoundingBox(box);
-    //Voxelizer.addCubeSizeOne(this.scene);
-
+    
     this.updateVoxelizer();
 
     //this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);

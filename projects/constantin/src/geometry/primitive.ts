@@ -78,9 +78,8 @@ export class Halfedge {
     this.cotan();
     this.angle();
     if(this.next!.next!.idx != this.prev!.idx){
-      console.log("Hmm");
+      console.log("Halfedge"+this.idx+"has wrong connectivity");
     }
-    //assert(this.vert !== null);
   }
 }
 
@@ -88,9 +87,7 @@ export class Edge {
   halfedge?: Halfedge;
   idx: number;
 
-  //constructor(halfedge:Halfedge) {
   constructor() {  
-    //this.halfedge=halfedge;
     this.idx = -1;
   }
 
@@ -109,23 +106,7 @@ export class Face {
   constructor() {
     this.idx = -1;
   }
-  validate(){
-    const valid=this.halfedge!=null;
-    if(!valid){
-      console.log("Face"+this.idx+" valid:"+(valid ? "Y":"N"));
-    }
-    this.vertices((v, i) => {
-      if(!v){
-        console.log("X");
-      }
-    });
-    const tris=this.asTriangle();
-    if(tris.length!=3){
-      console.log("Face"+this.idx+" asTriangle() error");
-    }
-    this.normal();
-    this.area();
-  }
+
   vertices(fn: (v: Vertex, n: number) => void) {
     let start = true;
     let i = 0;
@@ -173,6 +154,24 @@ export class Face {
     const b = h.prev!.vert!.position.sub(h.vert!.position).scale(-1);
     return a.cross(b).len() * 0.5;
   }
+  
+  validate(){
+    const valid=this.halfedge!=null;
+    if(!valid){
+      console.log("Face"+this.idx+" valid:"+(valid ? "Y":"N"));
+    }
+    this.vertices((v, i) => {
+      if(!v){
+        console.log("X");
+      }
+    });
+    const tris=this.asTriangle();
+    if(tris.length!=3){
+      console.log("Face"+this.idx+" asTriangle() error");
+    }
+    this.normal();
+    this.area();
+  }
 }
 
 export enum NormalMethod {
@@ -196,27 +195,28 @@ export class Vertex {
       valid=false;
       console.log("Vertex"+this.idx+" has no halfedge");
     }
+    // if something went wrong during construction, these methods can loop to infinity
     this.faces((f,i)=>{
-
+      //
     });
     this.halfedges((h,i)=>{
-
+      //
     });
   }
   faces(fn: (f: Face, i: number) => void) {
     let start = true;
     let i = 0;
-    let max=0;
+    //let max=0;
     for (
       let h = this.halfedge;
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
-      max++;
-      if(max>64){
+      //max++;
+      //if(max>64){
         //console.log("Something wrong with faces of Vertex:"+this.idx);
         //break;
-      }
+      //}
       if (h==null || h!.onBoundary) {
         continue;
       }
@@ -234,11 +234,11 @@ export class Vertex {
       start || h !== this.halfedge;
       h = h!.twin!.next
     ) {
-      max++;
-      if(max>64){
-        //console.log("Something wrong with halfedges of Vertex:"+this.idx);
+      //max++;
+      //if(max>64){
+      //  //console.log("Something wrong with halfedges of Vertex:"+this.idx);
         //break;
-      }
+      //}
       fn(h!, i);
       start = false;
       i++;
@@ -251,11 +251,6 @@ export class Vertex {
     // 2. AreaWeighted
     // 3. AngleWeighted
     let n = new Vector();
-    if(!this.halfedge){
-      return new Vector();
-    }else{
-      //return this.halfedge!.face!.normal();
-    }
     switch (method) {
       case NormalMethod.EqualWeighted:
         this.faces(f => {

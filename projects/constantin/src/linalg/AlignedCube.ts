@@ -49,7 +49,8 @@ export class AlignedCube {
         mesh.position.set(this.min.x+VOXEL_SIZE_HALF,this.min.y+VOXEL_SIZE_HALF,this.min.z+VOXEL_SIZE_HALF);
         return mesh;
     }
-
+    // Create the 8 vertices for this cube (unused)
+    // https://catonif.github.io/cube/
     static createCubeVertices(lowerLeftCorner:THREE.Vector3,size:number):THREE.Vector3[]{
         const l =size/2;
         let begin=new THREE.Vector3(lowerLeftCorner.x,lowerLeftCorner.y,lowerLeftCorner.z);
@@ -63,7 +64,8 @@ export class AlignedCube {
         }
         return verts;
     }
-
+    // Create indices for this cube (unused)
+    // https://catonif.github.io/cube/
     static createCubeIndices():number[]{
         let indices=new Array<number>();
         let AddVert= (one: number, two: number,three:number) => {
@@ -184,35 +186,4 @@ export class AlignedCube {
         }
         return ret;
     }
-
-    static fixOrder(indices:number[]):number[]{
-        let ret=new Array<number>();
-        for(let i=0;i<indices.length;i+=3){
-            const a=indices[i+0];
-            const b=indices[i+1];
-            const c=indices[i+2];
-            const [a1,b1,c1]=Helper.sortAscending(a,b,c);
-            if(a!=a1 || b!=b1 || c!=c1){
-                console.log("not sorted"+a+","+b+","+c+"");
-            }else{
-                console.log("sorted"+a+","+b+","+c+"");
-            }
-            ret.push(a1);
-            ret.push(b1);
-            ret.push(c1);
-        }
-        return ret;
-    }
-
-    
-    createMesh2(scene:THREE.Scene):THREE.LineSegments{
-        
-        let [vertices,indices]= this.createVerticesIndices();
-
-        //scene.add(this.createMeshFromVertsIndices(scene,vertices,indices));
-        //scene.add(this.createWireframeMeshFromVertsIndices(scene,vertices,indices));
-        //this.testAddSimpleFace(scene);
-        return Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(vertices),indices);
-    }
-   
 }

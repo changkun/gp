@@ -58,10 +58,6 @@ export class Helper{
         return [indices,positions];
     }
 
-    static convertToObj(vertices:number[],indices:number[]){
-
-    }
-
     static addCubeSizeOne(scene:THREE.Scene){
         const halfSize=0.5;
         const min=new THREE.Vector3(-halfSize,-halfSize,-halfSize);
@@ -105,21 +101,6 @@ export class Helper{
         return segments;
     }
 
-    static testAddSimpleFace(scene:THREE.Scene){
-        // create a simple square shape.
-        const vertices = [
-            -1.0, -1.0,  1.0,
-            1.0, -1.0,  1.0,
-            1.0,  1.0,  1.0,
-           -1.0,  1.0,  1.0,
-        ] ;
-        const indices=[
-            0,1,2,0,2,3
-        ];
-        scene.add(Helper.createMeshFromVertsIndices(vertices,indices));
-        scene.add(Helper.createWireframeMeshFromVertsIndices(vertices,indices));
-    }
-
     static createThreeJsTriangleList(heMesh:HalfedgeMesh):Array<THREE.Triangle>{
         let ret=new Array<THREE.Triangle>();
         for(let f of heMesh.faces){
@@ -137,22 +118,6 @@ export class Helper{
         }
         return indices;
     }
-
-    // append the vertices and indices to an already existing vertices/indices list
-    // no checking for duplicate vertices is performed here
-    /*static addVerticesIndicesSimple(vertices:THREE.Vector3[],indices:number){
-        const idxOffset=vertices.length;
-        const retVertices=new Array<THREE.Vector3>();
-        const retIndices=new Array<number>();
-        for(let i=0;i<vertices.length;i++){
-            this.verticesBuff.push(vertices[i]);
-        }
-        //console.log("IndicesX");
-        for(let i=0;i<indices.length;i++){
-            //console.log("Indices:"+indices[i]);
-            this.indicesBuff.push(idxOffset+indices[i]);
-        }
-    }*/
 
     static convertVertices(vertices:THREE.Vector3[]):number[]{
         let ret=new Array<number>(vertices.length);
@@ -191,6 +156,7 @@ export class Helper{
         box.getCenter(v2);
         console.log("Box:Center("+v2.x+","+v2.y+","+v2.z+")"+"Size("+v1.x+","+v1.y+","+v1.z+")");
     }
+    
     static getRandomInt(max:number):number {
         return Math.floor(Math.random() * max);
     }

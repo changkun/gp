@@ -6,18 +6,6 @@
 // in the LICENSE file.
 import { Vertex, Edge, Face, Halfedge, NormalMethod } from './primitive';
 import { Vector } from '../linalg/vec';
-import { smoothstep } from 'three/src/math/MathUtils';
-import { assert } from 'console';
-import * as THREE from 'three'
-import { Vector3 } from 'three';
-import {AABB} from './aabb';
-import { Voxelizer } from '../voxelizer';
-import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
-
-export enum WeightType {
-  Uniform = 'Uniform',
-  Cotan = 'Cotan',
-}
 
 export class HalfedgeMesh {
   color: Vector;
@@ -45,126 +33,6 @@ export class HalfedgeMesh {
     this.buildMesh(indices, positions);
   }
 
-  buildMesh2(indices: number[], positions: Vector[]){
-    // first step: create all the vertices
-    for(let i=0;i<positions.length;i++){
-      const vertex=new Vertex(positions[i]);
-      // we'l need the id later
-      vertex.idx=i;
-      this.verts.push(vertex);
-    }
-
-    for(let i=0;i<=indices.length-3;i+=3){
-      //this.appendSingleTriangle(positions[indices[i+0]],positions[indices[i+1]],positions[indices[i+2]]);
-      this.appendFace(indices[i],indices[i+1],indices[i+2]);
-    }
-  }
- // search for a halfedge that goes from idx1 to idx2
-  // returns the halfedge if found, null otherwise
-  findHalfedge(idx1:number,idx2:number):Halfedge | null{
-    for(let i=0;i<this.halfedges.length;i++){
-      const halfedge=this.halfedges[i];
-      const vert1=halfedge.prev?.vert;
-      const vert2=halfedge.vert;
-      if(vert1?.idx==idx1 && vert2?.idx==idx2){
-        //console.log("Found a matching halfedge");
-        return halfedge;
-      }
-    }
-    return null;
-  }
-
-  // Creates and Appends a new Edge. Call this with 2 opposite half edges
-  // (aka twins).
-  appendEdgeAndWriteTwins(newHe:Halfedge,oppositeHe:Halfedge){
-    if(newHe.twin!=null || oppositeHe.twin!=null){
-      console.log("One of these halfedges alread has a twin");
-    }
-    var edge=new Edge();
-    edge.halfedge=oppositeHe;
-    newHe.twin=oppositeHe;
-    oppositeHe.twin=newHe;
-    this.edges.push(edge);
-  }
-  
-
-  // each call to appendFace adds 
-  // 1 new face
-  // 3 new half-edges
-  // up to 3 new edges
-  appendFace(idx1:number,idx2:number,idx3:number){
-    // 3 new halfedges (appended later)
-    var halfedge1=new Halfedge(); //goes from idx1 to idx2
-    var halfedge2=new Halfedge(); //goes from idx2 to idx3
-    var halfedge3=new Halfedge(); //goes from idx3 to idx1
-    // 1 new face (appended later)
-    var face1=new Face;
-
-    if(idx1>this.verts.length || idx2>this.verts.length || idx3>this.verts.length){
-      console.log("Fucking hell");
-    }
-
-    face1.halfedge=halfedge1;
-
-    const vertex1=this.verts[idx1];
-    const vertex2=this.verts[idx2];
-    const vertex3=this.verts[idx3];
-
-    // if we have already added a halfedge that goes from vertex number x to vertex number y (or y to x),
-    // we have a new edge. And every time we have a new edge, we can assign the twin value for both halfedges
-    var oppositeHalfedge=this.findHalfedge(idx2,idx1);
-    if(oppositeHalfedge!=null){
-      this.appendEdgeAndWriteTwins(halfedge1,oppositeHalfedge);
-    }
-    oppositeHalfedge=this.findHalfedge(idx3,idx2);
-    if(oppositeHalfedge!=null){
-      this.appendEdgeAndWriteTwins(halfedge2,oppositeHalfedge);
-    }
-    oppositeHalfedge=this.findHalfedge(idx1,idx3);
-    if(oppositeHalfedge!=null){
-      this.appendEdgeAndWriteTwins(halfedge3,oppositeHalfedge);
-    }
-
-    // Doesn't really matter, but if a Vertex is already assigned a halfedge, don't ovverride it
-    if(!vertex1.halfedge){
-      vertex1.halfedge=halfedge1;
-    }
-    if(!vertex2.halfedge){
-      vertex2.halfedge=halfedge2;
-    }
-    if(!vertex3.halfedge){
-      vertex3.halfedge=halfedge3;
-    }
-    /*vertex1.halfedge=halfedge1;
-    vertex2.halfedge=halfedge2;
-    vertex3.halfedge=halfedge3;*/
-
-    // the vertex each halfedge points to
-    halfedge1.vert=vertex2;
-    halfedge2.vert=vertex3;
-    halfedge3.vert=vertex1;
-
-    halfedge1.face=face1;
-    halfedge2.face=face1;
-    halfedge3.face=face1;
-
-    halfedge1.prev=halfedge3;
-    halfedge1.next=halfedge2;
-
-    halfedge2.next=halfedge3;
-    halfedge2.prev=halfedge1;
-
-    halfedge3.next=halfedge1;
-    halfedge3.prev=halfedge2;
-
-    // append everything newly generated on the output array
-    this.halfedges.push(halfedge1);
-    this.halfedges.push(halfedge2);
-    this.halfedges.push(halfedge3);
-    this.faces.push(face1);
-  }
-
-
   /**
    * buildMesh builds half-edge based connectivity for the given vertex index buffer
    * and vertex position buffer.
@@ -173,21 +41,23 @@ export class HalfedgeMesh {
    * @param positions is the vertex buffer that contains all vertex positions.
    */
   buildMesh(indices: number[], positions: Vector[]) {
-    // We assume the input mesh is a manifold mesh.
-    // build the halfedge connectivity
+    // If the input mesh is a non-manifold,this method might add additional edges to the input mesh
+    // If any vertices of the input mesh are isolated vertices, those vertices will be removed
     console.log("HE construction begin");
+    // here we don't add additional edges yet.
     const edges = new Map();
     for (let i = 0; i < indices.length; i += 3) {
-      for (let j = 0; j < 3; j++) { // check a face
+      //check a face
+      for (let j = 0; j < 3; j++) {
         var a = indices[i + j];
         var b = indices[i + (j + 1) % 3];
-
+        // A edge going from idx X to idx Y is the same as
+        // an edge going from Y to X 
         if (a > b) {
           const tmp = b;
           b = a;
           a = tmp;
         }
-
         // store the edge if not exists
         const e = `${a}-${b}`;
         if (!edges.has(e)) {
@@ -195,7 +65,6 @@ export class HalfedgeMesh {
         }
       }
     }
-
     this.verts = new Array(positions.length);
     this.edges = new Array(edges.size);
     this.faces = new Array(indices.length / 3);
@@ -262,7 +131,8 @@ export class HalfedgeMesh {
           hasTwin.set(he, true);
           hasTwin.set(twin, true);
 
-          // when we have "consumed" this halfedge, we cannot reuse it anymore
+          // when we have "consumed" this halfedge, we cannot reuse it anymore - in case of a non-manifold this 
+          // might result in additional edges
           existedHe.delete(ek);
         } else {
           // new halfedge
@@ -278,8 +148,6 @@ export class HalfedgeMesh {
 
           existedHe.set(ek, he);
         }
-
-        // FIXME: non-manifold edge count checking
       }
     }
 

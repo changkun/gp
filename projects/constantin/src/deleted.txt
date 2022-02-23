@@ -112,3 +112,134 @@ bigBuffIndices=bigBuffIndices.concat(Helper.addOffsetToIndices(idxOffset,indices
         for(let i=0;i<takeSome;i++){
             argh.push(remaining[i]);
         }
+
+
+//this.internal.mesh3js!.geometry.computeBoundingBox();
+    //let box = new Box3();
+    //box.copy(this.internal.mesh3js!.geometry.boundingBox!);
+    let box = new Box3()
+    const helper = new Box3Helper(box);
+    //this.scene.add(helper);
+    Helper.debugBoundingBox(box);
+    //Voxelizer.addCubeSizeOne(this.scene);        
+
+
+ static fixOrder(indices:number[]):number[]{
+        let ret=new Array<number>();
+        for(let i=0;i<indices.length;i+=3){
+            const a=indices[i+0];
+            const b=indices[i+1];
+            const c=indices[i+2];
+            const [a1,b1,c1]=Helper.sortAscending(a,b,c);
+            if(a!=a1 || b!=b1 || c!=c1){
+                console.log("not sorted"+a+","+b+","+c+"");
+            }else{
+                console.log("sorted"+a+","+b+","+c+"");
+            }
+            ret.push(a1);
+            ret.push(b1);
+            ret.push(c1);
+        }
+        return ret;
+    }
+
+ createMesh2(scene:THREE.Scene):THREE.LineSegments{
+        let [vertices,indices]= this.createVerticesIndices();
+        //scene.add(this.createMeshFromVertsIndices(scene,vertices,indices));
+        //scene.add(this.createWireframeMeshFromVertsIndices(scene,vertices,indices));
+        //this.testAddSimpleFace(scene);
+        return Helper.createWireframeMeshFromVertsIndices(Helper.convertVertices(vertices),indices);
+    }      
+
+
+
+// https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox.txt
+
+export class XVector3 {
+  numbers: number[];
+ 
+  constructor(x?: number, y?: number, z?: number) {
+    this.numbers =new Array<number>(3);
+    this.numbers[0] = x || 0;
+    this.numbers[1] = y || 0;
+    this.numbers[2] = z || 0;
+  }
+
+  public static CROSS(v1:number[],v2:number[]):number[]{
+    let dest=new Array<number>(3);
+    dest[0]=v1[1]*v2[2]-v1[2]*v2[1];
+    dest[1]=v1[2]*v2[0]-v1[0]*v2[2];
+    dest[2]=v1[0]*v2[1]-v1[1]*v2[0];
+    return dest;
+  }
+
+  public static DOT(v1:number[],v2:number[]):number{
+    return (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]);
+  }
+
+  public static SUB(v1:number[],v2:number[]):number[]{
+    let dest=new Array<number>(3);
+    dest[0]=v1[0]-v2[0];
+    dest[1]=v1[1]-v2[1];
+    dest[2]=v1[2]-v2[2];
+    return dest;
+  }
+  public static FINDMINMAX(x0:number,x1:number,x2:number,min:number,max:number){
+    min = max = x0;
+    if(x1<min) min=x1;
+    if(x1>max) max=x1;
+    if(x2<min) min=x2;
+    if(x2>max) max=x2;
+  }
+
+  /*======================== X-tests ========================*/
+/*  public static  AXISTEST_X01(a:any, b:any, fa:any, fb:any){			  
+p0 = a*v0[Y] - b*v0[Z];			       	   
+p2 = a*v2[Y] - b*v2[Z];			       	   \
+      if(p0<p2) {min=p0; max=p2;} else {min=p2; max=p0;} 
+rad = fa * boxhalfsize[Y] + fb * boxhalfsize[Z];   
+if(min>rad || max<-rad) return 0;
+  }*/
+
+  public static planeBoxOverlap(normal:number[],d:number,maxbox:number[]):number{
+    let vmin=new Array<number>(3);
+    let vmax=new Array<number>(3);
+    for(let q=0;q<=2;q++){
+      if(normal[q]>0.0) {
+        vmin[q]=-maxbox[q];
+        vmax[q]=maxbox[q];
+      }else{
+        vmin[q]=maxbox[q];
+        vmax[q]=-maxbox[q];
+      }
+    }
+    if(XVector3.DOT(normal,vmin)+d>0.0) return 0;
+    if(XVector3.DOT(normal,vmax)+d>=0.0) return 1;
+    return 0;
+  }
+
+  
+
+  public static checkTriangleCube():boolean{
+    let triangle=new THREE.Triangle();
+    let cube = new THREE.Box3;
+    return cube.intersectsTriangle(triangle);
+  }
+
+
+}    
+
+static testAddSimpleFace(scene:THREE.Scene){
+        // create a simple square shape.
+        const vertices = [
+            -1.0, -1.0,  1.0,
+            1.0, -1.0,  1.0,
+            1.0,  1.0,  1.0,
+           -1.0,  1.0,  1.0,
+        ] ;
+        const indices=[
+            0,1,2,0,2,3
+        ];
+        scene.add(Helper.createMeshFromVertsIndices(vertices,indices));
+        scene.add(Helper.createWireframeMeshFromVertsIndices(vertices,indices));
+    }
