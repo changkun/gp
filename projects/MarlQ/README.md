@@ -11,6 +11,8 @@ Then you just execute the script.
 
 Because the algorithm has no concept of time or force, the results are obviously not physically accurate.
 
+Video demo: https://www.youtube.com/watch?v=taOCVPt3nzI
+
 ## How to install
 Similarly to other Blender addons, go to Edit -> Preferences -> Add-ons inside Blender.
 Then click on Install... in the top-right and select the SofObjectDenting.zip in the src folder (or zip the SofObjectDenting folder yourself).
