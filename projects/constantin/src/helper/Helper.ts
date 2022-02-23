@@ -188,7 +188,7 @@ export class Helper{
                 }
             }
         }
-        xBuffIndices=xBuffIndices.concat(AlignedCube.createFacesIndices(xSize-1,xSize-1,xSize-1,ramba));
+        xBuffIndices=xBuffIndices.concat(AlignedCube.createCubeIndicesFromTable(xSize-1,xSize-1,xSize-1,ramba));
         scene.add(Helper.createWireframeMeshFromVertsIndices(xBuffVertices,xBuffIndices));
     }
 

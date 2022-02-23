@@ -89,7 +89,7 @@ export class AlignedCube {
         return [AlignedCube.createCubeVertices(this.lowerLeftCorner,this.size),AlignedCube.createCubeIndices()];
     }
 
-    static createFacesIndices(x:number,y:number,z:number,map:number[][][]):number[]{
+    static createCubeIndicesFromTable(x:number,y:number,z:number,map:number[][][]):number[]{
         //let indices=this.createCubeIndices();
         let ret=new Array<number>();
         /*let faceIndices=[

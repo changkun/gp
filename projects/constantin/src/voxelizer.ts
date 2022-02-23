@@ -38,26 +38,28 @@ export class Voxelizer {
         const VOXELS_PER_AXIS=VOXELS_PER_HALF_AXIS*2;
         const VOXEL_SIZE=1/VOXELS_PER_AXIS;
         const xOriginalTriangles=Helper.createThreeJsTriangleList(originalMesh);
-    
-        let xBuffVertices=new Array<number>();
-        let xBuffIndices=new Array<number>();
-        let ramba=ThreeDArray.create3DArray(VOXELS_PER_AXIS+1);
-        let countLol=0;
+        // create a 3D grid of vertices, as well as a table to
+        // find the idx of the vertex at a given x,y,z position
+        let xBuffVertices=new Array<number>((VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*(VOXELS_PER_AXIS+1)*3);
+        let tableVertexIdx=ThreeDArray.create3DArray(VOXELS_PER_AXIS+1);
+        let idx=0;
         for(let x=0;x<VOXELS_PER_AXIS+1;x++){
             for(let y=0;y<VOXELS_PER_AXIS+1;y++){
                 for(let z=0;z<VOXELS_PER_AXIS+1;z++){
                     const x1=x*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
-                    xBuffVertices.push(x1);
-                    xBuffVertices.push(y1);
-                    xBuffVertices.push(z1);
-                    ramba[x][y][z]=countLol;
-                    countLol++;
+                    xBuffVertices[idx*3+0]=x1;
+                    xBuffVertices[idx*3+1]=y1;
+                    xBuffVertices[idx*3+2]=z1;
+                    tableVertexIdx[x][y][z]=idx;
+                    idx++;
                 }
             }
         }
-        let idx=0;
+        // The indices of the Voxels that intersect will be added to this array
+        let xBuffIndices=new Array<number>();
+        idx=0;
         for(let x=0;x<VOXELS_PER_AXIS;x++){
             for(let y=0;y<VOXELS_PER_AXIS;y++){
                 for(let z=0;z<VOXELS_PER_AXIS;z++){
@@ -66,7 +68,7 @@ export class Voxelizer {
                     const y1=y*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const z1=z*VOXEL_SIZE-VOXELS_PER_HALF_AXIS*VOXEL_SIZE;
                     const alignedCube=new AlignedCube(x1,y1,z1,VOXEL_SIZE);
-                    //
+                    // check if the voxel intersects with any triangle of the source mesh
                     let intersectsAny=false;
                     for(let tri of xOriginalTriangles){
                         if(alignedCube.intersect(tri)){
@@ -74,11 +76,11 @@ export class Voxelizer {
                             break;
                         }
                     }
-                    //
+                    // add the voxel if it intersects any
                     if(intersectsAny){
                         this.testHelperBoxes.push(alignedCube.createBox3Helper());
-
-                        const argh=AlignedCube.createFacesIndices(x,y,z,ramba);
+                        //
+                        const argh=AlignedCube.createCubeIndicesFromTable(x,y,z,tableVertexIdx);
                         xBuffIndices=xBuffIndices.concat(argh);
                     }
                     idx++;
