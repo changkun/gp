@@ -9,7 +9,7 @@ from mathutils.geometry import (
 from math import pi, acos, inf, sqrt, exp
 from numpy import log as ln
 
-# Determines whether point is inside mesh (deprecated, too many false positives)
+# DEPRECATED: Determines whether point is inside mesh (deprecated, too many false positives)
 def insideMesh(point, mesh):
     _, closest, normal, _ = mesh.closest_point_on_mesh(point)
     p2 = closest-point
@@ -72,7 +72,7 @@ def determineBoundaryVerts(verts1, verts2, edges):
     return boundaryVerts
 
 # Depresses all verts in overlap_verts_s (in softObject) onto the verts in overlap_verts_h (in hardObject)
-def depressVerts(overlap_verts_s, softObject, overlap_verts_h, hardObject, delta_initial, verts1, verts2, displace_increase, sk):
+def indentationFunction(overlap_verts_s, softObject, overlap_verts_h, hardObject, delta_initial, verts1, verts2, displace_increase, sk):
     dist_total = 0
     for vert1_index in overlap_verts_s:
         # Calculate the average normal of all hard object vertices that are inside the soft object
@@ -124,14 +124,14 @@ def minimumDistances(verts1_i, verts2_i, verts, object):
         minDist[vert1_index] = dist_min
     return minDist  
 
-# Function to describe the indentation. 
-# Goes from 1 at x = 0, to 0 at x = indentRange
+# Function to describe the sink-in around the indentation. 
+# Goes from 1 at x = 0, to 0 at x = sinkinRange
 # Almost linear for b values above 2, but very smooth for small b.
-def indentFunction(x, indentRange, smoothness):
+def sinkinFunction(x, sinkinRange, smoothness):
     b = -2.999 * smoothness + 3 # Maps values from 0 to 1 to values from 3 to 0.001
     #b = 0.01
     a = 1 + b
-    return a * exp( ln(b/a) * x / indentRange ) - b
+    return a * exp( ln(b/a) * x / sinkinRange ) - b
 
 #Function to describe the volume distribution
 # Goes smoothly from 0 at x = 0, to 1 at x = volumeRamp, then remains constant
@@ -144,30 +144,15 @@ def volumeFunction(x, volumeRamp):
         return 1
     
     
-def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, calculate_indent_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=1.0, volume_ramp=0.8):
-    # Variables
-    #displace_increase = 0.02
+def deform(from_mix=False, displace_increase=0.02, sinkin_smoothness=0.95, sinkin_range=1.2, calculate_sinkin_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=1.0, volume_ramp=0.8):
 
-    #indent_smoothness = 0.95
-    #indent_range = 1.2
-    #calculate_indent_range = True
-    
-    #delta_initial = 5.0
-    #delta_increase = 0.1
     delta = delta_initial
-
-    #volume_preservation = 1.0
-    
-    
-    #volume_ramp = 0.8
     add_overlap = False
-    
-    
-    # TODO: Multiple hard objects
 
+    # Prepare objects
     softObject = bpy.context.object
     hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop()
-    decimate = hardObject.modifiers.new("TEMP", "DECIMATE")
+    decimate = hardObject.modifiers.new("SOD_DECIMATE", "DECIMATE")
     decimate.decimate_type = "DISSOLVE"
     decimate.angle_limit = 0.017453
 
@@ -175,17 +160,14 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
     if softObject.data.shape_keys is None or len(softObject.data.shape_keys.key_blocks) < 1:
         sk_basis = softObject.shape_key_add(name='Basis',from_mix=False)
         #sk_basis.interpolation = 'KEY_LINEAR'
-    # must set relative to false here
-    #softObject.data.shape_keys.use_relative = False
+    softObject.data.shape_keys.use_relative = True
 
     # create new shape key
-    sk = softObject.shape_key_add(name='Deform',from_mix=False)
+    sk = softObject.shape_key_add(name='Deform',from_mix=from_mix)
     #sk.interpolation = 'KEY_LINEAR'
     sk.slider_min = 0.0
     sk.slider_max = 1.0
     sk.value = 1.0
-
-    # FIXME: Not enough objects selected
 
     # Get the verts and faces in world coordinates
     print("Getting object data.")
@@ -197,7 +179,6 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
     poly1 = [p.vertices for p in softObject.data.polygons]
 
     ho_mesh = hardObject.to_mesh()
-    print(ho_mesh)
 
     verts2 = [mat2 @ v.co for v in hardObject.data.vertices]
     poly2 = [p.vertices for p in hardObject.data.polygons]
@@ -206,30 +187,30 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
     inside_verts = set([i for i in range(len(verts1)) if is_inside( localC(verts1[i], hardObject), hardObject)])
     inside_vert_ho = set([i for i in range(len(verts2)) if insideMesh( localC(verts2[i], softObject), softObject)])
 
-    # Create the BVH trees
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    bvh1 = BVHTree.FromPolygons( verts1, poly1 )
-    bvh2 = BVHTree.FromPolygons( verts2, poly2 )
-
     # Overlapping vertices (list of index pairs, first belongs to the soft object, the other to the hard object)
     if add_overlap:
+        # Create the BVH trees
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        bvh1 = BVHTree.FromPolygons( verts1, poly1 )
+        bvh2 = BVHTree.FromPolygons( verts2, poly2 )
         overlap = bvh1.overlap(bvh2)
         for [v,_] in overlap:
             inside_verts.add(v)
-            
-    print(inside_verts)
         
-    inside_verts_new = inside_verts.copy()
+    inside_verts_new = inside_verts
 
     outside_verts = set([i for i in range(len(verts1)) if i not in inside_verts])
 
     boundaryVerts_so = set(determineBoundaryVerts(inside_verts, outside_verts, softObject.data.edges))
 
-    boundaryVerts_so_copy = boundaryVerts_so.copy()
-
 
     dist_total = 0
-    """
+
+    """ This code was supposed to first add some of the most important features of the hard object, but did not look good.
+    For this to work, it would have to be a lot more complicated...
+
+    boundaryVerts_so_copy = boundaryVerts_so.copy()
+    inside_verts_new = inside_verts.copy()
     print(inside_verts_new)
     print(boundaryVerts_so)
     for vert2_index in inside_vert_ho:
@@ -252,26 +233,12 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
     print(inside_verts_new)
     """
 
-
-
-
-
     # STEP 1: Find overlapping faces, and displace vertices so that they no longer overlap
 
     print("Displacing verts")
-    dist_total = dist_total + depressVerts(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial, verts1, verts2, displace_increase, sk)
-            
-    #inside_vert_ho_after = set([i for i in range(len(verts2)) if insideMesh( localC(verts2[i], softObject), softObject)])
-    #outside_verts_ho_after = set([i for i in range(len(verts2)) if i not in inside_vert_ho_after])
-    #boundaryVerts_ho = determineBoundaryVerts(inside_vert_ho_after, outside_verts_ho_after, hardObject.data.edges)
-    #print(boundaryVerts_so)
-    #print(boundaryVerts_ho)
+    dist_total = dist_total + indentationFunction(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial, verts1, verts2, displace_increase, sk)
 
-    # FIXME: objects don't overlap
-    # FIXME: all vertices overlap
-
-
-    # STEP 2: Add the lost volume back
+    # STEP 2: Calculate sink-in (and prepare for volume displacement)
 
     # Calculate shortest distance between an inside and an outside vert
     print("Getting the shortest distance")
@@ -281,13 +248,12 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
     for dist in minDist.values():
         if dist < shortest_dist:
                 shortest_dist = dist
-    print(shortest_dist)
 
-    if calculate_indent_range:
-        indent_range = sqrt(dist_total / len(inside_verts_new) )
+    if calculate_sinkin_range:
+        sinkin_range = sqrt(dist_total / len(inside_verts_new) )
 
-    print("Getting inverse square factor and adding elasticity")
-    inverse_square_sum = 0
+    print("Getting volume factor and adding sink-in")
+    volume_sum = 0
     for vert1_index in outside_verts.copy():
         vert1 = localC(verts1[vert1_index], softObject)
         dist_min = inf
@@ -296,42 +262,37 @@ def deform(displace_increase=0.02, indent_smoothness=0.95, indent_range=1.2, cal
             vert2 = localC(verts1[vert2_index], softObject)
             dist = (vert1 - vert2).length
             if dist < dist_min:
-                dist_min = dist # TODO: Save these for later
+                dist_min = dist
                 closest_vert = vert2_index
-        if dist_min <= indent_range:
+        if dist_min <= sinkin_range:
+            # Apply sink-in function
             closest_vert_move = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co)
-            #a = 1 / (dist_min * dist_min)
-            #b = 1 / (dist_min * dist_min) + 1 / ( (elasticity-dist_min) * (elasticity-dist_min) )
-            move_dist = indentFunction(dist_min,indent_range, indent_smoothness) 
+
+            move_dist = sinkinFunction(dist_min,sinkin_range, sinkin_smoothness) 
             
-            #move_dist = elasticity_factor * closest_vert_move * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
-            #move_dist = elasticity_factor * 1 / (shortest_dist + dist_min * dist_min)
-            #normal = softObject.data.vertices[vert1_index].normal
             newPos = sk.data[vert1_index].co  + move_dist * closest_vert_move
-            #softObject.data.vertices[vert1_index].co = newPos
             sk.data[vert1_index].co = newPos
-            #dist_total = dist_total + move_dist
             outside_verts.remove(vert1_index)
             
         else:
-            #inverse_square_sum += 1 / ( 1 + (dist_min-shortest_dist) * (dist_min-shortest_dist) )
-            inverse_square_sum += volumeFunction(dist_min-indent_range, volume_ramp)
-            #inverse_square_sum += 1 / (shortest_dist + dist_min * dist_min)
-    dist_total = dist_total * volume_preservation
+            # Otherwise prepare calculation for the volume preservation
+            volume_sum += volumeFunction(dist_min-sinkin_range, volume_ramp)
+    
+    # STEP 3: Add the lost volume back
     if volume_preservation > 0:
-        x_fac = dist_total / inverse_square_sum # The factor by which the inverse square of each distance is multiplied so that the total is always dist_total
+        dist_total = dist_total * volume_preservation
+        volume_fac = dist_total / volume_sum # The factor by which the volume function is multiplied so that the total is always dist_total
         print("Adding back volume")
-        print(dist_total)
-        print(x_fac)
 
         for vert1_index in outside_verts:
             vert1_global = verts1[vert1_index]
             vert1 = localC(verts1[vert1_index], softObject)
             dist_min = minDist[vert1_index]
-            #move_dist = x_fac * 1 / (1 + (dist_min-shortest_dist) * (dist_min-shortest_dist))
-            move_dist = x_fac * volumeFunction(dist_min-indent_range, volume_ramp)
-            #move_dist = x_fac * 1 / (shortest_dist + dist_min * dist_min)
+
+            move_dist = volume_fac * volumeFunction(dist_min-sinkin_range, volume_ramp)
+
             normal = softObject.data.vertices[vert1_index].normal
             newPos = sk.data[vert1_index].co + move_dist * normal
             sk.data[vert1_index].co = newPos
-            #softObject.data.vertices[vert1_index].co = newPos
+
+    hardObject.modifiers.remove(decimate)

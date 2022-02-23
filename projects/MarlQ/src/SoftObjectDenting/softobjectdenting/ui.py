@@ -16,24 +16,29 @@ from . import main
 # ------------------------------------------------------------------------      
 
 class SODSettings(PropertyGroup):
+    from_mix : BoolProperty(
+        name = "Shape key from mix",
+        description = "Determines whether the newly created shaped is created from mix. ",
+        default = False
+        )
     displace_increase : FloatProperty(
         name = "Indentation increase",
         description = "Additional displacement at the indentation point (makes the indentation deeper, creating a gap).",
         default = 0.02,
         )
-    calculate_indent_range : BoolProperty(
+    calculate_sinkin_range : BoolProperty(
         name = "Auto-calculate sink-in range",
         description = "Estimate the range of the sink-in based on the indentation depth (recommended).",
         default = True
         )
         
-    indent_range : FloatProperty(
+    sinkin_range : FloatProperty(
         name = "Sink-in range",
         description = "The range of the sink-in effect. A values that is too high may adversely affect volume preservation.",
         default = 1.2,
         min = 0.0
         )
-    indent_smoothness : FloatProperty(
+    sinkin_smoothness : FloatProperty(
         name = "Sink-in smoothness",
         description = "The smoothness of the sink-in. Linear at value 0.",
         default = 0.95,
@@ -79,10 +84,11 @@ class WM_OT_SOD(Operator):
     def execute(self, context):
         scene = context.scene
         sod_tool = scene.sod_tool
-        main.deform(displace_increase=sod_tool.displace_increase, 
-                    calculate_indent_range=sod_tool.calculate_indent_range,
-                    indent_range=sod_tool.indent_range,
-                    indent_smoothness=sod_tool.indent_smoothness,
+        main.deform(from_mix=sod_tool.from_mix,
+                    displace_increase=sod_tool.displace_increase, 
+                    calculate_sinkin_range=sod_tool.calculate_sinkin_range,
+                    sinkin_range=sod_tool.sinkin_range,
+                    sinkin_smoothness=sod_tool.sinkin_smoothness,
                     delta_initial=sod_tool.delta_initial,
                     delta_increase=sod_tool.delta_increase,
                     volume_preservation=sod_tool.volume_preservation,
@@ -111,13 +117,14 @@ class OBJECT_PT_SODPanel(Panel):
         scene = context.scene
         sod_tool = scene.sod_tool
         
+        layout.prop(sod_tool, "from_mix")
         layout.prop(sod_tool, "displace_increase")
-        layout.prop(sod_tool, "calculate_indent_range")
+        layout.prop(sod_tool, "calculate_sinkin_range")
         row = self.layout.row()
-        row.prop(sod_tool, "indent_range")
-        if sod_tool.calculate_indent_range is True:
+        row.prop(sod_tool, "sinkin_range")
+        if sod_tool.calculate_sinkin_range is True:
             row.enabled = False
-        layout.prop(sod_tool, "indent_smoothness")
+        layout.prop(sod_tool, "sinkin_smoothness")
         layout.prop(sod_tool, "delta_initial")
         layout.prop(sod_tool, "delta_increase")
         layout.separator()
