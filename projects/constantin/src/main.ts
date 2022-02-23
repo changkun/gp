@@ -173,8 +173,8 @@ export default class Main extends Renderer {
       .listen()
       .onChange(show => {
         show
-          ? this.internal.voxelizer!.createdHalfedgeMesh!.addNormalHelperToScene(this.scene,false)
-          : this.internal.voxelizer!.createdHalfedgeMesh!.addNormalHelperToScene(this.scene,true);
+          ? this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,false)
+          : this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,true);
       });
     folderVoxelized
       .add(this.params, 'showVoxelizedHalfedges')
