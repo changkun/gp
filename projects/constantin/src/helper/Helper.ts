@@ -9,7 +9,7 @@ import { Vertex, Edge, Face, Halfedge } from '../geometry/primitive';
 import { AABB } from '../geometry/aabb';
 import { Vector } from '../linalg/vec';
 import { ThreeDArray } from '../helper/3DArray';
-import { AlignedCube } from '../linalg/AlignedCube';
+import { AlignedCube } from '../geometry/AlignedCube';
 import { FogExp2, Side } from 'three';
 import { HalfedgeMesh } from '../geometry/halfedge';
 import { off } from 'process';

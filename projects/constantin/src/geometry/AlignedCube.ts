@@ -4,7 +4,7 @@
 //Use of this source code is governed by a GNU GPLv3 license that can be found
 //in the LICENSE file.
 
-import { Vector } from "./vec";
+import { Vector } from "../linalg/vec";
 import * as THREE from 'three'
 import { LineSegments } from "three";
 import { assert } from "console";

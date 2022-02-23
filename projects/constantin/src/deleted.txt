@@ -331,3 +331,9 @@ static removeIsolatedVertices(vertices:THREE.Vector3[],indices:number[]):[THREE.
             [x+1,y+1,z+1],
             [x+1,y+0,z+1],
         ];*/    
+
+
+//this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(xBuffIndices,xBuffVertices);
+//this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
+//this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(argh,xBuffVertices);
+//this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(AlignedCube.createFacesIndices(0,0,0,ramba),xBuffVertices);        

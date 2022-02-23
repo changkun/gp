@@ -5,7 +5,7 @@
 //Use of this source code is governed by a GNU GPLv3 license that can be found
 //in the LICENSE file.
 
-import { AlignedCube } from './linalg/AlignedCube';
+import { AlignedCube } from './geometry/AlignedCube';
 import { ThreeDArray } from './helper/3DArray';
 import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
@@ -107,11 +107,7 @@ export class Voxelizer {
         console.log("Voxelizer building Renderables -start");
         this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(allVoxelGridVertices,removed,new THREE.Color('red'));
 
-        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(xBuffIndices,xBuffVertices);
-        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData(bigBuffIndices,Vector.convArray(bigBuffVertices));
         this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,allVoxelGridVertices);
-        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(argh,xBuffVertices);
-        //this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(AlignedCube.createFacesIndices(0,0,0,ramba),xBuffVertices);
         this.createdHalfedgeMesh.halfedgeMesh.validate();
         this.createdHalfedgeMesh.createAllRenderHelpers();
         console.log("Voxelizer building Renderables -stop");
