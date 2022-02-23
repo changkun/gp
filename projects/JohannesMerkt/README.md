@@ -20,6 +20,9 @@ To turn the outputs of this function into a geometry I use the marching cubes al
 - Calculating chunks with multiple interconnected cubes on a compute shader and merging chunks only on the CPU
 - Calculating the Geometry entirely on the GPU and directly passing the result to the render shader
 
+# Video
+Link https://johannes-merkt.de/ProceduralGeometrywithCode.mp4
+
 ## Running the Code
 Install Unity 2020.3.25f1 and open the project folder `unity` with unity.
 
