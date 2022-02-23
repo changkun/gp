@@ -92,50 +92,6 @@ export class AlignedCube {
     static createCubeIndicesFromTable(x:number,y:number,z:number,map:number[][][]):number[]{
         //let indices=this.createCubeIndices();
         let ret=new Array<number>();
-        /*let faceIndices=[
-            // front
-            [x,y,z],
-            [x+1,y,z],
-            [x+1,y+1,z],
-            [x,y,z],
-            [x+1,y+1,z],
-            [x,y+1,z],
-            // back
-            [x,y,z+1],
-            [x+1,y,z+1],
-            [x+1,y+1,z+1],
-            [x,y,z+1],
-            [x+1,y+1,z+1],
-            [x,y+1,z+1],
-            // top
-            [x+0,y+1,z+0],
-            [x+1,y+1,z+0],
-            [x+1,y+1,z+1],
-            [x+0,y+1,z+0],
-            [x+1,y+1,z+1],
-            [x+0,y+1,z+1],
-            // bottom
-            [x+0,y,z+0],
-            [x+1,y,z+0],
-            [x+1,y,z+1],
-            [x+0,y,z+0],
-            [x+1,y,z+1],
-            [x+0,y,z+1],
-            // left
-            [x,y+0,z+0],
-            [x,y+1,z+0],
-            [x,y+1,z+1],
-            [x,y+0,z+0],
-            [x,y+1,z+1],
-            [x,y+0,z+1],
-            // right
-            [x+1,y+0,z+0],
-            [x+1,y+1,z+0],
-            [x+1,y+1,z+1],
-            [x+1,y+0,z+0],
-            [x+1,y+1,z+1],
-            [x+1,y+0,z+1],
-        ];*/
         let faceIndices=[
             // back
             [x,y,z],
