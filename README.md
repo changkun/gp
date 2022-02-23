@@ -26,8 +26,7 @@ We will introduce and use the following toolkits for this course:
 - [Git](https://git-scm.com/downloads)
 - [Blender](https://www.blender.org/) (2.93+)
 - [Node.js](https://nodejs.org/en/) (14.17+)
-- [Go](https://golang.org/dl/) (1.17+)
-- [Python](https://www.python.org/downloads/) (3.9+)
+- [Python](https://www.python.org/downloads/) (3.7+)
 
 Please install all of them in advance and take a glance to these tools beforehand.
 
@@ -44,19 +43,17 @@ Students will participate in the course every week to discuss and learn more geo
 During the rest of the semester, students should propose a project idea throughout the semester, and by the end of the semester, implement and demonstrate their project in 1) idea-pitch presentation; 2) intermediate presentation; 3) final presentation.
 
 | Date      | Topic                                            | Slides |
-|:---------:|:-------------------------------------------------|:--|
-|           | Organization                                     | [Link](https://changkun.de/s/gp/ws21/0-org) |
-|18.10.2021 | Introduction                                     | [Link](https://changkun.de/s/gp/ws21/1-intro) |
-|25.10.2021 | Discrete Differential Geometry                   | [Link](https://changkun.de/s/gp/ws21/2-ddg) |
-|08.11.2021 | Smoothing                                        | [Link](https://changkun.de/s/gp/ws21/3-smooth) |
-|15.11.2021 | Parameterization                                 | [Link](https://changkun.de/s/gp/ws21/4-param) |
-|22.11.2021 | Remeshing                                        | [Link](https://changkun.de/s/gp/ws21/5-remesh) |
-|29.11.2021 | Deformation                                      | [Link](https://changkun.de/s/gp/ws21/6-deform) |
-|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [Link](https://changkun.de/s/gp/ws21/extra1-nanite) |
-|10.01.2021 | Geometric Deep Learning                          | TBA |
-|27.01.2022 | Differentiable Rendering & Project Idea-Pitch    | TBA |
-|07.02.2022 | Project Intermediate                             | Presentation |
-|14.02.2022 | Project Final                                    | Presentation |
+|:---------:|:-------------------------------------------------|:--:|
+|           | Organization                                     | [<img src="./slides/0-org.png" width="200"/>](https://changkun.de/s/gp/ws21/0-org) |
+|18.10.2021 | Introduction                                     | [<img src="./slides/1-intro.png" width="200"/>](https://changkun.de/s/gp/ws21/1-intro) |
+|25.10.2021 | Discrete Differential Geometry                   | [<img src="./slides/2-ddg.png" width="200"/>](https://changkun.de/s/gp/ws21/2-ddg) |
+|08.11.2021 | Smoothing                                        | [<img src="./slides/3-smooth.png" width="200"/>](https://changkun.de/s/gp/ws21/3-smooth) |
+|15.11.2021 | Parameterization                                 | [<img src="./slides/4-param.png" width="200"/>](https://changkun.de/s/gp/ws21/4-param) |
+|22.11.2021 | Remeshing                                        | [<img src="./slides/5-remesh.png" width="200"/>](https://changkun.de/s/gp/ws21/5-remesh) |
+|29.11.2021 | Deformation                                      | [<img src="./slides/6-deform.png" width="200"/>](https://changkun.de/s/gp/ws21/6-deform) |
+|06.12.2021 | Christmas Special: The Nanite System in Unreal Engine 5 | [<img src="./slides/extra-nanite.png" width="200"/>](https://changkun.de/s/gp/ws21/extra1-nanite) |
+|10.01.2021 | Data-driven Approach I | [<img src="./slides/7-dda1.png" width="200"/>](https://changkun.de/s/gp/ws21/7-dda) |
+|24.01.2022 | Data-driven Approach II | [<img src="./slides/8-dda2.png" width="200"/>](https://changkun.de/s/gp/ws21/8-dda2) |
 
 ## Grading
 
@@ -71,12 +68,12 @@ Select 5 out of 7 given projects (5x10%), or feel free to finish them all (no bo
 | Proportion | Topic | Deadline |
 |:---:|:-------------------------------------------|:--------:|
 | 10% | [The Halfedge Structure](./1-halfedge/) | <img src="./1-halfedge/assets/expect.png" width="200"/> </br>01.11.2021 23:59:59 |
-| 10% | [Discrete Curvature](./2-ddg/)          | <img src="./2-ddg/assets/teaser.png" width="200"/> </br>15.11.2021 23:59:59 |
-| 10% | [Laplace Smooth](./3-smooth/)           | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
-| 10% | [Tutte's Embedding](./4-param/)         | <img src="./4-param/assets/teaser.png" width="200"/> </br>13.12.2021 23:59:59 |
-| 10% | [Quadric Error Metric Simplification](./5-remesh/)  | <img src="./5-remesh/assets/bunny-95.png" width="200"/> </br> 01.01.2022 23:59:59 |
-| 10% | TBA                                                | 14.01.2022 23:59:59 |
-| 10% | TBA                                                | 28.01.2022 23:59:59 |
+| 10% | [Discrete Curvature](./2-ddg/) | <img src="./2-ddg/assets/teaser.png" width="200"/> </br>15.11.2021 23:59:59 |
+| 10% | [Laplace Smooth](./3-smooth/) | <img src="./3-smooth/assets/teaser.png" width="200"/> </br>29.11.2021 23:59:59 |
+| 10% | [Tutte's Embedding](./4-param/) | <img src="./4-param/assets/teaser.png" width="200"/> </br>13.12.2021 23:59:59 |
+| 10% | [Quadric Error Metric Simplification](./5-remesh/) | <img src="./5-remesh/assets/bunny-95.png" width="200"/> </br> 01.01.2022 23:59:59 |
+| 10% | [Rendering with PyTorch(3D)](./6-dda1)        | <img src="./6-dda1/render.png" width="200"/> </br> 17.01.2022 23:59:59 |
+| 10% | [Learning to Deform A Mesh](./7-dda2) | <img src="./7-dda2/deform.png" width="200"/> </br> 07.02.2022 23:59:59 |
 
 ### Individual Project
 
@@ -91,13 +88,15 @@ Individual projects contributes 50% of the final grade, and separated into parts
 
 The timeline for individual projects are as follows:
 
-| Submission             | Deadline            |
+| Events                 | Deadline            |
 |:-----------------------|:-------------------:|
-| Proposal Submission    | 01.01.2022 23:59:59 |
-| Intermediate Submission| 15.01.2022 23:59:59 |
-| Video Submission       | 30.01.2022 23:59:59 |
-| Presentation           | 08.02.2022 23:59:59 |
-| Code Submission        | 08.02.2022 23:59:59 |
+| Proposal Submission                 | 01.01.2022 23:59:59 |
+| Project Presentation (Idea-Pitch)   | 24.01.2022 |
+| Project Presentation (Intermediate) | 07.02.2022|
+| Video Submission                    | 23.01.2022 23:59:59 |
+| Presentation                        | 23.02.2022 23:59:59 |
+| Code Submission                     | 23.02.2022 23:59:59 |
+| Project Presentation (Final)        | 24.02.2022 14:00:00 |
 
 Note that the individual project can be conducted in parallel with the coding projects,
 meaning the individual projects can be submitted anytime before the deadline; Individual
@@ -114,4 +113,4 @@ Find more details about how to do an individual project [here](./projects/README
 
 ## License
 
-Copyright &copy; 2020-2022 LMU Munich Media Informatics Group by [Changkun Ou](https://changkun.de).
+Copyright &copy; 2020-2022 LMU Munich Media Informatics Group. Created by [Changkun Ou](https://changkun.de).
