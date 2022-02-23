@@ -21,11 +21,11 @@ export class Voxelizer {
     // inside of the voxelized surface (saved)
     meshVerticesRemovedFromInside?:any;
     // how long the voxelization step took
-    lastVoxelConstructionTime:number;
+    lastVoxelConstructionTimeMs:number;
 
     constructor(){
         this.testHelperBoxes=[];
-        this.lastVoxelConstructionTime=0;
+        this.lastVoxelConstructionTimeMs=0;
     }
     
     /**
@@ -100,9 +100,9 @@ export class Voxelizer {
         // Here the "inner vertices" - aka vertices that are not needed for rendering / h.e.d.s are removed
         const [remaining,removed]=Helper.removeTwinTriangles(xBuffIndices);
         // Measure how long the actual voxelization took (does not include the creation of rendering helpers)
-        var elapsed = new Date().getTime() - start;
-        this.lastVoxelConstructionTime=elapsed;
-        console.log("Voxelizing took: "+this.lastVoxelConstructionTime+" ms");
+        const elapsedMs = new Date().getTime() - start;
+        this.lastVoxelConstructionTimeMs=elapsedMs;
+        console.log("Voxelizing took: "+this.lastVoxelConstructionTimeMs+" ms");
         console.log("Voxelizer building Renderables -start");
         this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(allVoxelGridVertices,removed,new THREE.Color('red'));
 

@@ -131,7 +131,7 @@ export default class Main extends Renderer {
     });
     folderSource
     .add(this.params, 'showHalfedgesOnBoundaries')
-    .name('show b.halfedges')
+    .name('show boundary h.e')
     .listen()
     .onChange(show => {
       show
@@ -142,7 +142,7 @@ export default class Main extends Renderer {
     const folderVoxelized = this.gui.addFolder('Voxelized Mesh');
     folderVoxelized
     .add(this.params, 'debugVoxels')
-    .name('debug voxels')
+    .name('show voxels')
     .listen()
     .onChange(show => {
       show
@@ -151,7 +151,7 @@ export default class Main extends Renderer {
     });
     folderVoxelized
     .add(this.params, 'debugVoxelizedRemoved')
-    .name('vox. removed')
+    .name('show removed')
     .listen()
     .onChange(show => {
       show
@@ -160,7 +160,7 @@ export default class Main extends Renderer {
     });
     folderVoxelized
     .add(this.params, 'showVoxelizedSolid')
-    .name('vox. solid')
+    .name('show solid')
     .listen()
     .onChange(show => {
       show
@@ -169,7 +169,7 @@ export default class Main extends Renderer {
     });
     folderVoxelized
       .add(this.params, 'showVoxelizedEdges')
-      .name('vox. edges')
+      .name('show edges')
       .listen()
       .onChange(show => {
         show
@@ -178,7 +178,7 @@ export default class Main extends Renderer {
       });
     folderVoxelized
       .add(this.params, 'showVoxelizedHalfedges')
-      .name('vox. halfedges')
+      .name('show halfedges')
       .listen()
       .onChange(show => {
         show
@@ -187,7 +187,7 @@ export default class Main extends Renderer {
     });
     folderVoxelized
       .add(this.params, 'showVoxelizedHalfedgesOnBoundaries')
-      .name('vox. h.e.b.')
+      .name('show boundary h.e.')
       .listen()
       .onChange(show => {
         show
@@ -198,11 +198,11 @@ export default class Main extends Renderer {
     const folder1 = this.gui.addFolder('Voxelizer');
     folder1
       .add(this.params, 'nVoxelsPerAxis', 1, 20, 1)
-      .name('n half vox per axis')
+      .name('Num Voxels/2')
       .onChange(() => this.updateVoxelizer());
     folder1
       .add(this.params,'computationTime')
-      .name("computation time_ms")
+      .name("computation_ms")
       .listen();
     folder1.open();
     // just for the first load
@@ -216,8 +216,10 @@ export default class Main extends Renderer {
     if(this.internal.halfedgeRenderer){
       this.internal.halfedgeRenderer!.removeAllIfAdded(this.scene);
     }
-    let [indices,positions]=Helper.loadObjAndScaleTransform(data);
-    //this.internal.halfedgeRenderer = new HalfedgeMesh(indices,positions);
+    if(this.internal.voxelizer){
+      this.internal.voxelizer!.removeAllFromScene(this.scene);
+    }
+    const [indices,positions]=Helper.loadObjAndScaleTransform(data);
     this.internal.halfedgeRenderer = HalfedgeMeshRenderer.createFromData(indices,positions);
     this.internal.voxelizer = new Voxelizer();
     this.renderMesh();
@@ -233,13 +235,26 @@ export default class Main extends Renderer {
     document.body.removeChild(e);
   }
 
+  // voxelize the mesh if needed (new mesh / n voxels changed)
   updateVoxelizer(){
+    // clear up the scene
     this.internal.voxelizer!.removeAllFromScene(this.scene);
-    //
     this.internal.voxelizer!.voxelizeHalfedgeMesh(this.internal.halfedgeRenderer!.halfedgeMesh!,this.scene,this.params.nVoxelsPerAxis);
-    this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
+    this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTimeMs;
     if(this.params.debugVoxels){
       this.internal.voxelizer!.addBoxesDebugToScene(this.scene,false);
+    }
+    if(this.params.debugVoxelizedRemoved){
+      this.internal.voxelizer!.addMeshVerticesRemovedToScene(this.scene,false);
+    }
+    if(this.params.showEdges){
+      this.internal.voxelizer!.createdHalfedgeMesh!.addEdgeHelpersToScene(this.scene,false);
+    }
+    if(this.params.showHalfedges){
+      this.internal.voxelizer!.createdHalfedgeMesh!.addHalfedgeHelpersToScene(this.scene,false);
+    }
+    if(this.params.showHalfedgesOnBoundaries){
+      this.internal.voxelizer!.createdHalfedgeMesh!.addHalfEdgesOnBoundaryHelpersToScene(this.scene,false);
     }
   }
 
@@ -265,14 +280,7 @@ export default class Main extends Renderer {
     if(this.params.showHalfedges){
       this.internal.halfedgeRenderer!.addHalfedgeHelpersToScene(this.scene,false);
     }
-    
     this.updateVoxelizer();
-
-    //this.internal.voxelizer!.createVoxels(this.internal.mesh!,this.scene,this.params.nVoxelsPerAxis);
-    //this.params.computationTime=this.internal!.voxelizer!.lastVoxelConstructionTime;
-    //if(this.params.showVoxels){
-    //  this.internal.voxelizer!.addToScene(this.scene);
-    //}
   }
 }
 
