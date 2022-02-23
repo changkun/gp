@@ -72,7 +72,7 @@ def determineBoundaryVerts(verts1, verts2, edges):
     return boundaryVerts
 
 # Depresses all verts in overlap_verts_s (in softObject) onto the verts in overlap_verts_h (in hardObject)
-def indentationFunction(overlap_verts_s, softObject, overlap_verts_h, hardObject, delta_initial, verts1, verts2, displace_increase, sk):
+def indentationFunction(overlap_verts_s, softObject, overlap_verts_h, hardObject, delta_initial, verts1, verts2, displace_increase, sk, delta_increase):
     dist_total = 0
     for vert1_index in overlap_verts_s:
         # Calculate the average normal of all hard object vertices that are inside the soft object
@@ -147,7 +147,7 @@ def distributionFunction(x, dist_total, dist_max, indentRange, indentDepth, volu
         return c
     
     
-def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_sinkin_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=0.2):
+def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_sinkin_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=0.2, use_decimate=False):
 
     delta = delta_initial
     add_overlap = False
@@ -155,9 +155,10 @@ def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_s
     # Prepare objects
     softObject = bpy.context.object
     hardObject = set(bpy.context.selected_objects).difference(set([softObject])).pop()
-    decimate = hardObject.modifiers.new("SOD_DECIMATE", "DECIMATE")
-    decimate.decimate_type = "DISSOLVE"
-    decimate.angle_limit = 0.017453
+    if use_decimate:
+        decimate = hardObject.modifiers.new("SOD_DECIMATE", "DECIMATE")
+        decimate.decimate_type = "DISSOLVE"
+        decimate.angle_limit = 0.017453
 
     print("Creating shape keys")
     if softObject.data.shape_keys is None or len(softObject.data.shape_keys.key_blocks) < 1:
@@ -239,7 +240,7 @@ def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_s
     # STEP 1: Find overlapping faces, and displace vertices so that they no longer overlap
 
     print("Displacing verts")
-    dist_total = dist_total + indentationFunction(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial, verts1, verts2, displace_increase, sk)
+    dist_total = dist_total + indentationFunction(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial, verts1, verts2, displace_increase, sk, delta_increase)
 
     # STEP 2: Calculate sink-in and volume distribution
 
@@ -287,4 +288,5 @@ def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_s
         newPos = sk.data[vert1_index].co  + move_dist * closest_vert_move
         sk.data[vert1_index].co = newPos
 
-    hardObject.modifiers.remove(decimate)
+    if use_decimate:
+        hardObject.modifiers.remove(decimate)

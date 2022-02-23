@@ -21,6 +21,11 @@ class SODSettings(PropertyGroup):
         description = "Determines whether the newly created shaped is created from mix. ",
         default = False
         )
+    use_decimate : BoolProperty(
+        name = "Use decimate",
+        description = "Using a temporary planar decimate on the hard object can help eliminate non-important features and improve deformation.",
+        default = False
+        )
     displace_increase : FloatProperty(
         name = "Indentation increase",
         description = "Additional displacement at the indentation point (makes the indentation deeper, creating a gap).",
@@ -58,6 +63,7 @@ class SODSettings(PropertyGroup):
         description = "How much of the volume is presrved and distributed across the rest of the mesh.",
         default = 1.0,
         )
+    
 
 # ------------------------------------------------------------------------
 #    Operators
@@ -76,7 +82,8 @@ class WM_OT_SOD(Operator):
                     sinkin_range=sod_tool.sinkin_range,
                     delta_initial=sod_tool.delta_initial,
                     delta_increase=sod_tool.delta_increase,
-                    volume_preservation=sod_tool.volume_preservation)
+                    volume_preservation=sod_tool.volume_preservation,
+                    use_decimate=sod_tool.use_decimate)
         return {'FINISHED'}
 
 
@@ -102,6 +109,7 @@ class OBJECT_PT_SODPanel(Panel):
         sod_tool = scene.sod_tool
         
         layout.prop(sod_tool, "from_mix")
+        layout.prop(sod_tool, "use_decimate")
         layout.prop(sod_tool, "displace_increase")
         layout.prop(sod_tool, "calculate_sinkin_range")
         row = self.layout.row()
