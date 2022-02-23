@@ -101,7 +101,7 @@ export class Helper{
         );
         return segments;
     }
-
+    // Various data format conversions
     static createThreeJsTriangleList(heMesh:HalfedgeMesh):Array<THREE.Triangle>{
         let ret=new Array<THREE.Triangle>();
         for(let f of heMesh.faces){
@@ -111,7 +111,30 @@ export class Helper{
         }
         return ret;
     }
-
+    static convArray(input:THREE.Vector3[]):Vector[]{
+        let ret=new Array<Vector>(input.length);
+        for(let i=0;i<input.length;i++){
+          ret[i]=Vector.createF(input[i]);
+        }
+        return ret;
+      }
+    static convArray2(input:Vector[]):THREE.Vector3[]{
+        let ret=new Array<THREE.Vector3>(input.length);
+        for(let i=0;i<input.length;i++){
+            ret[i]=input[i].convertT();
+        }
+        return ret;
+    }
+    static convArray3(input:number[]):Vector[]{
+        let ret=new Array<Vector>();
+        for(let i=0;i<input.length;i+=3){
+            const a=input[i+0];
+            const b=input[i+1];
+            const c=input[i+2];
+            ret.push(new Vector(a,b,c));
+        }
+        return ret;
+    }
     // add an offset to all indices, used for simple appending
     static addOffsetToIndices(offset:number,indices:number[]):number[]{
         for(let i=0;i<indices.length;i++){

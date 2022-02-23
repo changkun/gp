@@ -102,7 +102,7 @@ export class Voxelizer {
         // Here the "inner vertices" - aka vertices that are not needed for rendering / h.e.d.s are removed
         const [remaining,removed]=Helper.removeTwinTriangles(xBuffIndices);
         // create the halfedge mesh
-        const newHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3((allVoxelGridVertices)));
+        const newHalfedgeMesh=new HalfedgeMesh(remaining,Helper.convArray3((allVoxelGridVertices)));
         newHalfedgeMesh.validate();
         // Measure how long the actual voxelization and h.e. construction took (does not include the creation of rendering helpers)
         const elapsedMs = new Date().getTime() - start;

@@ -169,31 +169,5 @@ export class Vector {
   }
   static createF(input:THREE.Vector3):Vector{
     return new Vector(input.x,input.y,input.z);
-  } 
-  static convArray(input:THREE.Vector3[]):Vector[]{
-    let ret=new Array<Vector>();
-    for(let i=0;i<input.length;i++){
-      let tmp=Vector.createF(input[i]);
-      ret.push(tmp);
-    }
-    return ret;
-  }
-  static convArray2(input:Vector[]):THREE.Vector3[]{
-    let ret=new Array<THREE.Vector3>();
-    for(let i=0;i<input.length;i++){
-      let tmp=input[i].convertT();
-      ret.push(tmp);
-    }
-    return ret;
-  }
-  static convArray3(input:number[]):Vector[]{
-    let ret=new Array<Vector>();
-    for(let i=0;i<input.length;i+=3){
-      const a=input[i+0];
-      const b=input[i+1];
-      const c=input[i+2];
-      ret.push(new Vector(a,b,c));
-    }
-    return ret;
   }
 }

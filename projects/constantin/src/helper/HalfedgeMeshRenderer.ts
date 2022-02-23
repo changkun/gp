@@ -55,11 +55,11 @@ export class HalfedgeMeshRenderer {
     }
 
     static createFromData2(indices: number[],positions:THREE.Vector3[]):HalfedgeMeshRenderer{
-        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Vector.convArray(positions)));
+        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Helper.convArray(positions)));
     }
 
     static createFromData3(indices: number[],positions:number[]):HalfedgeMeshRenderer{
-        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Vector.convArray3((positions))));
+        return new HalfedgeMeshRenderer(new HalfedgeMesh(indices,Helper.convArray3((positions))));
     }
 
     // clears and creates all the rendering helper(s)
