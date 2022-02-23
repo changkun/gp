@@ -75,7 +75,7 @@ export default class Main extends Renderer {
       showEdges:false,
       showHalfedges:false,
       showHalfedgesOnBoundaries:false,
-      debugVoxels:false,
+      debugVoxels:true,
       debugVoxelizedRemoved:false,
       showVoxelizedSolid:false,
       showVoxelizedEdges:false,
@@ -206,9 +206,9 @@ export default class Main extends Renderer {
       .listen();
     folder1.open();
     // just for the first load
-    //fetch('./assets/bunny.obj')
+    fetch('./assets/bunny.obj')
     //fetch('./assets/cube.obj')
-    fetch('./assets/sphere.obj')
+    //fetch('./assets/sphere.obj')
       .then(resp => resp.text())
       .then(data => this.loadMesh(data));
   }
