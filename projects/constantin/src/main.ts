@@ -262,9 +262,6 @@ export default class Main extends Renderer {
     // clear old instances
     this.internal.halfedgeRenderer!.removeAllIfAdded(this.scene);
 
-    // update the instances if data has changed
-    this.internal.halfedgeRenderer!.createAllRenderHelpers();
-
     //if (this.params.showNormals) {
     //  this.internal.mesh!.addNormalHelperToScene(this.scene,false);
     //}

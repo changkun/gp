@@ -64,7 +64,7 @@ export class HalfedgeMeshRenderer {
 
     // clears and creates all the rendering helper(s)
     // Call this once after construction or after the halfegde mesh has been updated
-    createAllRenderHelpers(){
+    private createAllRenderHelpers(){
         console.log("HE createAllRenderHelpers begin");
         this.createRenderableMeshAndWireframe();
         this.createRenderableEdgeHelpers();

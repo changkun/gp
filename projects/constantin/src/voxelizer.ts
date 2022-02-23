@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import { HalfedgeMesh } from './geometry/halfedge';
 import { Helper} from './helper/Helper';
 import { HalfedgeMeshRenderer} from './helper/HalfedgeMeshRenderer';
+import { Vector } from './linalg/vec';
 
 export class Voxelizer {
     // the halfedge mesh we create after voxelization
@@ -38,8 +39,8 @@ export class Voxelizer {
      * @param nVoxelsPerHalfAxis How many voxels both in - and + direction. The max number of voxels created in both X,Y and Z direction is 2*nVoxelsPerHalfAxis
      */
     voxelizeHalfedgeMesh(originalMesh:HalfedgeMesh,scene:THREE.Scene,nVoxelsPerHalfAxis?:number){
-        console.log("Voxelizing begin");
         this.removeAllFromScene(scene);
+        console.log("Voxelizing begin");
         this.testHelperBoxes=[];
         const start = new Date().getTime();
 
@@ -100,16 +101,16 @@ export class Voxelizer {
         }
         // Here the "inner vertices" - aka vertices that are not needed for rendering / h.e.d.s are removed
         const [remaining,removed]=Helper.removeTwinTriangles(xBuffIndices);
-        // Measure how long the actual voxelization took (does not include the creation of rendering helpers)
+        // create the halfedge mesh
+        const newHalfedgeMesh=new HalfedgeMesh(remaining,Vector.convArray3((allVoxelGridVertices)));
+        newHalfedgeMesh.validate();
+        // Measure how long the actual voxelization and h.e. construction took (does not include the creation of rendering helpers)
         const elapsedMs = new Date().getTime() - start;
         this.lastVoxelConstructionTimeMs=elapsedMs;
         console.log("Voxelizing took: "+this.lastVoxelConstructionTimeMs+" ms");
         console.log("Voxelizer building Renderables -start");
         this.meshVerticesRemovedFromInside=Helper.createWireframeMeshFromVertsIndices(allVoxelGridVertices,removed,new THREE.Color('red'));
-
-        this.createdHalfedgeMesh=HalfedgeMeshRenderer.createFromData3(remaining,allVoxelGridVertices);
-        this.createdHalfedgeMesh.halfedgeMesh.validate();
-        this.createdHalfedgeMesh.createAllRenderHelpers();
+        this.createdHalfedgeMesh=new HalfedgeMeshRenderer(newHalfedgeMesh);
         console.log("Voxelizer building Renderables -stop");
     }
 
