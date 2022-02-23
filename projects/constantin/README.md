@@ -4,9 +4,6 @@
 |<img src="./talks/screenshot_final_1.JPG" height="240"/>|<img src="./talks/screenshot_final_2.JPG" height="240"/>|
 
 
-# Installation and running
-npm install & npm start
-
 # About
 This project performs surface voxelization on an input mesh that is stored in an a h.e.d.s.
 The resulting voxelized mesh is then modified such that it can also be (efficiently) stored in a h.e.d.s.
