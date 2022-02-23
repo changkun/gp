@@ -38,13 +38,6 @@ class SODSettings(PropertyGroup):
         default = 1.2,
         min = 0.0
         )
-    sinkin_smoothness : FloatProperty(
-        name = "Sink-in smoothness",
-        description = "The smoothness of the sink-in. Linear at value 0.",
-        default = 0.95,
-        min = 0.0,
-        max = 1.0
-        )
 
     delta_initial : FloatProperty(
         name = "Indentation displacement delta",
@@ -66,13 +59,6 @@ class SODSettings(PropertyGroup):
         default = 1.0,
         )
 
-    volume_ramp : FloatProperty(
-        name = "Volume distribution ramp",
-        description = "Over what distance the volume distribution ramps up before becoming constant.",
-        default = 0.8,
-        min = 0.0
-        )
-
 # ------------------------------------------------------------------------
 #    Operators
 # ------------------------------------------------------------------------
@@ -88,11 +74,9 @@ class WM_OT_SOD(Operator):
                     displace_increase=sod_tool.displace_increase, 
                     calculate_sinkin_range=sod_tool.calculate_sinkin_range,
                     sinkin_range=sod_tool.sinkin_range,
-                    sinkin_smoothness=sod_tool.sinkin_smoothness,
                     delta_initial=sod_tool.delta_initial,
                     delta_increase=sod_tool.delta_increase,
-                    volume_preservation=sod_tool.volume_preservation,
-                    volume_ramp=sod_tool.volume_ramp)
+                    volume_preservation=sod_tool.volume_preservation)
         return {'FINISHED'}
 
 
@@ -124,12 +108,10 @@ class OBJECT_PT_SODPanel(Panel):
         row.prop(sod_tool, "sinkin_range")
         if sod_tool.calculate_sinkin_range is True:
             row.enabled = False
-        layout.prop(sod_tool, "sinkin_smoothness")
         layout.prop(sod_tool, "delta_initial")
         layout.prop(sod_tool, "delta_increase")
         layout.separator()
         layout.prop(sod_tool, "volume_preservation")
-        layout.prop(sod_tool, "volume_ramp")
 
         layout.operator("wm.sod")
 

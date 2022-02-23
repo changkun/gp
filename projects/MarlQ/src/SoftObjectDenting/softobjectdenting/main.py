@@ -118,33 +118,36 @@ def minimumDistances(verts1_i, verts2_i, verts, object):
         for vert2_index in verts2_i:
             vert2 = localC(verts[vert2_index], object)
             dist = (vert1 - vert2).length
-            if dist < dist_min:
+            if dist < dist_min and dist != 0.0:
                 dist_min = dist
                 closest_vert = vert2_index
         minDist[vert1_index] = dist_min
-    return minDist  
+    return minDist 
 
-# Function to describe the sink-in around the indentation. 
-# Goes from 1 at x = 0, to 0 at x = sinkinRange
-# Almost linear for b values above 2, but very smooth for small b.
-def sinkinFunction(x, sinkinRange, smoothness):
-    b = -2.999 * smoothness + 3 # Maps values from 0 to 1 to values from 3 to 0.001
-    #b = 0.01
-    a = 1 + b
-    return a * exp( ln(b/a) * x / sinkinRange ) - b
+# Finds the maximum distance between each vert from verts1_i and verts2_i
+def maximumDistance(verts, object):
+    maxDist = 0
+    for vert1 in verts:
+        vert1_local = localC(vert1, object)
+        for vert2 in verts:
+            vert2_local = localC(vert2, object)
+            dist = (vert1_local - vert2_local).length
+            if dist > maxDist:
+                maxDist = dist
+    return maxDist 
 
-#Function to describe the volume distribution
-# Goes smoothly from 0 at x = 0, to 1 at x = volumeRamp, then remains constant
-def volumeFunction(x, volumeRamp):
-    
-    if x < volumeRamp:
-        a = - 1 / (volumeRamp * volumeRamp)
-        return a * (x - volumeRamp) * (x - volumeRamp) + 1
+# Singular function to describe the surface deformation of the object.
+# Is a simple half-parabola until indentRage is reached, at which point it remains constant.
+def distributionFunction(x, dist_total, dist_max, indentRange, indentDepth, volumeFactor):
+    a = (dist_total + indentDepth * dist_max) / (indentRange**3 / 3 - indentRange**2 * dist_max)
+    c = volumeFactor * (-indentDepth - a * indentRange**2)
+    if x <= indentRange:
+        return a * (x - indentRange)**2 + c
     else:
-        return 1
+        return c
     
     
-def deform(from_mix=False, displace_increase=0.02, sinkin_smoothness=0.95, sinkin_range=1.2, calculate_sinkin_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=1.0, volume_ramp=0.8):
+def deform(from_mix=False, displace_increase=0.02, sinkin_range=1.2, calculate_sinkin_range=True, delta_initial=5.0, delta_increase=0.1, volume_preservation=0.2):
 
     delta = delta_initial
     add_overlap = False
@@ -238,23 +241,31 @@ def deform(from_mix=False, displace_increase=0.02, sinkin_smoothness=0.95, sinki
     print("Displacing verts")
     dist_total = dist_total + indentationFunction(inside_verts_new, softObject, inside_vert_ho, hardObject, delta_initial, verts1, verts2, displace_increase, sk)
 
-    # STEP 2: Calculate sink-in (and prepare for volume displacement)
+    # STEP 2: Calculate sink-in and volume distribution
 
     # Calculate shortest distance between an inside and an outside vert
     print("Getting the shortest distance")
-    minDist = minimumDistances(outside_verts, boundaryVerts_so, verts1, softObject)
+    minDist = minimumDistances(inside_verts_new, inside_verts_new, verts1, softObject)
+
+    maxDist = maximumDistance(verts1, softObject)
 
     shortest_dist = inf
     for dist in minDist.values():
         if dist < shortest_dist:
                 shortest_dist = dist
 
-    if calculate_sinkin_range:
-        sinkin_range = sqrt(dist_total / len(inside_verts_new) )
+    sinkin_depth = dist_total / len(inside_verts_new)
+    
+    sk_normals = sk.normals_vertex_get()
+    normals = []
+    for i in range(len(sk_normals)):
+        if i % 3 == 0:
+            normals.append(Vector((sk_normals[i],sk_normals[i+1],sk_normals[i+2])))
 
-    print("Getting volume factor and adding sink-in")
-    volume_sum = 0
-    for vert1_index in outside_verts.copy():
+    if calculate_sinkin_range:
+        sinkin_range = sqrt(sinkin_depth)
+
+    for vert1_index in outside_verts:
         vert1 = localC(verts1[vert1_index], softObject)
         dist_min = inf
         closest_vert = vert1_index
@@ -264,35 +275,16 @@ def deform(from_mix=False, displace_increase=0.02, sinkin_smoothness=0.95, sinki
             if dist < dist_min:
                 dist_min = dist
                 closest_vert = vert2_index
-        if dist_min <= sinkin_range:
-            # Apply sink-in function
-            closest_vert_move = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co)
-
-            move_dist = sinkinFunction(dist_min,sinkin_range, sinkin_smoothness) 
-            
-            newPos = sk.data[vert1_index].co  + move_dist * closest_vert_move
-            sk.data[vert1_index].co = newPos
-            outside_verts.remove(vert1_index)
-            
+        
+        indent_depth = (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co).length
+        move_dist = distributionFunction(dist_min, dist_total * shortest_dist / sqrt(len(inside_verts_new)), maxDist, sinkin_range, indent_depth, volume_preservation) 
+        if move_dist < 0:
+            closest_vert_move = - (sk.data[closest_vert].co - sk.relative_key.data[closest_vert].co).normalized()
         else:
-            # Otherwise prepare calculation for the volume preservation
-            volume_sum += volumeFunction(dist_min-sinkin_range, volume_ramp)
-    
-    # STEP 3: Add the lost volume back
-    if volume_preservation > 0:
-        dist_total = dist_total * volume_preservation
-        volume_fac = dist_total / volume_sum # The factor by which the volume function is multiplied so that the total is always dist_total
-        print("Adding back volume")
-
-        for vert1_index in outside_verts:
-            vert1_global = verts1[vert1_index]
-            vert1 = localC(verts1[vert1_index], softObject)
-            dist_min = minDist[vert1_index]
-
-            move_dist = volume_fac * volumeFunction(dist_min-sinkin_range, volume_ramp)
-
-            normal = softObject.data.vertices[vert1_index].normal
-            newPos = sk.data[vert1_index].co + move_dist * normal
-            sk.data[vert1_index].co = newPos
+            closest_vert_move = normals[vert1_index]
+        #closest_vert_move = softObject.data.vertices[vert1_index].normal
+        #closest_vert_move = normals[vert1_index]
+        newPos = sk.data[vert1_index].co  + move_dist * closest_vert_move
+        sk.data[vert1_index].co = newPos
 
     hardObject.modifiers.remove(decimate)
