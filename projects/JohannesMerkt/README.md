@@ -21,7 +21,7 @@ To turn the outputs of this function into a geometry I use the marching cubes al
 - Calculating the Geometry entirely on the GPU and directly passing the result to the render shader
 
 # Video
-Link https://directus.johannes-merkt.de/assets/dbae0469-4bed-41d5-b9a5-75d9ad454dba?cache-buster=2022-02-23T23:24:04.652Z&key=system-large-contain&access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdmNjZjZGNkLTdkNzMtNGU1ZC1iNTdmLWQxZWM4NGViMjVmNCIsImlhdCI6MTY0NTY1OTYwNSwiZXhwIjoxNjQ1NjYwNTA1LCJpc3MiOiJkaXJlY3R1cyJ9.2kMokAjq82-xRwKlsgJiWaJQHsKxkXkKjxa5vHpSIe0
+Link https://directus.johannes-merkt.de/assets/dbae0469-4bed-41d5-b9a5-75d9ad454dba
 
 ## Running the Code
 Install Unity 2020.3.25f1 and open the project folder `unity` with unity.
