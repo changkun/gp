@@ -5,11 +5,6 @@
 //Use of this source code is governed by a GNU GPLv3 license that can be found
 //in the LICENSE file.
 
-import { SparseMatrix, DenseMatrix, Triplet } from '@penrose/linear-algebra';
-import { Vertex, Edge, Face, Halfedge } from './geometry/primitive';
-import { Vector } from './linalg/vec';
-import { smoothstep } from 'three/src/math/MathUtils';
-import { assert } from 'console';
 import { AlignedCube } from './linalg/AlignedCube';
 import { ThreeDArray } from './helper/3DArray';
 import * as THREE from 'three'

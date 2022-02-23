@@ -46,7 +46,7 @@ export class HalfedgeMeshRenderer {
      */
     constructor(halfedgeMesh:HalfedgeMesh){
         this.halfedgeMesh=halfedgeMesh;
-        //this.createAllRenderHelpers();
+        this.createAllRenderHelpers();
     }
 
     // Helper that constructs the halfedge mesh in place
@@ -63,7 +63,7 @@ export class HalfedgeMeshRenderer {
     }
 
     // clears and creates all the rendering helper(s)
-    //Call this once after construction or after the halfegde mesh has been updated
+    // Call this once after construction or after the halfegde mesh has been updated
     createAllRenderHelpers(){
         console.log("HE createAllRenderHelpers begin");
         this.createRenderableMeshAndWireframe();
@@ -155,7 +155,7 @@ export class HalfedgeMeshRenderer {
             }
         }
     }
-    // 
+    // similar to above, for edges
     createRenderableEdgeHelpers(){
         // clear, don't forget to remove from scene before recalculation
         this.edgeHelpers=[];

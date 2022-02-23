@@ -58,6 +58,7 @@ export class Helper{
         return [indices,positions];
     }
 
+    // debug, add a cube size one to scene
     static addCubeSizeOne(scene:THREE.Scene){
         const halfSize=0.5;
         const min=new THREE.Vector3(-halfSize,-halfSize,-halfSize);
@@ -118,7 +119,6 @@ export class Helper{
         }
         return indices;
     }
-
     static convertVertices(vertices:THREE.Vector3[]):number[]{
         let ret=new Array<number>(vertices.length);
         let count=0;
@@ -130,7 +130,6 @@ export class Helper{
         }
         return ret;
     }
-
     static convertToThreeJs(vertices:Vector[]):THREE.Triangle{
         const v1=new THREE.Vector3(vertices[0].x,vertices[0].y,vertices[0].z);
         const v2=new THREE.Vector3(vertices[1].x,vertices[1].y,vertices[1].z);
@@ -253,48 +252,4 @@ export class Helper{
         }
         return [remaining,removedIndices];
     }
-
-    
-    static removeIsolatedVertices(vertices:THREE.Vector3[],indices:number[]):[THREE.Vector3[],number[]]{
-        // mark the vertices that are actually used by indices
-        let used=new Array<boolean>(vertices.length);
-        used.fill(false);
-        for(let i=0;i<indices.length;i++){
-            used[indices[i]]=true;
-        }
-        let unused=new Array<number>();
-        for(let i=0;i<used.length;i++){
-            if(!used[i]){
-                unused.push(i);
-                //console.log("Vert:"+i+" is unused\n");
-            }else{
-                //console.log("Vert:"+i+" is used\n");
-            }
-        }
-        let verticesRet=new Array<THREE.Vector3>();
-        for(let i=0;i<vertices.length;i++){
-            if(used[i]){
-                verticesRet.push(vertices[i]);
-            }
-        }
-        //verticesRet=verticesRet.concat(vertices);
-        let indicesRet=new Array<number>();
-        indicesRet=indicesRet.concat(indices);
-
-        for(let i=0;i<unused.length;i++){
-            const unu=unused[i];
-            for(let j=0;j<indicesRet.length;j++){
-                if(indicesRet[j]>unu){
-                    indicesRet[j]=indicesRet[j]-1;
-                }
-            }
-            /*for(let j=i+1;j<unused.length;j++){
-                if(unused[j]>unu){
-                    unused[j]=unused[j]-1;
-                }
-            }*/
-        }
-        return [verticesRet,indicesRet];
-    }
-
 }
