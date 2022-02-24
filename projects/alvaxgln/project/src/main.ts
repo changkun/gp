@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Jakob Schmid <schmid.ja@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -214,82 +215,6 @@ export default class Main extends Renderer {
     this.gui.add(this.params, 'regularize').name('Start Algorithm');
     this.gui.add(this.params, 'reset').name('Reset mesh');
 
-
-    /*
-    const mod = this.gui.addFolder('Reduce Ratio');
-    mod
-      .add(this.params, 'qSim', 0.0, 1.0, 0.001)
-      .name('Left (QEM)')
-      .onChange(v => {
-        this.internal.mesh = new HalfedgeMesh(this.internal.raw!);
-        const was = this.internal.mesh.faces.length;
-        this.internal.mesh.regularize();
-        console.log(
-          `QEM: reduced from ${was / 2} to ${
-            this.internal.mesh.faces.length / 2
-          }.`
-        );
-
-        this.prepareBuf();
-        this.renderMeshLeft();
-      });
-
-    
-    const simplifier = new SimplifyModifier();
-    mod
-      .add(this.params, 'melaxSim', 0.0, 1.0, 0.001)
-      .name('Right (three.js)')
-      .onChange(v => {
-        let g = this.internal.mesh3jsRightOrig!.geometry;
-        const prevc = g.attributes.position.count;
-        const count = Math.floor(g.attributes.position.count * v);
-        g = simplifier.modify(g, count);
-        g.computeVertexNormals();
-        const nv = g.getAttribute('position').array.length;
-        console.log(`melaxSim: reduced from ${prevc} to ${nv / 3}.`);
-
-        // The following is ugly, and this is unfortunate. Because
-        // the three.js's simplify modifier does not preserve color, tex info.
-        const bufcolors = new Float32Array(nv);
-        for (let i = 0; i < bufcolors.length; i += 3) {
-          bufcolors[i + 0] = 0;
-          bufcolors[i + 1] = 0.5;
-          bufcolors[i + 2] = 1;
-        }
-        g.setAttribute('color', new BufferAttribute(bufcolors, 3));
-        this.sceneRight.remove(this.internal.mesh3jsRightSim!);
-        this.internal.mesh3jsRightSim = new Mesh(
-          g,
-          new MeshPhongMaterial({
-            vertexColors: true,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1,
-            side: DoubleSide,
-            flatShading: this.params.flatShading,
-          })
-        );
-        this.sceneRight.remove(this.internal.meshRightWireframeHelper!);
-        this.sceneRight.remove(this.internal.meshRightNormalHelper!);
-        this.internal.meshRightWireframeHelper = new LineSegments(
-          new WireframeGeometry(g),
-          new LineBasicMaterial({color: 0x000000, linewidth: 1})
-        );
-        this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-          this.internal.mesh3jsRightSim,
-          0.03,
-          0xaa0000
-        );
-        if (this.params.showWireframe) {
-          this.sceneRight.add(this.internal.meshRightWireframeHelper);
-        }
-        if (this.params.showNormals) {
-          this.sceneRight.add(this.internal.meshRightNormalHelper);
-        }
-        this.sceneRight.add(this.internal.mesh3jsRightSim);
-      });
-    mod.open();
-    */
 
     // just for the first load
     fetch('./assets/bunny.obj')
