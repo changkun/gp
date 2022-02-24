@@ -16,5 +16,4 @@ the following controlls (for both input and created mesh):
 npm install & npm start should open a new browser image with the above UI.
 
 # Video on Youtube
-https://youtu.be/swykST4ICkY
-[![Watch the video]](https://youtu.be/swykST4ICkY)
+[![Link to Video on youtube]](https://youtu.be/swykST4ICkY)
