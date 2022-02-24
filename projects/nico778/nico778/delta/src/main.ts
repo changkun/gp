@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Nicolas Mogicato <your-email-address or website>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
