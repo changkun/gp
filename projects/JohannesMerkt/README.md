@@ -23,6 +23,9 @@ To turn the outputs of this function into a geometry I use the marching cubes al
 # Video
 Link https://directus.johannes-merkt.de/assets/dbae0469-4bed-41d5-b9a5-75d9ad454dba
 
+# Slides
+https://docs.google.com/presentation/d/1AcDcYHETSU1LCkiW8x64mgZeZYxM313exieONMthO4o/edit?usp=sharing
+
 ## Running the Code
 Install Unity 2020.3.25f1 and open the project folder `unity` with unity.
 
