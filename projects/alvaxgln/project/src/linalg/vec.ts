@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Jakob Schmid <schmid.ja@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -158,7 +159,13 @@ export class Vector {
   //computes the angle between two vectors
   angle(v: Vector) :number{
 
-    const cos = Math.abs(this.dot(v)/(this.len() *v.len()))
+
+    //TODO: find solution without Math.abs
+    let cos = this.dot(v)/(this.len() *v.len());
+
+    //necessary because of some Numbers going beyond 1/-1
+    cos = Math.round((cos + Number.EPSILON) * 1000) / 1000
+
     return Math.acos(cos);
 
   }

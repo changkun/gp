@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Jakob Schmid <schmid.ja@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -50,15 +51,10 @@ export class Halfedge {
     return Math.acos(Math.max(-1, Math.min(1, u.dot(v))));
   }
 
-  //Checks if edge should be flipped
-  //TODO: handle boundary
-  detectFlip(){
-
-    //TODO: check for bad angles and return false if bad angles are detected
-
-    //TODO: Check for boundary and skip if edge is on boundary
-    if (this.onBoundary) return false;
-
+  //checks if an edge CAN be flipped
+  canFlip(): boolean{
+    //Check for boundary and skip if edge is on boundary
+    if (this.onBoundary || this.twin!.onBoundary) return false;
 
     //verts of this face
     const v0 = this.vert!;
@@ -68,20 +64,55 @@ export class Halfedge {
     //vert of twins face
     const v3 = this.twin!.prev!.vert!;
 
+    const h1 = this.next!.vector();
+    const h2 = this.prev!.twin!.vector();
+    const h3 = this.twin!.next!.vector();
+    const h4 = this.twin!.prev!.twin!.vector();
+
+    //calculate angle between h4h1 and h2h3
+    const right_angle = h4.angle(h1);
+    const left_angle = h2.angle(h3);
+
+    if(right_angle > 3 || left_angle > 3){
+      //console.log("Bad angles, cant flip!")
+      return false;
+    }
 
     //Calculate angle of faces
     const f0 = v0.halfedge!.face!;
     const f1 = v3.halfedge!.face!;
     const face_angle = f0.normal().angle(f1.normal())+Math.PI;
 
-    console.log("Winkel: "+ face_angle);
-    if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)) return false;
+    //Print angle for debug
+    //console.log("Winkel: "+ face_angle);
+    if (face_angle < 1/3 * (2*Math.PI) || face_angle > 2/3 * (2*Math.PI)){
+      //console.log("Bad face angles, can't flip");
+      return false;
+    }
+
+    //no problems found
+    return true;
+  }
+
+  //Checks if edge should be flipped
+  detectFlip(){
+
+
+    if(!this.canFlip()) return false;
+
+    //verts of this face
+    const v0 = this.vert!;
+    const v1 = this.next!.vert!;
+    const v2 = this.prev!.vert!;
+
+    //vert of twins face
+    const v3 = this.twin!.prev!.vert!;
 
     //calculates error of degree for current connectivity
-    let deg_error_current = v0.deg_error(v0.deg()) + v1.deg_error(v1.deg()) + v2.deg_error(v2.deg()) + v3.deg_error(v3.deg());
+    let deg_error_current = Math.abs(v0.deg_error(v0.deg())) + Math.abs(v1.deg_error(v1.deg())) + Math.abs(v2.deg_error(v2.deg())) + Math.abs(v3.deg_error(v3.deg()));
 
     //calculates error of degree if edge was flipped
-    let deg_error_new = v0.deg_error(v0.deg()-1) + v1.deg_error(v1.deg()-1) + v2.deg_error(v2.deg()+1) + v3.deg_error(v3.deg()+1);
+    let deg_error_new = Math.abs(v0.deg_error(v0.deg()-1)) + Math.abs(v1.deg_error(v1.deg()-1)) + Math.abs(v2.deg_error(v2.deg()+1)) + Math.abs(v3.deg_error(v3.deg()+1));
 
     //returns true if the current edge error is greater then then one with edge flipped
     return deg_error_current > deg_error_new;
@@ -273,7 +304,6 @@ export class Vertex {
   }
 
   //returns the degree of a vertex
-  //TODO: handle boundary
   deg(){
     let n = 0;
     this.halfedges(()=>{
@@ -282,26 +312,128 @@ export class Vertex {
     return n;
   }
 
-  //return error of degree (difference from optimum)
-  deg_error(deg: number){
-
+  //returns true if an edge connecting to the vertex lies on a boundary
+  onBoundary() :boolean{
     let onBoundary = false;
 
     //check if any of the verts halfedges are on a boundary and set it to true if so
     this.halfedges(h=>{
       if (h.onBoundary || h.twin!.onBoundary) onBoundary = true;
     })
+    
+    return onBoundary;
+  }
+
+  //return error of degree (difference from optimum)
+  deg_error(deg: number){
+
+    let onBoundary = this.onBoundary();
+    //const deg = this.deg();
 
     //optimal degree for boundary verts is 4
     if (onBoundary) {
-      return Math.abs(deg-4);
+      return deg-4;
     }
 
     //for all other vertices optimal degree is 6
     else{
-      return Math.abs(deg-6);
+      return deg-6;
     }
 
+  }
+
+ 
+  /**
+   * calculates position of vertex after angle based smooting
+   * 
+   * Angle based smoothing is described in this paper: "DOI 10.1007/s00366-004-0282-6"
+   * The procedure calculates a vertex-position for every edge connected to the vertex, and then moves the vertex to the average of those.
+   * The positions are chosen so, that the angle at the vertex the respective edge connects to (left and right of the edge) are getting equalized.
+   * 
+   * It is described for 2D meshes in the paper and thus had to be modified for 3D models.
+   * I decided rather then rotating the edges around the connecting vertices as described i would shift the vertex, (that should get smoothed) on the respective neighbouring edge to equalize the angles.
+   * 
+   */
+  angle_smooth(intensity: number): Vector{
+
+    //let intensity = 1;
+    
+    //if the vertex is on a boundary it should not move
+    if(this.onBoundary()) return this.pos;
+
+    let count = 0;
+    let sum = new Vector(0,0,0,0);
+
+    //calculate modified position of vertex for each halfedge
+    this.halfedges((h,i)=>{
+
+      //get positions of vertices
+      const v = this.pos!;
+      const p1 = h.next!.vert!.pos!;
+      const p2 = h.prev!.vert!.pos!;
+      const p0 = h.twin!.prev!.vert!.pos!;
+
+      //get vectors
+      const vec = v.sub(p1);
+      const vec0 = p0.sub(p1);
+      const vec1 = p2.sub(p1);
+
+      //get angle a
+      let a = vec0.angle(vec);
+      //get angle b
+      let b = vec1.angle(vec);
+
+
+      //goal is to equalize a and b
+
+      //get the larger angle of the two
+      let max_angle = Math.max(a,b);
+
+      //determine halfedge along which the vertex will be shifted
+      let vec_shift = a>b? p0.sub(v) : p2.sub(v);
+
+      //difference between angles
+      let dif = Math.abs(a-b);
+      //angle has to be reduced by half the difference
+      let shift = dif/2;
+      //ratio between shift and max_angle determines how far the vertex will be moved on the edge
+      let ratio = shift/max_angle;
+
+      
+      //new position on the edge after shifting
+      let pos = v.add(vec_shift.scale(ratio));
+
+      //Find the new position by constructing a vector from p1 to pos, and then scale (p1->pos) to the original length of the edge
+      pos = p1.add(pos.sub(p1).unit().scale(vec.len()));
+
+      //For weighted version find the new angle
+      let ab = (a+b)/2
+      let a_i = 1/(ab*ab)
+
+      //add value to count
+      count = count + a_i;
+      //add value to sum
+      sum = sum.add(pos.scale(a_i));
+
+    }); 
+
+    //multiply results
+    let res = sum.scale(1/count);
+
+    res = new Vector(res.x, res.y, res.z, 1);
+
+    //factor in intensity
+    let current = this.pos;
+    res = current.add(res.sub(current).scale(intensity));
+
+    //return new position vector
+    return res;
+ 
+  }
+
+  //Applies angle based smoothing to the vertex
+  apply_angle_smooth(){
+    this.pos = this.angle_smooth(1);
   }
 
   /**

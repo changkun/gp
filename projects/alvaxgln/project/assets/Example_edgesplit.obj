@@ -1,0 +1,12 @@
+# Blender v2.93.5 OBJ File: ''
+# www.blender.org
+mtllib Example_edgesplit.mtl
+o Plane
+v -1.000000 0.000000 1.000000
+v 1.000000 0.000000 1.000000
+v -1.000000 0.000000 -1.000000
+v 1.000000 0.000000 -1.000000
+
+s off
+f 3 4 1
+f 4 2 1

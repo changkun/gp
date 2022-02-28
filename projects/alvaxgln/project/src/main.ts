@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Jakob Schmid <schmid.ja@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -48,6 +49,16 @@ export default class Main extends Renderer {
     flatShading: boolean;
     qSim: number;
     melaxSim: number;
+    easyEdges: boolean;
+    driftingEdges: boolean;
+    smoothIntensity: number;
+    smoothRounds: number;
+    initialSmooth: boolean;
+    intermediateSmooth: boolean;
+    smooth: () => void;
+    regularize: () => void;
+    reset: () => void;
+    mesh: string;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -68,9 +79,13 @@ export default class Main extends Renderer {
         alert('Only .OBJ files are supported');
       }
       const r = new FileReader();
-      r.onload = () => this.loadMesh(<string>r.result);
+      r.onload = () => {
+        this.params.mesh = <string>r.result;
+        this.loadMesh(<string>r.result)
+      };
       r.onerror = () => alert('Cannot import your obj mesh');
       r.readAsText(file);
+
     });
     document.body.appendChild(this.input);
 
@@ -84,6 +99,28 @@ export default class Main extends Renderer {
       normalMethod: NormalMethod.EqualWeighted,
       qSim: 0.0,
       melaxSim: 0.0,
+      easyEdges: true,
+      driftingEdges: true,
+      smoothIntensity: 1,
+      smoothRounds: 1,
+      initialSmooth: false,
+      intermediateSmooth: true,
+      //smooth: () => console.log("GUI test!")
+      smooth: () => {
+        //this.internal!.mesh!.smooth_intensity = this.params.smoothIntensity
+        this.internal!.mesh!.angle_smooth(this.params.smoothIntensity, this.params.smoothRounds);
+        this.prepareBuf();
+        this.renderMeshLeft();
+      },
+      regularize: () => {
+        this.loadMesh(this.params.mesh);
+        this.internal!.mesh!.regularize(this.params.easyEdges, this.params.driftingEdges, this.params.smoothIntensity, this.params.smoothRounds, this.params.initialSmooth, this.params.intermediateSmooth);
+        this.prepareBuf();
+        this.renderMeshLeft();
+        
+      },
+      reset: () => this.loadMesh(this.params.mesh),
+      mesh: ""
     };
 
     this.bufpos = new Float32Array();
@@ -143,85 +180,49 @@ export default class Main extends Renderer {
           this.internal.mesh3jsRightSim!.material
         )).needsUpdate = true;
       });
-    vis.open();
+    //vis.open();
 
-    const mod = this.gui.addFolder('Reduce Ratio');
-    mod
-      .add(this.params, 'qSim', 0.0, 1.0, 0.001)
-      .name('Left (QEM)')
-      .onChange(v => {
-        this.internal.mesh = new HalfedgeMesh(this.internal.raw!);
-        const was = this.internal.mesh.faces.length;
-        this.internal.mesh.regularize();
-        console.log(
-          `QEM: reduced from ${was / 2} to ${
-            this.internal.mesh.faces.length / 2
-          }.`
-        );
-
-        this.prepareBuf();
-        this.renderMeshLeft();
+    //add Button for regularization
+    const reg = this.gui.addFolder('Regularization');
+    const smooth = this.gui.addFolder('Smoothing');
+    smooth
+      .add(this.params, 'smoothIntensity', 0.0, 1.0, 0.001)
+      .name('Intensity')
+    smooth
+      .add(this.params, 'smoothRounds', 0.0, 10, 1)
+      .name('Rounds')
+    smooth
+      .add(this.params, 'initialSmooth')
+      .name('Initial Smooth Step')
+      .listen()
+      .onChange(show => {
+        console.log(this.params.initialSmooth);
       });
-
-    const simplifier = new SimplifyModifier();
-    mod
-      .add(this.params, 'melaxSim', 0.0, 1.0, 0.001)
-      .name('Right (three.js)')
-      .onChange(v => {
-        let g = this.internal.mesh3jsRightOrig!.geometry;
-        const prevc = g.attributes.position.count;
-        const count = Math.floor(g.attributes.position.count * v);
-        g = simplifier.modify(g, count);
-        g.computeVertexNormals();
-        const nv = g.getAttribute('position').array.length;
-        console.log(`melaxSim: reduced from ${prevc} to ${nv / 3}.`);
-
-        // The following is ugly, and this is unfortunate. Because
-        // the three.js's simplify modifier does not preserve color, tex info.
-        const bufcolors = new Float32Array(nv);
-        for (let i = 0; i < bufcolors.length; i += 3) {
-          bufcolors[i + 0] = 0;
-          bufcolors[i + 1] = 0.5;
-          bufcolors[i + 2] = 1;
-        }
-        g.setAttribute('color', new BufferAttribute(bufcolors, 3));
-        this.sceneRight.remove(this.internal.mesh3jsRightSim!);
-        this.internal.mesh3jsRightSim = new Mesh(
-          g,
-          new MeshPhongMaterial({
-            vertexColors: true,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1,
-            side: DoubleSide,
-            flatShading: this.params.flatShading,
-          })
-        );
-        this.sceneRight.remove(this.internal.meshRightWireframeHelper!);
-        this.sceneRight.remove(this.internal.meshRightNormalHelper!);
-        this.internal.meshRightWireframeHelper = new LineSegments(
-          new WireframeGeometry(g),
-          new LineBasicMaterial({color: 0x000000, linewidth: 1})
-        );
-        this.internal.meshRightNormalHelper = new VertexNormalsHelper(
-          this.internal.mesh3jsRightSim,
-          0.03,
-          0xaa0000
-        );
-        if (this.params.showWireframe) {
-          this.sceneRight.add(this.internal.meshRightWireframeHelper);
-        }
-        if (this.params.showNormals) {
-          this.sceneRight.add(this.internal.meshRightNormalHelper);
-        }
-        this.sceneRight.add(this.internal.mesh3jsRightSim);
+    smooth
+      .add(this.params, 'intermediateSmooth')
+      .name('Intermediate Smooth Step')
+      .listen()
+      .onChange(show => {
+        console.log(this.params.initialSmooth);
       });
-    mod.open();
+    reg
+    .add(this.params, 'easyEdges')
+    .name('Long/Short Edges');
+    reg
+    .add(this.params, 'driftingEdges')
+    .name('Drifting Edges');
+    smooth.add(this.params, 'smooth').name('Smooth');
+    this.gui.add(this.params, 'regularize').name('Start Algorithm');
+    this.gui.add(this.params, 'reset').name('Reset mesh');
+
 
     // just for the first load
     fetch('./assets/bunny.obj')
       .then(resp => resp.text())
-      .then(data => this.loadMesh(data));
+      .then(data =>{
+        this.params.mesh = data;
+        this.loadMesh(data);
+      });
   }
   loadMesh(data: string) {
     this.internal.raw = data;
@@ -259,6 +260,8 @@ export default class Main extends Renderer {
     this.internal.meshLeftNormalHelper!.update();
   }
   prepareBuf() {
+    //debugger;
+    //console.log("about to prepare buffer:")
     // prepare threejs buffer data
     const v = this.internal.mesh!.verts!.length;
     this.bufpos = new Float32Array(v * 3);
@@ -275,9 +278,13 @@ export default class Main extends Renderer {
       max.y = Math.max(max.y, v!.pos.y);
       max.z = Math.max(max.z, v!.pos.z);
     });
+
+    //console.log("prepare buffer: 0")
+
     const center = min.add(max).scale(1 / 2);
     const radius = max.sub(min).len() / 2;
     this.internal.mesh!.verts.forEach(v => {
+
       const i = v!.idx;
       // use AABB and rescale to viewport center
       const p = v!.pos.sub(center).scale(1 / radius);
@@ -285,16 +292,28 @@ export default class Main extends Renderer {
       this.bufpos[3 * i + 1] = p.y;
       this.bufpos[3 * i + 2] = p.z;
 
+      //debug
+      //console.log("prepare buffer: 2 at vert:" + i)
+
       // default GP blue color
       this.bufcolors[3 * i + 0] = 0;
       this.bufcolors[3 * i + 1] = 0.5;
       this.bufcolors[3 * i + 2] = 1;
 
+      //debug
+      //console.log("prepare buffer: 3 at vert:" + i)
+
       const n = v!.normal(this.params.normalMethod);
+      //debug
+      //console.log("prepare buffer: 4 at vert:" + i)
+
       this.bufnormals[3 * i + 0] = n.x;
       this.bufnormals[3 * i + 1] = n.y;
       this.bufnormals[3 * i + 2] = n.z;
+
+
     });
+    //console.log("buffer prepared")
   }
   renderMeshLeft() {
     // clear old instances
