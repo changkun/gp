@@ -107,6 +107,16 @@ geometry processing algorithm or feature.
 
 Find more details about how to do an individual project [here](./projects/README.md).
 
+
+| Author | Topic | Project |
+|:---:|:-------------------------------------------|:--------:|
+| [Jakob Schmid](https://github.com/alvaxgln) | Mesh Connectivity Regularization | <img src="./projects/alvaxgln/teaser.png" width="200"/> </br> [source](./projects/alvaxgln/README.md), [talk](./projects/alvaxgln/talks/Jakob_Schmid_GP_final.pdf), [video](https://www.youtube.com/watch?v=-01tQyUI47A) |
+| [Constantin Geier](https://github.com/Consti10) | Mesh-based Geometry Voxelization using Halfedge Representation | <img src="./projects/constantin/teaser.png" width="200"/> </br> [source](./projects/constantin/README.md), [talk](./projects/constantin/talks/3_final/Final_Voxelizer,_Constantin_Geier_GP.pdf), [video](https://youtu.be/swykST4ICkY) |
+| [Johannes Merkt](https://github.com/JohannesMerkt) | Mesh Generation for Implicit Geometries | <img src="./projects/JohannesMerkt/teaser.gif" width="200"/> </br> [sources](./projects/JohannesMerkt/README.md), [talk](./projects/JohannesMerkt/talks/final.pdf), [video](https://directus.johannes-merkt.de/assets/dbae0469-4bed-41d5-b9a5-75d9ad454dba) |
+| [Marcel Quanz](https://github.com/MarlQ) | (Approximated) Volume-preserving Soft Object Denting | <img src="./projects/MarlQ/teaser.png" width="200"/> </br> [source](./projects/MarlQ/README.md), [talk](./projects/MarlQ/talks/GP%20Presentation.pdf), [video](https://www.youtube.com/watch?v=taOCVPt3nzI) |
+| [Nicolas Mogicato](https://github.com/nico778) | Delta Mush Mesh Deformation | <img src="./projects/nico778/teaser.png" width="200"/> </br> [source](./projects/nico778/README.md), [talk](./projects/nico778/talks/GP%20Project_%20Delta%20Mush.pdf), [video](./projects/nico778/delta_mush.mp4) |
+
+
 ## Questions?
 
 [Start a new discussion thread](https://github.com/mimuc/gp/discussions/new).
