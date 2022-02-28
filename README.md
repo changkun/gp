@@ -123,4 +123,4 @@ Find more details about how to do an individual project [here](./projects/README
 
 ## License
 
-Copyright &copy; 2020-2022 LMU Munich Media Informatics Group. Created by [Changkun Ou](https://changkun.de).
+Copyright &copy; 2022 LMU Munich [Geometry Processing Authors](./AUTHORS). Created by [Changkun Ou](https://changkun.de).
