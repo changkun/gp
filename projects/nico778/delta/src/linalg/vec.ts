@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Nicolas Mogicato <n.mogicato@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -123,6 +124,9 @@ export class Vector {
    */
   scale(s: number): Vector {
     return new Vector(this.x * s, this.y * s, this.z * s, this.w * s);
+  }
+  div(s: number): Vector {
+    return new Vector(this.x / s, this.y / s, this.z / s, this.w / s);
   }
   /**
    * len computes the length of the given Vector. Note that this method

@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Nicolas Mogicato <n.mogicato@campus.lmu.de>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -8,6 +9,7 @@ import {Vector} from '../linalg/vec';
 
 export class Halfedge {
   vertsOrig?: Vertex[];
+  vertsDefOrig?: Vertex[];
   vert?: Vertex;
   edge?: Edge;
   face?: Face;
@@ -77,9 +79,9 @@ export class Face {
 
   normal(): Vector {
     // Compute the face normal of this face.
-    if (this.halfedge!.onBoundary) {
-      return new Vector(0, 0, 0);
-    }
+    //if (this.halfedge!.onBoundary) {
+      //return new Vector(0, 0, 0);
+    //}
     const h = this.halfedge!;
     const a = h.vert!.position.sub(h.next!.vert!.position);
     const b = h.prev!.vert!.position.sub(h.vert!.position).scale(-1);
@@ -115,6 +117,7 @@ export class Vertex {
   position: Vector;
   halfedge?: Halfedge;
   idx: number;
+  uv?: Vector;
 
   constructor(position: Vector) {
     this.position = position;

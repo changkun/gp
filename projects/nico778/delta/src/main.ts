@@ -1,5 +1,6 @@
 // Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
 // Created by Changkun Ou <https://changkun.de>.
+// Modified by Nicolas Mogicato <your-email-address or website>
 //
 // Use of this source code is governed by a GNU GPLv3 license that can be found
 // in the LICENSE file.
@@ -46,6 +47,8 @@ export default class Main extends Renderer {
     laplacian: WeightType;
     timeStep: number;
     smoothStep: number;
+    joint1: number;
+    joint2: number;
   };
   bufpos: Float32Array;
   bufnormals: Float32Array;
@@ -83,6 +86,8 @@ export default class Main extends Renderer {
       laplacian: WeightType.Uniform,
       timeStep: 0.001,
       smoothStep: 1,
+      joint1: 0,
+      joint2: 0
     };
 
     this.bufpos = new Float32Array();
@@ -111,42 +116,24 @@ export default class Main extends Renderer {
           : this.scene.remove(this.internal.wireframeHelper!);
       });
 
-    const methods = this.gui.addFolder('Methods');
-
-    methods
-      .add(this.params, 'normalMethod', [
-        NormalMethod.EqualWeighted,
-        NormalMethod.AreaWeighted,
-        NormalMethod.AngleWeighted,
-      ])
-      .listen()
-      .onChange(() => this.updateNormals());
-    methods
-      .add(this.params, 'curvatureMethod', [
-        CurvatureMethod.None,
-        CurvatureMethod.Mean,
-        CurvatureMethod.Gaussian,
-        CurvatureMethod.Kmin,
-        CurvatureMethod.Kmax,
-      ])
-      .listen()
-      .onChange(() => this.updateCurvature());
-
-    methods
-      .add(this.params, 'laplacian', [WeightType.Uniform, WeightType.Cotan])
-      .onChange(() => this.updateSmoothing());
-    methods.open();
-
-    const smoothing = this.gui.addFolder('Laplacian Smoothing');
-    smoothing
+    const delta = this.gui.addFolder('Delta Mush');
+    delta
       .add(this.params, 'timeStep', 0.001, 10, 0.001)
-      .name('time step')
-      .onChange(() => this.updateSmoothing());
-    smoothing
-      .add(this.params, 'smoothStep', 1, 3, 1)
-      .name('smooth step')
-      .onChange(() => this.updateSmoothing());
-    smoothing.open();
+      .name('calculate delta')
+      .onChange(() => this.updateSmooth());
+    delta
+      .add(this.params, 'joint1', 0, 90, 1)
+      .name('deform joint 1')
+      .onChange(() => this.deform1());
+    delta
+      .add(this.params, 'joint2', 0, 90, 1)
+      .name('deform joint 2')
+      .onChange(() => this.deform2());
+    delta
+      .add(this.params, 'timeStep', 0.001, 10, 0.001)
+      .name('apply delta')
+      .onChange(() => this.updateDelta());
+    delta.open();
 
 
     // just for the first load
@@ -234,11 +221,31 @@ export default class Main extends Renderer {
     });
     this.internal.mesh3js!.geometry.attributes.color.needsUpdate = true;
   }
-  updateSmoothing() {
+  updateSmooth() {
     this.internal.mesh!.smooth(
-      this.params.laplacian,
+      WeightType.Uniform,
       this.params.timeStep,
-      this.params.smoothStep
+      1
+    );
+    this.renderMesh();
+  }
+  updateDelta() {
+    this.internal.mesh!.delta(
+      WeightType.Uniform,
+      this.params.timeStep,
+      1
+    );
+    this.renderMesh();
+  }
+  deform1() {
+    this.internal.mesh!.deform1(
+      this.params.joint1
+    );
+    this.renderMesh();
+  }
+  deform2() {
+    this.internal.mesh!.deform2(
+      this.params.joint2
     );
     this.renderMesh();
   }
