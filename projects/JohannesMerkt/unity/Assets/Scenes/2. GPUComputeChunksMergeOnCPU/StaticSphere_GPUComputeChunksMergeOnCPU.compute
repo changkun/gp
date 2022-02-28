@@ -1,0 +1,624 @@
+// Copyright (c) 2021 LMU Munich Geometry Processing Authors. All rights reserved.
+// Created by JohannesMerkt johannes.merkt@campus.lmu.de
+// 
+// Use of this source code is governed by a GNU GPLv3 license that can be found
+// in the LICENSE file.
+
+#pragma kernel CSMain
+
+#define CHUNKSIZE 3
+#define CHUNKVERTS 144
+#define CHUNKFACES 135
+
+static const int triangulation[256][16] = {
+    {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1 },
+    { 8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1 },
+    { 3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1 },
+    { 4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1 },
+    { 4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 0, 8, 1, 2, 10, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1 },
+    { 9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1 },
+    { 10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1 },
+    { 5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1 },
+    { 5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1 },
+    { 8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1 },
+    { 2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1 },
+    { 2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1 },
+    { 11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1 },
+    { 5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1 },
+    { 11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1 },
+    { 11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1 },
+    { 2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1 },
+    { 6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1 },
+    { 3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1 },
+    { 6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1 },
+    { 6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1 },
+    { 8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1 },
+    { 7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1 },
+    { 3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1 },
+    { 0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1 },
+    { 9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1 },
+    { 8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1 },
+    { 5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1 },
+    { 0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1 },
+    { 6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1 },
+    { 10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1 },
+    { 1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1 },
+    { 0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1 },
+    { 3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1 },
+    { 6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1 },
+    { 9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1 },
+    { 8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1 },
+    { 3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1 },
+    { 10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1 },
+    { 10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1 },
+    { 2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1 },
+    { 7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1 },
+    { 2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1 },
+    { 1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1 },
+    { 11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1 },
+    { 8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1 },
+    { 0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1 },
+    { 7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1 },
+    { 7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1 },
+    { 10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1 },
+    { 0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1 },
+    { 7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1 },
+    { 6, 8, 4, 6, 11, 8, 2, 10, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1 },
+    { 4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1 },
+    { 10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1 },
+    { 8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1 },
+    { 1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, -1, -1, -1, -1 },
+    { 10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1 },
+    { 10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1 },
+    { 9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1 },
+    { 7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1 },
+    { 3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1 },
+    { 7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1 },
+    { 3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1 },
+    { 6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1 },
+    { 9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1 },
+    { 1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1 },
+    { 4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1 },
+    { 7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1 },
+    { 6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1 },
+    { 0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1 },
+    { 6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1 },
+    { 0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1 },
+    { 11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1 },
+    { 6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1 },
+    { 5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1 },
+    { 9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1 },
+    { 1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1 },
+    { 10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1 },
+    { 0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1 },
+    { 11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1 },
+    { 9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1 },
+    { 7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1 },
+    { 2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1 },
+    { 9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1 },
+    { 9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1 },
+    { 1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1 },
+    { 0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1 },
+    { 10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1 },
+    { 2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1 },
+    { 0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1 },
+    { 0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1 },
+    { 9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1 },
+    { 5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1 },
+    { 5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1 },
+    { 8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1 },
+    { 9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1 },
+    { 1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1 },
+    { 3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1 },
+    { 4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1 },
+    { 9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1 },
+    { 11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1 },
+    { 11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1 },
+    { 2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1 },
+    { 9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1 },
+    { 3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1 },
+    { 1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1 },
+    { 4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1 },
+    { 0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1 },
+    { 9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1 },
+    { 1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    { 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+    {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
+    };
+
+static const int3 chunkPositionLookupTable[27] = {
+    int3(0,0,0),
+    int3(1,0,0),
+    int3(2,0,0),
+    int3(0,0,1),
+    int3(1,0,1),
+    int3(2,0,1),
+    int3(0,0,2),
+    int3(1,0,2),
+    int3(2,0,2),
+    int3(0,1,0),
+    int3(1,1,0),
+    int3(2,1,0),
+    int3(0,1,1),
+    int3(1,1,1),
+    int3(2,1,1),
+    int3(0,1,2),
+    int3(1,1,2),
+    int3(2,1,2),
+    int3(0,2,0),
+    int3(1,2,0),
+    int3(2,2,0),
+    int3(0,2,1),
+    int3(1,2,1),
+    int3(2,2,1),
+    int3(0,2,2),
+    int3(1,2,2),
+    int3(2,2,2),
+};
+
+static const int cubeEdgesForVerts[12][2] = {
+    {0, 1},
+    {1, 2},
+    {2, 3},
+    {3, 0},
+    {4, 5},
+    {5, 6},
+    {6, 7},
+    {7, 4},
+    {0, 4},
+    {1, 5},
+    {2, 6},
+    {3, 7}
+};
+
+static const int dirX = 0;
+static const int dirY = 3;
+static const int dirZ = 1;
+
+static const int vertBasePointAndDir[12][2] = {
+    {0, dirX},
+    {1, dirZ},
+    {3, dirX},
+    {0, dirZ},
+    {4, dirX},
+    {5, dirZ},
+    {7, dirX},
+    {4, dirZ},
+    {0, dirY},
+    {1, dirY},
+    {2, dirY},
+    {3, dirY}
+};
+
+//DEFINITIONS
+int _pointsPerSide;
+int _chunksPerSide;
+float _time;
+float _scale;
+float _surfaceDensity;
+
+struct Vert { // 28 byte
+    float3 pos;
+    float3 normal;
+    uint uniqueKey;
+};
+
+struct CubeData { // 400 byte
+    uint info; // data stored in bits: bit0 cubeContainsMesh?, bit1-3 faceCount, bit4-7 vertCount
+    Vert verts[12]; // 336 byte
+    uint3 faces[5]; // 12 byte * 5 = 60 byte
+};
+
+RWStructuredBuffer<uint> _cubeInfosOutput; // 1 per cube 27 per chunk
+RWStructuredBuffer<uint3> _cubeFacesOutput; // 5 per cube
+RWStructuredBuffer<Vert> _cubeVertsOutput; // 12 per cube
+RWStructuredBuffer<uint> _chunkInfosOutput; // 1 info per chunk
+RWStructuredBuffer<uint3> _chunkFacesOutput; // 135 faces per chunk
+RWStructuredBuffer<Vert> _chunkVertsOutput; //144 verts per chunk
+
+//FUNCTIONS
+float calculateDensity(float x, float y, float z, float time) {
+    float3 center = float3(0.5, 0.5, 0.5);
+    float radius = 0.25;
+
+    float3 radialVector = center - float3(x,y,z);
+    float distance = length(radialVector);
+    float l = -distance + 1.1;
+    return l;
+}
+
+float3 getCoord(uint3 pos, int pointsPerSide) {
+    return float3(float(pos.x) / float(pointsPerSide - 1), float(pos.y) / float(pointsPerSide - 1), float(pos.z) / float(pointsPerSide - 1));
+}
+
+float getDensity(float3 coord, float time) {
+    return calculateDensity(coord.x, coord.y, coord.z, time);
+}
+
+bool isMeshEdge(bool corner1Inside, bool corner2Inside) {
+    return ((corner1Inside && !corner2Inside) || (!corner1Inside && corner2Inside));
+}
+
+float3 getScaledPosition(float3 coord, float scale) {
+    return coord * scale;
+}
+
+float3 getInterpolatedPosition(int corners[2], float scale, float surfaceDensity, float3 cornerCoords[8], float cornerDensities[8]) {
+    float3 p1 = getScaledPosition(cornerCoords[corners[0]], scale);
+    float3 p2 = getScaledPosition(cornerCoords[corners[1]], scale);
+    float t = (surfaceDensity - cornerDensities[corners[0]]) / (cornerDensities[corners[1]] - cornerDensities[corners[0]]);
+    return p1 + t * (p2 -p1);
+}
+
+uint calculateUniqueVertKey(int pointDirGroup[2], int pointsPerSide, uint3 cubeCorners[8]) {
+    return (cubeCorners[pointDirGroup[0]].x + cubeCorners[pointDirGroup[0]].z * uint(pointsPerSide) + cubeCorners[pointDirGroup[0]].y * uint(pointsPerSide) * uint(pointsPerSide)) * 4 + uint(pointDirGroup[1]);
+}
+
+[numthreads(CHUNKSIZE,CHUNKSIZE,CHUNKSIZE)]
+void CSMain (
+	uint3 Gid  : SV_GroupID,
+	uint3 DTid : SV_DispatchThreadID,
+	uint3 GTid : SV_GroupThreadID,
+	uint  GI : SV_GroupIndex)
+{
+    uint cubesPerSide = _pointsPerSide - 1;
+    int cubeDataID = int(GTid.x) + int(GTid.z) * CHUNKSIZE + int(GTid.y) * CHUNKSIZE * CHUNKSIZE; 
+    int chunkId = int(Gid.x) + int(Gid.z) * _chunksPerSide  + int(Gid.y) * _chunksPerSide * _chunksPerSide;
+    // is inside the volume? Some threads can be out of volume bounds
+    if (DTid.x >= cubesPerSide || DTid.y >= cubesPerSide || DTid.z >= cubesPerSide) {
+        // set empty cubeData
+        _cubeInfosOutput[chunkId * 27 + cubeDataID] = 1024; // impossible value to reach other ways
+    } else {
+
+        uint3 cubeCorners[8] = {
+            uint3(DTid.x, DTid.y, DTid.z),
+            uint3(DTid.x + 1, DTid.y, DTid.z),
+            uint3(DTid.x + 1, DTid.y, DTid.z + 1),
+            uint3(DTid.x, DTid.y, DTid.z + 1),
+            uint3(DTid.x, DTid.y + 1, DTid.z),
+            uint3(DTid.x + 1, DTid.y + 1, DTid.z),
+            uint3(DTid.x + 1, DTid.y + 1, DTid.z + 1),
+            uint3(DTid.x, DTid.y + 1, DTid.z + 1),
+        };
+
+        float3 cornerCoords[8] = {
+            getCoord(cubeCorners[0], _pointsPerSide),
+            getCoord(cubeCorners[1], _pointsPerSide),
+            getCoord(cubeCorners[2], _pointsPerSide),
+            getCoord(cubeCorners[3], _pointsPerSide),
+            getCoord(cubeCorners[4], _pointsPerSide),
+            getCoord(cubeCorners[5], _pointsPerSide),
+            getCoord(cubeCorners[6], _pointsPerSide),
+            getCoord(cubeCorners[7], _pointsPerSide)
+        };
+
+        float cornerDensities[8] = {
+            getDensity(cornerCoords[0], _time),
+            getDensity(cornerCoords[1], _time),
+            getDensity(cornerCoords[2], _time),
+            getDensity(cornerCoords[3], _time),
+            getDensity(cornerCoords[4], _time),
+            getDensity(cornerCoords[5], _time),
+            getDensity(cornerCoords[6], _time),
+            getDensity(cornerCoords[7], _time),
+        };
+
+        bool isCornerInside[8] = {
+            cornerDensities[0] >= _surfaceDensity,
+            cornerDensities[1] >= _surfaceDensity,
+            cornerDensities[2] >= _surfaceDensity,
+            cornerDensities[3] >= _surfaceDensity,
+            cornerDensities[4] >= _surfaceDensity,
+            cornerDensities[5] >= _surfaceDensity,
+            cornerDensities[6] >= _surfaceDensity,
+            cornerDensities[7] >= _surfaceDensity,
+        };
+
+        int cubeIndex = 0;
+        if (isCornerInside[0]) cubeIndex |= 1;
+        if (isCornerInside[1]) cubeIndex |= 2;
+        if (isCornerInside[2]) cubeIndex |= 4;
+        if (isCornerInside[3]) cubeIndex |= 8;
+        if (isCornerInside[4]) cubeIndex |= 16;
+        if (isCornerInside[5]) cubeIndex |= 32;
+        if (isCornerInside[6]) cubeIndex |= 64;
+        if (isCornerInside[7]) cubeIndex |= 128;
+
+        bool vertSet[12] = {
+            false, false, false, false, false, false, false, false, false, false, false, false
+        };
+        int vertCount = 0;
+        int faceCount = 0;
+        for (int i = 0; triangulation[cubeIndex][i] != -1; i+=3) {
+            int triangleVertIDs[3] = {
+                triangulation[cubeIndex][i],
+                triangulation[cubeIndex][i+1],
+                triangulation[cubeIndex][i+2]
+            };
+            for (int j = 0; j < 3; j++) { // add new verts
+                if (!vertSet[triangleVertIDs[j]]) {
+                    _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[j]].pos = getInterpolatedPosition(cubeEdgesForVerts[triangleVertIDs[j]], _scale, _surfaceDensity, cornerCoords, cornerDensities);
+                    _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[j]].uniqueKey = calculateUniqueVertKey(vertBasePointAndDir[triangleVertIDs[j]], _pointsPerSide, cubeCorners);
+                    _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[j]].normal = float3(0,0,0);
+                    vertSet[triangleVertIDs[j]] = true;
+                    vertCount = vertCount + 1;
+                }
+            }
+            // calculate face normal
+            float3 a = _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[2]].pos - _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[1]].pos;
+            float3 b = _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[0]].pos - _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[1]].pos;
+            float3 n = normalize(cross(a,b));
+            // add normal to each vert
+            for (int k = 0; k < 3; k++) {
+                _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[k]].normal = _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + triangleVertIDs[k]].normal + n;
+            }
+            _cubeFacesOutput[chunkId * 27 * 5 + cubeDataID * 5 + faceCount] = uint3(uint(triangleVertIDs[0]), uint(triangleVertIDs[1]), uint(triangleVertIDs[2]));
+            faceCount = faceCount + 1;
+        }
+        vertCount = vertCount * 16; // move bits up by 4
+        // normalize normal vectors
+        for (int l = 0; l < 12; l++) {
+            if (vertSet[l]) {
+                _cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + l].normal = normalize(_cubeVertsOutput[chunkId * 27 * 12 + cubeDataID * 12 + l].normal);
+            }
+        }
+
+        uint cubeInfo = uint(vertCount);
+
+        faceCount = faceCount * 2; // move bits up by one
+        cubeInfo = cubeInfo + uint(faceCount);
+        if (cubeIndex > 0 && cubeIndex < 255) {
+            cubeInfo = cubeInfo + uint(1); // set first bit
+        }
+        
+        int movedUpCubeIndex = cubeIndex * 65536; // move up the cube index
+        cubeInfo = cubeInfo + uint(movedUpCubeIndex);
+        _cubeInfosOutput[chunkId * 27 + cubeDataID] = cubeInfo;
+    }
+    // wait for all threads to reach this point => all cubes have been calculated
+    GroupMemoryBarrierWithGroupSync();
+    
+    if (GI == 0) { // thread 0 contiues to make the chunk
+        bool chunkVertSet[144] = {
+            false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+        };
+        int chunkVertCount = 0;
+        int chunkFaceCount = 0;
+        for (int m = 0; m < 27; m++) {
+            if (_cubeInfosOutput[chunkId * 27 + m] & (1<<0)) {
+                int faceCount = 0;
+                int3 chunkPos = chunkPositionLookupTable[m];
+                int chunkY = chunkPos.y;
+                int chunkX = chunkPos.x;
+                int chunkZ = chunkPos.z;
+                if (_cubeInfosOutput[chunkId * 27 + m] & (1<<1)) faceCount |= 1;
+                if (_cubeInfosOutput[chunkId * 27 + m] & (1<<2)) faceCount |= 2;
+                if (_cubeInfosOutput[chunkId * 27 + m] & (1<<3)) faceCount |= 4;
+                for (int n = 0; n < faceCount; n++) {
+                    uint vertIds[3] = {
+                        _cubeFacesOutput[chunkId * 27 * 5 + m * 5 + n].x,
+                        _cubeFacesOutput[chunkId * 27 * 5 + m * 5 + n].y,
+                        _cubeFacesOutput[chunkId * 27 * 5 + m * 5 + n].z,
+                    };
+                    uint chunkFaceIndices[3] = {
+                        0,0,0
+                    };
+                    for (int o = 0; o < 3; o++) {
+                        // calculate chunkVertId
+                        uint chunkVertId = uint(0);
+                        // 0-47 for edges along x axis
+                        if (vertIds[o] == uint(0)) {
+                            chunkVertId = uint(chunkX + chunkZ * 3 + chunkY * 3 * 4); 
+                        }
+                        if (vertIds[o] == uint(2)) {
+                            chunkVertId = uint(chunkX + (chunkZ + 1) * 3 + chunkY * 3 * 4);
+                        }
+                        if (vertIds[o] == uint(4)) {
+                            chunkVertId = uint(chunkX + chunkZ * 3 + (chunkY + 1) * 3 * 4);
+                        }
+                        if (vertIds[o] == uint(6)) {
+                            chunkVertId = uint(chunkX + (chunkZ + 1) * 3 + (chunkY + 1) * 3 * 4);
+                        }
+                        //48-95 for edges along z axis
+                        if (vertIds[o] == uint(3)) {
+                            chunkVertId = uint(48 + chunkX + chunkZ * 4 + chunkY * 3 * 4); 
+                        }
+                        if (vertIds[o] == uint(1)) {
+                            chunkVertId = uint(48 + chunkX + 1 + chunkZ * 4 + chunkY * 3 * 4); 
+                        }
+                        if (vertIds[o] == uint(7)) {
+                            chunkVertId = uint(48 + chunkX + chunkZ * 4 + (chunkY + 1) * 3 * 4); 
+                        }
+                        if (vertIds[o] == uint(5)) {
+                            chunkVertId = uint(48 + chunkX + 1 + chunkZ * 4 + (chunkY + 1) * 3 * 4); 
+                        }
+                        // 96-143 for edges along y axis
+                        if (vertIds[o] == uint(8)) {
+                            chunkVertId = uint(96 + chunkX + chunkZ * 4 + chunkY * 4 * 4); 
+                        }
+                        if (vertIds[o] == uint(9)) {
+                            chunkVertId = uint(96 + chunkX + 1 + chunkZ * 4 + chunkY * 4 * 4); 
+                        }
+                        if (vertIds[o] == uint(10)) {
+                            chunkVertId = uint(96 + chunkX + 1 + (chunkZ + 1) * 4 + chunkY * 4 * 4); 
+                        }
+                        if (vertIds[o] == uint(11)) {
+                            chunkVertId = uint(96 + chunkX + (chunkZ + 1) * 4 + chunkY * 4 * 4); 
+                        }
+                        if (!chunkVertSet[chunkVertId]) {
+                            _chunkVertsOutput[(chunkId * CHUNKVERTS) + chunkVertId].pos = _cubeVertsOutput[chunkId * 27 * 12 + m * 12 + vertIds[o]].pos;
+                            _chunkVertsOutput[(chunkId * CHUNKVERTS) + chunkVertId].uniqueKey = _cubeVertsOutput[chunkId * 27 * 12 + m * 12 + vertIds[o]].uniqueKey;
+                            _chunkVertsOutput[(chunkId * CHUNKVERTS) + chunkVertId].normal = float3(0,0,0);
+
+                            chunkVertSet[chunkVertId] = true;
+                            chunkVertCount = chunkVertCount + 1;
+                        }
+                        // sum up normals
+                        _chunkVertsOutput[(chunkId * CHUNKVERTS) + chunkVertId].normal = _chunkVertsOutput[(chunkId * CHUNKVERTS) + chunkVertId].normal + _cubeVertsOutput[chunkId * 27 * 12 + m * 12 + vertIds[o]].normal;
+                        
+                        chunkFaceIndices[o] = chunkVertId;
+                    }
+                    _chunkFacesOutput[(chunkId * CHUNKFACES) + chunkFaceCount] = uint3(chunkFaceIndices[0], chunkFaceIndices[1], chunkFaceIndices[2]);
+                    chunkFaceCount = chunkFaceCount + 1;
+                }
+            }
+        }
+        //normalize normal vectors
+        for (int p = 0; p < 144; p++) {
+            if (chunkVertSet[p]) {
+                _chunkVertsOutput[(chunkId * CHUNKVERTS) + p].normal = normalize(_chunkVertsOutput[(chunkId * CHUNKVERTS) + p].normal);
+                
+            }
+        }
+        // create chunk info 
+        uint chunkInfo = chunkVertCount * 512; //move vert count to bit9-16 by multiplying with 2^9 = 512
+        chunkInfo = chunkInfo + chunkFaceCount * 2; // move face count to bit1-8 by multiplying with 2^1 = 2
+        if (chunkVertCount > 0) {
+            chunkInfo = chunkInfo + 1; // set first bit if chunk isnt empty
+        }
+        _chunkInfosOutput[chunkId] = chunkInfo;
+    }
+}
